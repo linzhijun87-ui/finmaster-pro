@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Masterplan PRO | Aplikasi Keuangan Pribadi</title>
+    
+    <!-- PWA Meta Tags - PATH DIUBAH -->
+    <meta name="theme-color" content="#4361ee">
+    <meta name="description" content="Aplikasi perencanaan keuangan pribadi dengan analytics lengkap">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="assets/icons/icon-192x192.png"> <!-- PATH DIUBAH -->
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"> <!-- PATH DIUBAH -->
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- APP CONTAINER -->
+    <div class="app-container" id="app">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">F$</div>
+                    <span>Financial Masterplan <strong>PRO</strong></span>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="btn-outline" id="exportBtn">
+                        <span>📤</span> Export Data
+                    </button>
+                    
+                    <div class="user-profile" id="userProfile">
+                        <div class="avatar" id="userAvatar">FL</div>
+                        <div>
+                            <div style="font-weight: 600;" id="userName">Ferdiansyah Lim</div>
+                            <div style="font-size: 0.875rem; color: var(--gray-400);">Premium User</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- NAVIGATION -->
+        <nav class="nav-container">
+            <div class="nav-tabs" id="navTabs">
+                <button class="nav-tab active" data-tab="dashboard">
+                    <span>📊</span> Dashboard
+                </button>
+                <button class="nav-tab" data-tab="expenses">
+                    <span>💸</span> Pengeluaran
+                    <span class="tab-badge" id="expenseBadge">0</span>
+                </button>
+                <button class="nav-tab" data-tab="income">
+                    <span>💰</span> Pendapatan
+                </button>
+                <button class="nav-tab" data-tab="checklist">
+                    <span>✅</span> Checklist
+                    <span class="tab-badge" id="checklistBadge">0</span>
+                </button>
+                <button class="nav-tab" data-tab="simulation">
+                    <span>📈</span> Simulasi
+                </button>
+                <button class="nav-tab" data-tab="settings">
+                    <span>⚙️</span> Pengaturan
+                </button>
+            </div>
+        </nav>
+        
+        <!-- MAIN CONTENT - DYNAMIC CONTENT WILL BE LOADED HERE -->
+        <main class="dashboard" id="mainContent">
+            <!-- Content will be loaded dynamically by JavaScript -->
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>Memuat dashboard...</p>
+            </div>
+        </main>
+        
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Financial Masterplan PRO</h4>
+                    <p>Aplikasi perencanaan keuangan pribadi dengan tools lengkap untuk mencapai financial freedom.</p>
+                    <div style="margin-top: var(--space-4);">
+                        <button class="btn" id="installBtn" style="display: none;">
+                            📲 Install App
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Fitur Utama</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" data-tab="dashboard">📊 Dashboard Analytics</a></li>
+                        <li><a href="#" data-tab="expenses">💸 Budget Planning</a></li>
+                        <li><a href="#" data-tab="simulation">📈 Investment Simulation</a></li>
+                        <li><a href="#" id="exportReport">📄 Report Generation</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" id="helpBtn">📚 Documentation</a></li>
+                        <li><a href="#" id="tipsBtn">💡 Blog & Tips</a></li>
+                        <li><a href="#" data-tab="settings">⚙️ Settings</a></li>
+                        <li><a href="#" id="clearDataBtn">🔄 Reset Data</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Status Sistem</h4>
+                    <div style="font-size: 0.9rem;">
+                        <div style="margin-bottom: var(--space-2);">
+                            <span class="text-muted">Mode:</span>
+                            <span id="appMode" style="color: var(--primary); font-weight: 600;">Online</span>
+                        </div>
+                        <div style="margin-bottom: var(--space-2);">
+                            <span class="text-muted">Storage:</span>
+                            <span id="storageStatus" style="color: var(--success); font-weight: 600;">Local</span>
+                        </div>
+                        <div style="margin-bottom: var(--space-2);">
+                            <span class="text-muted">Version:</span>
+                            <span id="appVersion" style="color: var(--info); font-weight: 600;">2.0.0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer-status">
+                    <div>&copy; 2026 Financial Masterplan PRO. All rights reserved.</div>
+                    <div style="display: flex; gap: var(--space-4);">
+                        <button id="darkModeToggle" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                            🌙 Dark Mode
+                        </button>
+                        <a href="#" style="color: var(--text-muted);">Privacy Policy</a>
+                        <a href="#" style="color: var(--text-muted);">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- MODALS & OVERLAYS -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    
+    <!-- Add Expense Modal -->
+    <div class="modal" id="addExpenseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Tambah Pengeluaran</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseName">Nama Pengeluaran</label>
+                        <input type="text" id="expenseName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseAmount">Jumlah (Rp)</label>
+                        <input type="number" id="expenseAmount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseCategory">Kategori</label>
+                        <select id="expenseCategory" required>
+                            <option value="kebutuhan">Kebutuhan</option>
+                            <option value="hiburan">Hiburan</option>
+                            <option value="transport">Transportasi</option>
+                            <option value="makanan">Makanan</option>
+                            <option value="lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseDate">Tanggal</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💾 Simpan Pengeluaran
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Income Modal -->
+    <div class="modal" id="addIncomeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 Tambah Pendapatan</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="incomeForm">
+                    <div class="form-group">
+                        <label for="incomeName">Sumber Pendapatan</label>
+                        <input type="text" id="incomeName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeAmount">Jumlah (Rp)</label>
+                        <input type="number" id="incomeAmount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeCategory">Kategori</label>
+                        <select id="incomeCategory" required>
+                            <option value="gaji">Gaji</option>
+                            <option value="freelance">Freelance</option>
+                            <option value="investasi">Investasi</option>
+                            <option value="lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeDate">Tanggal</label>
+                        <input type="date" id="incomeDate" required>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💰 Simpan Pendapatan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Goals Modal -->
+    <div class="modal" id="addGoalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎯 Tambah Goal Baru</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="goalForm">
+                    <div class="form-group">
+                        <label for="goalName">Nama Goal</label>
+                        <input type="text" id="goalName" placeholder="Contoh: DP Rumah" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goalTarget">Target Amount (Rp)</label>
+                        <input type="number" id="goalTarget" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goalDeadline">Target Tanggal</label>
+                        <input type="date" id="goalDeadline" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="goalCurrent">Jumlah Saat Ini (Rp)</label>
+                        <input type="number" id="goalCurrent" value="0">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        🎯 Buat Goal Baru
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    
+    <!-- PWA Service Worker Registration - PATH DIUBAH -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')  <!-- NAMA FILE DIUBAH -->
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
