@@ -98,6 +98,10 @@ class UIManager {
         const overlay = this.app.elements.modalOverlay;
         
         if (modal && overlay) {
+            // Close any other open modals first
+            this.closeModal();
+            
+            // Open new modal
             modal.classList.add('active');
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -110,13 +114,43 @@ class UIManager {
                     input.value = today;
                 }
             });
+            
+            // Focus management for accessibility
+            setTimeout(() => {
+                // Try to focus first input
+                const focusable = modal.querySelectorAll(
+                    'input:not([disabled]):not([type="hidden"]), ' +
+                    'select:not([disabled]), ' +
+                    'textarea:not([disabled]), ' +
+                    'button:not([disabled])'
+                );
+                
+                if (focusable.length > 0) {
+                    // Skip close button, focus on first input
+                    const firstInput = focusable[0].classList.contains('modal-close') 
+                        ? focusable[1] 
+                        : focusable[0];
+                    if (firstInput) firstInput.focus();
+                }
+            }, 100);
         }
     }
 
     closeModal(modalId = null) {
+        let shouldCloseOverlay = true;
+        
         if (modalId) {
+            // Close specific modal
             const modal = document.getElementById(modalId);
-            if (modal) modal.classList.remove('active');
+            if (modal) {
+                modal.classList.remove('active');
+                
+                // Check if there are other active modals
+                const otherActiveModals = Array.from(document.querySelectorAll('.modal.active'))
+                    .filter(m => m.id !== modalId);
+                
+                shouldCloseOverlay = otherActiveModals.length === 0;
+            }
         } else {
             // Close all modals
             document.querySelectorAll('.modal').forEach(modal => {
@@ -124,8 +158,17 @@ class UIManager {
             });
         }
         
-        this.app.elements.modalOverlay.classList.remove('active');
-        document.body.style.overflow = '';
+        // Only close overlay if no modals are active
+        if (shouldCloseOverlay && this.app.elements.modalOverlay) {
+            this.app.elements.modalOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Return focus to previous element (for accessibility)
+        if (this.lastFocusedElement) {
+            this.lastFocusedElement.focus();
+            this.lastFocusedElement = null;
+        }
     }
 
     // ====== THEME MANAGEMENT ======
@@ -137,44 +180,74 @@ class UIManager {
         } else if (theme === 'light') {
             document.body.classList.remove('dark-mode');
         } else {
-            // Auto - follow system preference
+            // Auto - follow system
             if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 document.body.classList.add('dark-mode');
             } else {
                 document.body.classList.remove('dark-mode');
             }
         }
+        
+        this.updateThemeToggleButton(); 
+    }
+
+    updateThemeToggleButton() {
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (!toggleBtn) return;
+        
+        const theme = this.app.state.settings.theme || 'auto';
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        
+        // Update button text berdasarkan kondisi saat ini
+        if (theme === 'dark') {
+            toggleBtn.innerHTML = '☀️ Light Mode';
+        } else if (theme === 'light') {
+            toggleBtn.innerHTML = '🌙 Dark Mode';
+        } else { // 'auto'
+            // Untuk auto mode, lihat class di body
+            toggleBtn.innerHTML = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
     }
 
     changeTheme(theme) {
+        // Update setting
         this.app.state.settings.theme = theme;
-        this.applyTheme();
+        
+        // Terapkan tema
+        this.applyTheme(); // Ini akan update class body DAN button text
+        
+        // Simpan
         this.app.dataManager.saveData(true);
         
         this.showNotification(`Tema diubah ke: ${theme}`, 'success');
     }
 
     toggleDarkMode() {
-        const isDark = !document.body.classList.contains('dark-mode');
+        const currentTheme = this.app.state.settings.theme || 'auto';
+        let newTheme;
         
-        if (isDark) {
-            document.body.classList.add('dark-mode');
-        } else {
-            document.body.classList.remove('dark-mode');
+        // Logika toggle
+        if (currentTheme === 'auto') {
+            // Jika sedang auto, kita lihat state saat ini
+            const isCurrentlyDark = document.body.classList.contains('dark-mode');
+            newTheme = isCurrentlyDark ? 'light' : 'dark';
+        } else if (currentTheme === 'dark') {
+            newTheme = 'light';
+        } else { // currentTheme === 'light'
+            newTheme = 'dark';
         }
         
-        // Update button text
-        const toggleBtn = document.getElementById('darkModeToggle');
-        if (toggleBtn) {
-            toggleBtn.innerHTML = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
-        }
+        // Update setting
+        this.app.state.settings.theme = newTheme;
         
-        // Update settings
-        this.app.state.settings.theme = isDark ? 'dark' : 'light';
+        // Terapkan tema baru
+        this.applyTheme(); // Ini akan update class body DAN button text
+        
+        // Simpan
         this.app.dataManager.saveData(true);
         
         this.showNotification(
-            isDark ? 'Dark mode diaktifkan' : 'Light mode diaktifkan', 
+            `Mode diubah ke: ${newTheme === 'dark' ? 'Dark' : 'Light'}`,
             'success'
         );
     }

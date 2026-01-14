@@ -372,24 +372,42 @@ class EventManager {
     // ====== KEYBOARD SHORTCUTS ======
     setupKeyboardShortcuts() {
         this.addEventHandler(document, 'keydown', (e) => {
-            // Ctrl+S or Cmd+S to save
+            // ====== CEK APAKAH USER SEDANG DI INPUT FIELD ======
+            const activeElement = document.activeElement;
+            const isInputField = activeElement.tagName === 'INPUT' || 
+                                activeElement.tagName === 'TEXTAREA' ||
+                                activeElement.tagName === 'SELECT' ||
+                                activeElement.isContentEditable;
+            
+            // ====== SHORTCUT YANG BOLEH DI MANA SAJA ======
+            // Ctrl+S or Cmd+S to save (boleh di input field)
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 this.app.dataManager.saveData();
                 this.app.uiManager.showNotification('Data disimpan!', 'success');
+                return; // Stop processing
             }
             
-            // Escape to close modals
+            // Escape to close modals (boleh di input field)
             if (e.key === 'Escape') {
                 this.app.uiManager.closeModal();
+                // Jangan return, biarkan lanjut ke shortcut lain jika perlu
             }
             
-            // Ctrl+E to export
+            // Ctrl+E to export (boleh di input field)
             if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
                 e.preventDefault();
                 this.app.reportGenerator.exportData('json');
+                return;
             }
             
+            // ====== SHORTCUT YANG TIDAK BOLEH DI INPUT FIELD ======
+            // JANGAN proses shortcut angka jika user sedang di input field
+            if (isInputField) {
+                return; // Skip semua shortcut non-essential
+            }
+            
+            // ====== SHORTCUT ANGKA HANYA JIKA BUKAN DI INPUT FIELD ======
             // Number keys for quick navigation (1-6)
             if (e.key >= '1' && e.key <= '6' && !e.ctrlKey && !e.metaKey) {
                 const tabIndex = parseInt(e.key) - 1;

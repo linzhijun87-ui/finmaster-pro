@@ -145,21 +145,73 @@ class ExpensesView {
     }
 
     refresh() {
+        // 1. HITUNG ULANG TOTAL PENGELUARAN BULAN INI
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        
+        const monthlyExpenses = this.app.state.transactions.expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate.getMonth() === currentMonth && 
+                expenseDate.getFullYear() === currentYear;
+        });
+        
+        const totalExpenses = monthlyExpenses.reduce((sum, item) => sum + item.amount, 0);
+        
+        // Update state
+        this.app.state.finances.expenses = totalExpenses;
+        
+        // 2. UPDATE UI: TOTAL PENGELUARAN BULAN INI
+        // Cari element yang menampilkan total (biasanya setelah section-title)
+        const totalExpenseEl = document.querySelector('.section-title + div div:first-child div:first-child');
+        if (totalExpenseEl) {
+            totalExpenseEl.textContent = this.app.calculator.formatCurrency(totalExpenses);
+            totalExpenseEl.style.color = 'var(--danger)'; // Pastikan warna merah
+        }
+        
+        // 3. UPDATE EXPENSES LIST
         const expensesListEl = document.getElementById('expensesList');
         if (expensesListEl) {
             expensesListEl.innerHTML = this.getExpensesListHTML();
         }
         
+        // 4. UPDATE LARGEST CATEGORY
         const largestCategoryEl = document.getElementById('largestCategory');
         if (largestCategoryEl) {
             largestCategoryEl.textContent = this.getLargestCategory();
         }
         
-        // Update transaction count
+        // 5. UPDATE EXPENSE ANALYSIS
+        const expenseAnalysisEl = document.getElementById('expenseAnalysis');
+        if (expenseAnalysisEl) {
+            expenseAnalysisEl.innerHTML = this.getExpenseAnalysis();
+        }
+        
+        // 6. UPDATE TRANSACTION COUNT (di activity section)
         const transactionCountEl = document.querySelector('.activity-section .text-muted');
         if (transactionCountEl) {
             transactionCountEl.textContent = `${this.app.state.transactions.expenses.length} transaksi`;
         }
+        
+        // 7. UPDATE AVG MONTHLY (stat card pertama)
+        const avgMonthly = Math.round(totalExpenses / 12);
+        const avgMonthlyEl = document.querySelector('.stat-card:nth-child(1) .stat-value');
+        if (avgMonthlyEl) {
+            avgMonthlyEl.textContent = this.app.calculator.formatCurrency(avgMonthly);
+        }
+        
+        // 8. UPDATE TRANSACTION COUNT IN STAT CARD (stat card ketiga)
+        const transactionCountCardEl = document.querySelector('.stat-card:nth-child(3) .stat-value');
+        if (transactionCountCardEl) {
+            transactionCountCardEl.textContent = this.app.state.transactions.expenses.length;
+        }
+        
+        // 9. UPDATE MONTHLY STATS
+        const monthlyStatsEl = document.querySelector('.dashboard-grid:nth-of-type(2) .activity-section > div');
+        if (monthlyStatsEl && monthlyStatsEl.parentElement.querySelector('.section-title').textContent.includes('Bulanan')) {
+            monthlyStatsEl.innerHTML = this.getMonthlyStats();
+        }
+        
+        console.log('Expense view refreshed with total:', totalExpenses);
     }
 }
 

@@ -21,9 +21,14 @@ class SimulationView {
         return `
             <div class="section-title">📈 Simulasi Keuangan</div>
             
-            <div class="dashboard-grid">
+            <div class="dashboard-grid" style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: var(--space-6);
+                align-items: start;
+            ">
                 <!-- Investment Calculator -->
-                <div class="activity-section">
+                <div class="activity-section" style="height: 100%;">
                     <h3 class="section-title">Kalkulator Investasi</h3>
                     <div style="padding: var(--space-4);">
                         <div class="form-group">
@@ -60,7 +65,7 @@ class SimulationView {
                 </div>
                 
                 <!-- Loan Calculator -->
-                <div class="activity-section">
+                <div class="activity-section" style="height: 100%;">
                     <h3 class="section-title">Kalkulator Pinjaman</h3>
                     <div style="padding: var(--space-4);">
                         <div class="form-group">

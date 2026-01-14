@@ -237,27 +237,65 @@ class IncomeView {
     }
 
     refresh() {
+        // 1. UPDATE TOTAL PENDAPATAN
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        
+        const monthlyIncome = this.app.state.transactions.income.filter(income => {
+            const incomeDate = new Date(income.date);
+            return incomeDate.getMonth() === currentMonth && 
+                incomeDate.getFullYear() === currentYear;
+        });
+        
+        const totalIncome = monthlyIncome.reduce((sum, item) => sum + item.amount, 0);
+        
+        // Update state
+        this.app.state.finances.income = totalIncome;
+        
+        // Update UI: Total pendapatan bulan ini
+        const totalIncomeEl = document.querySelector('.section-title + div div:first-child div:first-child');
+        if (totalIncomeEl) {
+            totalIncomeEl.textContent = this.app.calculator.formatCurrency(totalIncome);
+        }
+        
+        // 2. UPDATE INCOME LIST
         const incomeListEl = document.getElementById('incomeList');
         if (incomeListEl) {
             incomeListEl.innerHTML = this.getIncomeListHTML();
         }
         
+        // 3. UPDATE LARGEST SOURCE
         const largestSourceEl = document.getElementById('largestSource');
         if (largestSourceEl) {
             largestSourceEl.textContent = this.getLargestSource();
         }
         
-        // Update income analysis
+        // 4. UPDATE INCOME ANALYSIS
         const incomeAnalysisEl = document.getElementById('incomeAnalysis');
         if (incomeAnalysisEl) {
             incomeAnalysisEl.innerHTML = this.getIncomeAnalysis();
         }
         
-        // Update transaction count
+        // 5. UPDATE TRANSACTION COUNT
         const transactionCountEl = document.querySelector('.activity-section .text-muted');
         if (transactionCountEl) {
             transactionCountEl.textContent = `${this.app.state.transactions.income.length} transaksi`;
         }
+        
+        // 6. UPDATE AVG MONTHLY
+        const avgMonthly = Math.round(totalIncome / 12);
+        const avgMonthlyEl = document.querySelector('.stat-card:nth-child(1) .stat-value');
+        if (avgMonthlyEl) {
+            avgMonthlyEl.textContent = this.app.calculator.formatCurrency(avgMonthly);
+        }
+        
+        // 7. UPDATE TRANSACTION COUNT IN STAT CARD
+        const transactionCountCardEl = document.querySelector('.stat-card:nth-child(3) .stat-value');
+        if (transactionCountCardEl) {
+            transactionCountCardEl.textContent = this.app.state.transactions.income.length;
+        }
+        
+        console.log('Income view refreshed with total:', totalIncome);
     }
 }
 
