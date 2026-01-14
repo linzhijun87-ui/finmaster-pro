@@ -5,24 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Masterplan PRO | Aplikasi Keuangan Pribadi</title>
     
-    <!-- PWA Meta Tags - PATH DIUBAH -->
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#4361ee">
     <meta name="description" content="Aplikasi perencanaan keuangan pribadi dengan analytics lengkap">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="assets/icons/icon-192x192.png"> <!-- PATH DIUBAH -->
-    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"> <!-- PATH DIUBAH -->
+    <link rel="icon" href="assets/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
     
+    <!-- Preload Chart.js untuk performa lebih baik -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js" as="script">
+
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
     
-    <!-- Chart.js for Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js will be loaded dynamically -->
+    <!-- NOT loaded here to avoid blocking -->
 </head>
 <body>
     <!-- APP CONTAINER -->
     <div class="app-container" id="app">
         <!-- HEADER -->
-        <header class="header">
+        <header class="header" id="appHeader">
             <div class="header-content">
                 <div class="logo">
                     <div class="logo-icon">F$</div>
@@ -48,7 +57,7 @@
         <!-- NAVIGATION -->
         <nav class="nav-container">
             <div class="nav-tabs" id="navTabs">
-                <button class="nav-tab active" data-tab="dashboard">
+                <button class="nav-tab" data-tab="dashboard">
                     <span>📊</span> Dashboard
                 </button>
                 <button class="nav-tab" data-tab="expenses">
@@ -71,17 +80,17 @@
             </div>
         </nav>
         
-        <!-- MAIN CONTENT - DYNAMIC CONTENT WILL BE LOADED HERE -->
-        <main class="dashboard" id="mainContent">
-            <!-- Content will be loaded dynamically by JavaScript -->
+        <!-- MAIN CONTENT -->
+        <main class="main-content" id="mainContent">
+            <!-- Loading state -->
             <div class="loading-container">
                 <div class="loading-spinner"></div>
-                <p>Memuat dashboard...</p>
+                <p>Memuat Financial Masterplan PRO v2.1...</p>
             </div>
         </main>
         
         <!-- FOOTER -->
-        <footer class="footer">
+        <footer class="footer" id="appFooter">
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>Financial Masterplan PRO</h4>
@@ -126,7 +135,7 @@
                         </div>
                         <div style="margin-bottom: var(--space-2);">
                             <span class="text-muted">Version:</span>
-                            <span id="appVersion" style="color: var(--info); font-weight: 600;">2.0.0</span>
+                            <span id="appVersion" style="color: var(--info); font-weight: 600;">2.1.0</span>
                         </div>
                     </div>
                 </div>
@@ -159,11 +168,11 @@
                 <form id="expenseForm">
                     <div class="form-group">
                         <label for="expenseName">Nama Pengeluaran</label>
-                        <input type="text" id="expenseName" required>
+                        <input type="text" id="expenseName" required placeholder="Contoh: Belanja bulanan">
                     </div>
                     <div class="form-group">
                         <label for="expenseAmount">Jumlah (Rp)</label>
-                        <input type="number" id="expenseAmount" required>
+                        <input type="number" id="expenseAmount" required min="0" placeholder="1000000">
                     </div>
                     <div class="form-group">
                         <label for="expenseCategory">Kategori</label>
@@ -172,6 +181,9 @@
                             <option value="hiburan">Hiburan</option>
                             <option value="transport">Transportasi</option>
                             <option value="makanan">Makanan</option>
+                            <option value="kesehatan">Kesehatan</option>
+                            <option value="pendidikan">Pendidikan</option>
+                            <option value="investasi">Investasi</option>
                             <option value="lainnya">Lainnya</option>
                         </select>
                     </div>
@@ -198,18 +210,20 @@
                 <form id="incomeForm">
                     <div class="form-group">
                         <label for="incomeName">Sumber Pendapatan</label>
-                        <input type="text" id="incomeName" required>
+                        <input type="text" id="incomeName" required placeholder="Contoh: Gaji bulanan">
                     </div>
                     <div class="form-group">
                         <label for="incomeAmount">Jumlah (Rp)</label>
-                        <input type="number" id="incomeAmount" required>
+                        <input type="number" id="incomeAmount" required min="0" placeholder="5000000">
                     </div>
                     <div class="form-group">
                         <label for="incomeCategory">Kategori</label>
                         <select id="incomeCategory" required>
                             <option value="gaji">Gaji</option>
                             <option value="freelance">Freelance</option>
-                            <option value="investasi">Investasi</option>
+                            <option value="bisnis">Bisnis</option>
+                            <option value="investasi">Return Investasi</option>
+                            <option value="hadiah">Hadiah</option>
                             <option value="lainnya">Lainnya</option>
                         </select>
                     </div>
@@ -225,7 +239,7 @@
         </div>
     </div>
     
-    <!-- Goals Modal -->
+    <!-- Add Goal Modal -->
     <div class="modal" id="addGoalModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -240,7 +254,7 @@
                     </div>
                     <div class="form-group">
                         <label for="goalTarget">Target Amount (Rp)</label>
-                        <input type="number" id="goalTarget" required>
+                        <input type="number" id="goalTarget" required min="0" placeholder="100000000">
                     </div>
                     <div class="form-group">
                         <label for="goalDeadline">Target Tanggal</label>
@@ -248,7 +262,7 @@
                     </div>
                     <div class="form-group">
                         <label for="goalCurrent">Jumlah Saat Ini (Rp)</label>
-                        <input type="number" id="goalCurrent" value="0">
+                        <input type="number" id="goalCurrent" value="0" min="0" placeholder="0">
                     </div>
                     <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
                         🎯 Buat Goal Baru
@@ -258,22 +272,106 @@
         </div>
     </div>
     
-    <!-- Scripts -->
-    <script src="app.js"></script>
+    <!-- Custom Date Modal (for chart) -->
+    <div class="modal" id="customDateModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📅 Custom Periode Chart</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="customStartDate">Tanggal Mulai</label>
+                    <input type="date" id="customStartDate" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customEndDate">Tanggal Akhir</label>
+                    <input type="date" id="customEndDate" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customGroupBy">Group By</label>
+                    <select id="customGroupBy" class="form-control">
+                        <option value="daily">Harian</option>
+                        <option value="weekly">Mingguan</option>
+                        <option value="monthly" selected>Bulanan</option>
+                        <option value="yearly">Tahunan</option>
+                    </select>
+                </div>
+                
+                <div class="button-group" style="display: flex; gap: var(--space-3); margin-top: var(--space-6);">
+                    <button class="btn-outline" id="cancelCustomModal" style="flex: 1;">
+                        Batal
+                    </button>
+                    <button class="btn" id="applyCustomFilter" style="flex: 1;">
+                        Terapkan Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <!-- PWA Service Worker Registration - PATH DIUBAH -->
+    <!-- Scripts - TYPE MODULE untuk ES6 modules -->
+    <script type="module" src="app.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
     <script>
+        // Register service worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')  <!-- NAMA FILE DIUBAH -->
+                navigator.serviceWorker.register('sw.js')
                     .then(registration => {
-                        console.log('ServiceWorker registered:', registration);
+                        console.log('✅ ServiceWorker registered:', registration.scope);
+                        
+                        // Update app mode in footer
+                        const appModeElement = document.getElementById('appMode');
+                        if (appModeElement) {
+                            appModeElement.textContent = 'PWA Ready';
+                        }
                     })
                     .catch(error => {
-                        console.log('ServiceWorker registration failed:', error);
+                        console.log('❌ ServiceWorker registration failed:', error);
                     });
             });
         }
+        
+        // Check if app is running as PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('📱 Running as PWA');
+            // Hide install button
+            const installBtn = document.getElementById('installBtn');
+            if (installBtn) {
+                installBtn.style.display = 'none';
+            }
+        }
+    </script>
+    
+    <!-- Error handling for older browsers -->
+    <script>
+        // Check for ES6 module support
+        if (!('noModule' in HTMLScriptElement.prototype)) {
+            document.write('<script src="legacy-app.js"><\/script>');
+        }
+        
+        // Show error if JavaScript is disabled
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.getElementById('mainContent');
+            if (mainContent) {
+                setTimeout(function() {
+                    const loading = mainContent.querySelector('.loading-container');
+                    if (loading && loading.style.display !== 'none') {
+                        loading.innerHTML = `
+                            <div style="text-align: center; padding: 40px;">
+                                <div style="font-size: 3rem; margin-bottom: 15px;">⚠️</div>
+                                <h3>JavaScript Required</h3>
+                                <p>Please enable JavaScript to use this application.</p>
+                            </div>
+                        `;
+                    }
+                }, 5000);
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,24 @@
+{
+  "name": "financial-masterplan-pro",
+  "version": "2.1.0",
+  "description": "Aplikasi manajemen keuangan pribadi dengan fitur lengkap",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx live-server .",
+    "build": "echo 'Build process would go here'",
+    "test": "echo 'Tests would go here'"
+  },
+  "keywords": [
+    "finance",
+    "pwa",
+    "money-management",
+    "budget"
+  ],
+  "author": "Ferdiansyah Lim",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
+}
