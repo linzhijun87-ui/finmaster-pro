@@ -2265,9 +2265,24 @@ input:checked + .toggle-slider:before {
         gap: var(--space-2);
     }
     
-    #customDateModal {
+    /* CSS FIXED untuk customDateModal */
+#customDateModal.modal {
+    max-width: 500px !important; /* Lebar maksimal tetap */
+    width: 90% !important; /* Responsif */
+}
+
+#customDateModal .modal-content {
+    padding: var(--space-6) !important; /* Padding cukup */
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Untuk mobile, buat lebih kecil */
+@media (max-width: 768px) {
+    #customDateModal.modal {
         width: 95% !important;
         max-width: 95% !important;
+        margin: 0 auto !important;
     }
     
     #customDateModal .modal-content {
@@ -2281,6 +2296,7 @@ input:checked + .toggle-slider:before {
     #customDateModal .button-group button {
         width: 100% !important;
     }
+}
 }
 
 @media (max-width: 480px) {
