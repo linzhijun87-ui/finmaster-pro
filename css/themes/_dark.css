@@ -1,0 +1,397 @@
+/* ====== DARK THEME OVERRIDES ====== */
+
+[data-theme="dark"] {
+  /* Background Colors */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-surface: #374151;
+  --bg-elevated: #1f2937;
+  --bg-overlay: rgba(0, 0, 0, 0.7);
+  
+  /* Text Colors */
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-tertiary: #d1d5db;
+  --text-muted: #9ca3af;
+  --text-disabled: #6b7280;
+  --text-inverse: #111827;
+  
+  /* Border Colors */
+  --border-color: #4b5563;
+  --border-hover: #6b7280;
+  --border-active: #6366f1;
+  --border-divider: #374151;
+  
+  /* Shadow System */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -2px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 10px 10px -5px rgba(0, 0, 0, 0.7);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.9);
+  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+  
+  /* Glass Morphism */
+  --glass-bg: rgba(31, 41, 55, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  --glass-blur: blur(12px);
+  
+  /* Chart Colors */
+  --chart-income: #34d399;
+  --chart-expense: #f87171;
+  --chart-savings: #818cf8;
+  --chart-investment: #60a5fa;
+  
+  /* Component Specific Overrides */
+  .card {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+  }
+  
+  .btn-outline {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+  }
+  
+  .btn-outline:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+  }
+  
+  .btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .stat-card {
+    background: var(--bg-elevated);
+  }
+  
+  .activity-item {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .activity-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .goal-card {
+    background: linear-gradient(135deg, #3730a3, #4f46e5);
+  }
+  
+  .chart-container {
+    background: var(--bg-elevated);
+  }
+  
+  .action-btn {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+  }
+  
+  .modal-content {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+  }
+  
+  .modal-header,
+  .modal-footer {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+  }
+  
+  .notification {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+  }
+  
+  .notification-success {
+    background: linear-gradient(to right, rgba(34, 197, 94, 0.1), var(--bg-elevated));
+  }
+  
+  .notification-error {
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.1), var(--bg-elevated));
+  }
+  
+  .notification-warning {
+    background: linear-gradient(to right, rgba(245, 158, 11, 0.1), var(--bg-elevated));
+  }
+  
+  .notification-info {
+    background: linear-gradient(to right, rgba(59, 130, 246, 0.1), var(--bg-elevated));
+  }
+  
+  .progress-section {
+    background: linear-gradient(135deg, var(--gray-900), var(--gray-800));
+  }
+  
+  .quick-actions {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+  }
+  
+  .activity-section {
+    background: var(--bg-elevated);
+    border-color: var(--border-color);
+  }
+  
+  .goals-section {
+    background: linear-gradient(135deg, #3730a3, #4f46e5);
+  }
+  
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar-track {
+    background: var(--bg-surface);
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--gray-600);
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-500);
+  }
+  
+  /* Form Elements */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  textarea,
+  select {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+  }
+  
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  input[type="date"]:focus,
+  textarea:focus,
+  select:focus {
+    background: var(--bg-elevated);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+  
+  /* Tables */
+  table {
+    color: var(--text-primary);
+  }
+  
+  thead {
+    background: var(--bg-surface);
+  }
+  
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Code Blocks */
+  code {
+    background: var(--bg-surface);
+    color: var(--info-300);
+  }
+  
+  pre {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+  }
+  
+  /* Selection */
+  ::selection {
+    background-color: var(--primary-900);
+    color: var(--primary-100);
+  }
+  
+  /* Links */
+  a {
+    color: var(--primary-400);
+  }
+  
+  a:hover {
+    color: var(--primary-300);
+  }
+  
+  /* Focus States */
+  :focus-visible {
+    outline-color: var(--primary-500);
+  }
+  
+  /* Disabled States */
+  :disabled {
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+  
+  /* Loading States */
+  .loading-spinner {
+    border-color: var(--border-color);
+    border-top-color: var(--primary);
+  }
+  
+  /* Error States */
+  .error-state {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  
+  /* Success States */
+  .success-state {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+  
+  /* Empty States */
+  .empty-state {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+  }
+  
+  /* Tooltips */
+  [data-tooltip]::after {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Progress Bars */
+  .progress-bar-container {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Toggle Switches */
+  .toggle-slider {
+    background: var(--gray-600);
+  }
+  
+  .toggle-slider::before {
+    background: var(--gray-300);
+  }
+  
+  input:checked + .toggle-slider {
+    background: var(--primary);
+  }
+  
+  /* Checkboxes & Radio Buttons */
+  .checkbox-box,
+  .radio-circle {
+    background: var(--bg-surface);
+    border-color: var(--border-color);
+  }
+  
+  /* Range Sliders */
+  .range-slider {
+    background: var(--gray-600);
+  }
+  
+  .range-slider::-webkit-slider-thumb {
+    background: var(--primary);
+    border-color: var(--bg-elevated);
+  }
+  
+  /* Badges */
+  .badge {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
+  
+  .badge-primary {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--primary-300);
+  }
+  
+  .badge-success {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--success-300);
+  }
+  
+  .badge-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger-300);
+  }
+  
+  /* Avatars */
+  .avatar {
+    box-shadow: 0 0 0 2px var(--bg-elevated), 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Dividers */
+  hr {
+    border-color: var(--border-divider);
+  }
+  
+  /* Glass Effects */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  
+  /* Animations */
+  @keyframes darkModeFadeIn {
+    from {
+      opacity: 0;
+      background: var(--bg-secondary);
+    }
+    to {
+      opacity: 1;
+      background: var(--bg-primary);
+    }
+  }
+  
+  body {
+    animation: darkModeFadeIn 0.5s ease-out;
+  }
+  
+  /* Print Styles */
+  @media print {
+    body {
+      background: white !important;
+      color: black !important;
+    }
+    
+    .card,
+    .modal-content,
+    .notification {
+      background: white !important;
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+    }
+  }
+  
+  /* High Contrast Mode Support */
+  @media (prefers-contrast: high) {
+    --border-color: #9ca3af;
+    --text-primary: #ffffff;
+    --text-secondary: #e5e7eb;
+    
+    .card {
+      border-width: 2px;
+    }
+    
+    .btn {
+      border-width: 2px;
+    }
+    
+    input,
+    textarea,
+    select {
+      border-width: 2px;
+    }
+  }
+  
+  /* Reduced Motion Support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

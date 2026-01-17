@@ -1,0 +1,715 @@
+/* ====== EXPENSE VIEW ====== */
+
+/* Expense Overview */
+.expense-overview {
+  background: linear-gradient(135deg, var(--danger-50), var(--bg-elevated));
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  border: 1px solid var(--danger-200);
+  animation: expenseOverviewEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes expenseOverviewEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expense-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.expense-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--danger);
+}
+
+.expense-total {
+  text-align: right;
+}
+
+.expense-amount {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--danger);
+  line-height: 1;
+  margin-bottom: var(--space-1);
+  background: var(--gradient-danger);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.expense-period {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Expense Stats Grid */
+.expense-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.expense-stat-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 1px solid var(--border-color);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  animation: expenseStatEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes expenseStatEntrance {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expense-stat-card:nth-child(1) { animation-delay: 0.1s; }
+.expense-stat-card:nth-child(2) { animation-delay: 0.2s; }
+.expense-stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+.expense-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--danger-300);
+}
+
+.expense-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-danger);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.expense-stat-card:hover::before {
+  opacity: 1;
+}
+
+.expense-stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.expense-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: var(--danger-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xl);
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.expense-stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.expense-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Expense Categories */
+.expense-categories {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-8);
+  animation: categoriesEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes categoriesEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.category-item:hover {
+  background: var(--bg-surface);
+  transform: translateX(4px);
+}
+
+.category-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: var(--danger-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.category-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.category-progress {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.category-progress-bar {
+  height: 100%;
+  background: var(--gradient-danger);
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-amount {
+  font-weight: var(--font-weight-semibold);
+  color: var(--danger);
+  white-space: nowrap;
+}
+
+/* Expense Timeline */
+.expense-timeline {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-8);
+  animation: timelineEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes timelineEntrance {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--danger);
+  background: var(--bg-surface);
+  transition: all var(--transition-fast);
+}
+
+.timeline-item:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.timeline-date {
+  min-width: 80px;
+  font-size: var(--font-size-sm);
+  color: var(--danger);
+  font-weight: var(--font-weight-semibold);
+  padding-top: 2px;
+}
+
+.timeline-content {
+  flex: 1;
+}
+
+.timeline-category {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.timeline-description {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.timeline-amount {
+  font-weight: var(--font-weight-bold);
+  color: var(--danger);
+  font-size: var(--font-size-lg);
+}
+
+/* Expense Chart */
+.expense-chart-container {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-8);
+  animation: chartContainerEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes chartContainerEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotateX(10deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+  }
+}
+
+.expense-chart {
+  height: 300px;
+  position: relative;
+  margin-top: var(--space-4);
+}
+
+/* Expense Analysis */
+.expense-analysis {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+  animation: analysisEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes analysisEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.analysis-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  border: 1px solid var(--border-color);
+}
+
+.analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.analysis-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.analysis-content {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Expense Filters */
+.expense-filters {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-8);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  animation: filtersEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes filtersEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.filter-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-muted);
+}
+
+/* Expense List */
+.expense-list-container {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  animation: listContainerEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes listContainerEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.expense-list-header {
+  padding: var(--space-6);
+  border-bottom: 1px solid var(--border-divider);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+}
+
+.expense-list-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.expense-list {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.expense-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-divider);
+  transition: all var(--transition-fast);
+  animation: listItemEntrance 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+@keyframes listItemEntrance {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.expense-list-item:nth-child(1) { animation-delay: 0.1s; }
+.expense-list-item:nth-child(2) { animation-delay: 0.2s; }
+.expense-list-item:nth-child(3) { animation-delay: 0.3s; }
+.expense-list-item:nth-child(4) { animation-delay: 0.4s; }
+
+.expense-list-item:hover {
+  background: var(--bg-surface);
+  transform: translateX(4px);
+}
+
+.expense-list-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  background: var(--danger-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.expense-list-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.expense-list-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.expense-list-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.expense-list-amount {
+  font-weight: var(--font-weight-bold);
+  color: var(--danger);
+  font-size: var(--font-size-lg);
+  white-space: nowrap;
+}
+
+.expense-list-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* Expense Summary */
+.expense-summary {
+  background: linear-gradient(135deg, var(--danger-100), var(--bg-elevated));
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-top: var(--space-8);
+  border: 1px solid var(--danger-200);
+  animation: summaryEntrance 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes summaryEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-6);
+}
+
+.summary-item {
+  text-align: center;
+}
+
+.summary-value {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--danger);
+  margin-bottom: var(--space-1);
+  background: var(--gradient-danger);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.summary-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Responsive Expense View */
+@media (max-width: 1024px) {
+  .expense-analysis {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .expense-overview {
+    padding: var(--space-4);
+  }
+  
+  .expense-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  
+  .expense-total {
+    text-align: left;
+  }
+  
+  .expense-amount {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .expense-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .expense-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+  
+  .expense-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  
+  .expense-list-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .expense-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+  
+  .expense-list-details {
+    width: 100%;
+  }
+  
+  .expense-list-amount {
+    width: 100%;
+    text-align: right;
+  }
+  
+  .timeline-item {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  
+  .timeline-date {
+    width: 100%;
+  }
+}
+
+/* Dark Mode Expense View */
+[data-theme="dark"] {
+  .expense-overview {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--gray-800));
+    border-color: var(--danger-800);
+  }
+  
+  .expense-stat-card {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .expense-stat-icon {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger-300);
+  }
+  
+  .expense-categories {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .category-icon {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger-300);
+  }
+  
+  .expense-timeline {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .expense-chart-container {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .analysis-card {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .expense-filters {
+    background: var(--gray-900);
+  }
+  
+  .expense-list-container {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .expense-list-header {
+    background: var(--gray-900);
+  }
+  
+  .expense-summary {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--gray-800));
+    border-color: var(--danger-800);
+  }
+}

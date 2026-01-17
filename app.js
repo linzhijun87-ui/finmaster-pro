@@ -35,7 +35,9 @@ class FinancialApp {
                 income: 0, 
                 expenses: 0, 
                 savings: 0, 
-                balance: 0 
+                balance: 0,
+                monthlyIncome: 0,
+                monthlyExpenses: 0
             },
             transactions: { 
                 income: [], 
@@ -50,7 +52,8 @@ class FinancialApp {
                 autoSave: true 
             },
             activeTab: 'dashboard',
-            isLoading: true
+            isLoading: true,
+            isChartReady: false
         };
 
         // DOM Elements cache
@@ -182,7 +185,8 @@ class FinancialApp {
         
         // Don't switch if already on this view
         if (this.state.activeTab === viewName && !this.state.isLoading) {
-            console.log(`ℹ️ Already on ${viewName} view`);
+            console.log(`ℹ️ Already on ${viewName} view, refreshing...`);
+            this.refreshCurrentView();
             return;
         }
         
@@ -193,35 +197,158 @@ class FinancialApp {
         // Update navigation
         this.uiManager.updateNavigation(viewName);
         
-        // Show loading state
-        this.uiManager.showLoading('mainContent', `Memuat ${viewName}...`);
+        // SPECIAL CASE: Untuk dashboard, jangan clear chart container
+        if (viewName === 'dashboard' && this.chartManager && this.chartManager.isChartValid()) {
+            console.log('📊 Chart is valid, preserving it...');
+            this.loadDashboardWithPreservedChart();
+            return;
+        }
         
-        // Render view after short delay
+        // Untuk view lain, clear content normal
+        if (this.elements.mainContent) {
+            this.elements.mainContent.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><p>Memuat...</p></div>';
+        }
+        
+        // Render view
         setTimeout(() => {
             try {
                 if (this.views[viewName]) {
                     this.views[viewName].render();
+                    this.state.isLoading = false;
                 } else {
                     console.error(`❌ View not found: ${viewName}`);
-                    this.showView('dashboard'); // Fallback to dashboard
+                    this.showView('dashboard');
                 }
-                
-                // Update badges
-                this.uiManager.updateBadges();
-                
-                // Scroll to top for mobile
-                if (window.innerWidth < 768) {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-                
-                this.state.isLoading = false;
-                
             } catch (error) {
                 console.error(`❌ Error rendering view ${viewName}:`, error);
                 this.uiManager.showNotification(`Gagal memuat ${viewName}`, 'error');
-                this.showView('dashboard'); // Fallback to dashboard
+                this.showView('dashboard');
             }
-        }, 50);
+        }, 100);
+    }
+
+    // TAMBAHKAN method baru untuk load dashboard dengan chart yang di-preserve:
+    loadDashboardWithPreservedChart() {
+        console.log('🏠 Loading dashboard with preserved chart...');
+        
+        // Render dashboard view
+        if (this.views.dashboard) {
+            this.views.dashboard.render();
+        }
+        
+        // Chart sudah ada, jadi langsung update data
+        setTimeout(() => {
+            if (this.chartManager && this.chartManager.chartInstance) {
+                console.log('🔄 Updating existing chart data...');
+                
+                // Update chart data
+                const newData = this.chartManager.generateChartData();
+                this.chartManager.chartInstance.data = newData;
+                this.chartManager.chartInstance.update('none');
+            }
+            
+            this.state.isLoading = false;
+            console.log('✅ Dashboard loaded with preserved chart');
+        }, 200);
+    }
+
+    // TAMBAHKAN method baru:
+    handleDashboardAfterRender() {
+        console.log('🎯 Handling dashboard after render...');
+        
+        // Tunggu DOM benar-benar siap
+        setTimeout(() => {
+            const chartContainer = document.getElementById('chartContainer');
+            
+            if (!chartContainer) {
+                console.error('❌ Chart container not found');
+                this.state.isLoading = false;
+                return;
+            }
+            
+            // Pastikan canvas ada
+            let canvas = chartContainer.querySelector('#financeChart');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'financeChart';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.display = 'block';
+                chartContainer.appendChild(canvas);
+            }
+            
+            // Setup container
+            chartContainer.style.height = '280px';
+            chartContainer.style.minHeight = '280px';
+            chartContainer.style.width = '100%';
+            chartContainer.style.display = 'block';
+            
+            // Coba restore chart dari config
+            if (this.chartManager && this.chartManager.preservedChartConfig) {
+                console.log('🔄 Attempting to restore chart from config...');
+                
+                const restored = this.chartManager.restoreChartFromConfig();
+                if (!restored) {
+                    console.log('📊 Creating new chart...');
+                    this.chartManager.initializeChart();
+                }
+            } else {
+                console.log('📊 Creating new chart...');
+                if (this.chartManager) {
+                    this.chartManager.initializeChart();
+                }
+            }
+            
+            this.state.isLoading = false;
+            
+        }, 200);
+    }
+
+
+    // TAMBAHKAN method baru untuk load dashboard:
+    loadDashboardWithChartSupport() {
+        console.log('📊 Loading dashboard with chart support...');
+        
+        // Step 1: Render dashboard HTML
+        if (this.views.dashboard) {
+            this.views.dashboard.render();
+        }
+        
+        // Step 2: Setup dashboard components (tanpa chart dulu)
+        setTimeout(() => {
+            if (this.views.dashboard && this.views.dashboard.initializeComponents) {
+                // Initialize semua kecuali chart
+                this.views.dashboard.calculateTrends();
+                this.views.dashboard.setupQuickActions();
+                this.views.dashboard.setupChartControls();
+            }
+            
+            // Step 3: Initialize chart dengan delay untuk memastikan DOM siap
+            setTimeout(() => {
+                if (this.chartManager) {
+                    console.log('🎯 Initializing chart with container check...');
+                    
+                    // Cek dulu apakah container siap
+                    const chartContainer = document.getElementById('chartContainer');
+                    if (chartContainer) {
+                        // Force container untuk memiliki dimensi
+                        chartContainer.style.minHeight = '300px';
+                        chartContainer.style.display = 'block';
+                        
+                        // Tunggu 1 frame untuk layout
+                        requestAnimationFrame(() => {
+                            this.chartManager.initializeChart();
+                            this.state.isLoading = false;
+                        });
+                    } else {
+                        console.error('❌ Chart container not found');
+                        this.state.isLoading = false;
+                    }
+                } else {
+                    this.state.isLoading = false;
+                }
+            }, 200);
+        }, 100);
     }
 
     // ====== TRANSACTION MANAGEMENT ======

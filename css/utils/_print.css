@@ -1,0 +1,488 @@
+/* ====== PRINT STYLES ====== */
+
+@media print {
+  /* Reset untuk print */
+  * {
+    background: transparent !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Hide elements yang tidak perlu di print */
+  .nav-container,
+  .header,
+  .footer,
+  .mobile-menu-toggle,
+  .header-search,
+  .user-profile,
+  .notification-badge,
+  .btn,
+  .btn-outline,
+  .modal,
+  .modal-overlay,
+  .notifications-container,
+  .chart-controls,
+  .chart-type-selector,
+  .chart-export,
+  .table-action-btn,
+  .pagination,
+  .quick-action-btn,
+  .theme-toggle,
+  .theme-menu,
+  .footer-back-to-top,
+  .action-btn,
+  [onclick],
+  [data-tooltip],
+  .tab-badge,
+  .progress-step-icon,
+  .activity-icon,
+  .stat-icon,
+  .social-link,
+  .newsletter-btn {
+    display: none !important;
+  }
+
+  /* Base typography untuk print */
+  body {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 12pt;
+    line-height: 1.5;
+    color: #000;
+    margin: 0;
+    padding: 20px;
+  }
+
+  /* Layout untuk print */
+  .app-container {
+    display: block;
+  }
+
+  .main-content {
+    margin: 0;
+    padding: 0;
+    min-height: auto;
+  }
+
+  /* Typography untuk print */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1 {
+    font-size: 24pt;
+    margin: 20pt 0 10pt;
+  }
+
+  h2 {
+    font-size: 18pt;
+    margin: 15pt 0 8pt;
+  }
+
+  h3 {
+    font-size: 14pt;
+    margin: 12pt 0 6pt;
+  }
+
+  h4 {
+    font-size: 12pt;
+    margin: 10pt 0 5pt;
+  }
+
+  p, li {
+    font-size: 11pt;
+    margin: 5pt 0;
+  }
+
+  /* Links untuk print */
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 10pt;
+    color: #666;
+  }
+
+  a[href^="#"] {
+    text-decoration: none;
+  }
+
+  /* Tables untuk print */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15pt 0;
+    page-break-inside: avoid;
+  }
+
+  th, td {
+    border: 1px solid #000;
+    padding: 6pt 8pt;
+    text-align: left;
+    font-size: 10pt;
+  }
+
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold;
+  }
+
+  tbody tr:nth-child(odd) {
+    background-color: #f9f9f9 !important;
+  }
+
+  /* Lists untuk print */
+  ul, ol {
+    margin: 10pt 0 10pt 20pt;
+  }
+
+  li {
+    margin: 3pt 0;
+  }
+
+  /* Cards untuk print */
+  .card,
+  .stat-card,
+  .activity-section,
+  .chart-container,
+  .settings-section {
+    border: 1px solid #000 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin: 10pt 0;
+    padding: 10pt;
+  }
+
+  .card-header,
+  .modal-header {
+    border-bottom: 2px solid #000 !important;
+    margin-bottom: 8pt;
+    padding-bottom: 5pt;
+  }
+
+  /* Forms untuk print */
+  input, textarea, select {
+    border: 1px solid #000 !important;
+    background: white !important;
+  }
+
+  /* Progress bars untuk print */
+  .progress-track {
+    border: 1px solid #000 !important;
+    height: 10px;
+  }
+
+  .progress-fill {
+    background: #666 !important;
+    border-right: 1px solid #000;
+  }
+
+  /* Charts untuk print */
+  .chart-placeholder {
+    border: 1px solid #000;
+    padding: 10pt;
+    text-align: center;
+  }
+
+  .chart-placeholder::before {
+    content: "[Chart: " attr(data-chart-title) "]";
+    display: block;
+    font-style: italic;
+    color: #666;
+  }
+
+  /* Images untuk print */
+  img {
+    max-width: 100% !important;
+    break-inside: avoid;
+  }
+
+  /* Page breaks */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+
+  /* Print header */
+  @page {
+    margin: 2cm;
+    @top-left {
+      content: "Financial Masterplan PRO";
+      font-size: 10pt;
+      color: #666;
+    }
+    @top-right {
+      content: counter(page);
+      font-size: 10pt;
+    }
+    @bottom-center {
+      content: "Confidential - For internal use only";
+      font-size: 9pt;
+      color: #999;
+    }
+  }
+
+  /* Cover page */
+  .print-cover {
+    page-break-after: always;
+    text-align: center;
+    padding: 5cm 0;
+  }
+
+  .print-cover h1 {
+    font-size: 36pt;
+    margin-bottom: 20pt;
+  }
+
+  .print-cover .subtitle {
+    font-size: 18pt;
+    color: #666;
+    margin-bottom: 30pt;
+  }
+
+  .print-cover .meta {
+    font-size: 11pt;
+    color: #666;
+    margin-top: 50pt;
+  }
+
+  /* Table of contents */
+  .print-toc {
+    page-break-after: always;
+  }
+
+  .print-toc h2 {
+    border-bottom: 2px solid #000;
+    padding-bottom: 5pt;
+  }
+
+  .print-toc ul {
+    list-style: none;
+    margin: 0;
+  }
+
+  .print-toc li {
+    margin: 5pt 0;
+  }
+
+  .print-toc a {
+    text-decoration: none;
+    color: #000;
+  }
+
+  .print-toc .page-number {
+    float: right;
+  }
+
+  /* Financial data khusus */
+  .financial-data {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .amount {
+    text-align: right;
+    font-family: "Courier New", monospace;
+  }
+
+  .amount.income {
+    color: #000;
+  }
+
+  .amount.expense {
+    color: #000;
+  }
+
+  /* Summary section */
+  .print-summary {
+    border: 2px solid #000;
+    padding: 15pt;
+    margin: 20pt 0;
+    break-inside: avoid;
+  }
+
+  .print-summary h3 {
+    background-color: #f0f0f0;
+    margin: -15pt -15pt 15pt -15pt;
+    padding: 10pt 15pt;
+  }
+
+  /* Charts placeholder untuk print */
+  .print-chart-placeholder {
+    border: 1px solid #000;
+    padding: 20pt;
+    text-align: center;
+    margin: 15pt 0;
+    break-inside: avoid;
+  }
+
+  .print-chart-placeholder::before {
+    content: "[Chart: " attr(data-title) "]";
+    display: block;
+    font-size: 12pt;
+    font-weight: bold;
+    margin-bottom: 10pt;
+  }
+
+  .print-chart-placeholder::after {
+    content: attr(data-description);
+    display: block;
+    font-style: italic;
+    color: #666;
+    margin-top: 10pt;
+  }
+
+  /* Footer untuk setiap halaman */
+  .print-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    border-top: 1px solid #000;
+    padding: 5pt 0;
+  }
+
+  /* Watermark untuk draft */
+  .draft-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    font-size: 60pt;
+    color: rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* QR Code untuk digital copy */
+  .print-qr {
+    text-align: center;
+    margin: 20pt 0;
+    break-inside: avoid;
+  }
+
+  .print-qr::before {
+    content: "Scan for digital copy:";
+    display: block;
+    font-size: 10pt;
+    color: #666;
+    margin-bottom: 5pt;
+  }
+
+  /* Page numbers */
+  .page-number::after {
+    content: counter(page);
+  }
+
+  /* Hide empty elements */
+  :empty {
+    display: none !important;
+  }
+
+  /* Optimasi untuk tinta */
+  .ink-optimized {
+    color: #000 !important;
+    background: transparent !important;
+  }
+
+  /* Batch printing */
+  .print-batch {
+    display: block !important;
+  }
+}
+
+/* Print-specific classes untuk control dari JavaScript */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .print-only {
+    display: block;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Print preview styling */
+@media screen {
+  .print-preview {
+    background: white;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    margin: 20px auto;
+    max-width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+  }
+  
+  .print-preview .no-print {
+    display: none;
+  }
+}
+
+/* Print size classes */
+@media print {
+  .print-a4 {
+    width: 210mm;
+    min-height: 297mm;
+  }
+  
+  .print-letter {
+    width: 8.5in;
+    min-height: 11in;
+  }
+  
+  .print-a5 {
+    width: 148mm;
+    min-height: 210mm;
+  }
+}
+
+/* Print orientation */
+@media print {
+  .print-landscape {
+    size: landscape;
+  }
+  
+  .print-portrait {
+    size: portrait;
+  }
+}
+
+/* Print margins */
+@media print {
+  .print-margin-normal {
+    margin: 2cm;
+  }
+  
+  .print-margin-narrow {
+    margin: 1cm;
+  }
+  
+  .print-margin-wide {
+    margin: 3cm;
+  }
+}
+
+/* Print quality optimization */
+@media print {
+  .print-high-quality {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

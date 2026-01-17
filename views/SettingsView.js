@@ -11,6 +11,7 @@ class SettingsView {
         const html = this.getSettingsHTML();
         this.app.elements.mainContent.innerHTML = html;
         
+        this.app.elements.mainContent.className = 'main-content settings-view';
         // Initialize after DOM is ready
         setTimeout(() => {
             this.initialize();

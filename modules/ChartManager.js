@@ -10,7 +10,159 @@ class ChartManager {
         this.maxRetries = CHART_CONFIG.MAX_RETRIES;
         this.currentPeriod = CHART_CONFIG.DEFAULT_PERIOD;
         this.customPeriod = null;
-        this.preloadChartJs();
+        this.isInitializing = false;
+        this.chartInitialized = false; // Flag untuk track inisialisasi
+    }
+
+    saveChartConfig() {
+        if (!this.chartInstance) return;
+        
+        console.log('💾 Saving chart configuration...');
+        
+        // Simpan hanya konfigurasi penting
+        this.preservedChartConfig = {
+            currentPeriod: this.currentPeriod,
+            customPeriod: this.customPeriod,
+            // Simpan data chart yang sederhana
+            chartData: this.generateSimpleChartData(),
+            lastUpdate: Date.now()
+        };
+    }
+
+    // TAMBAHKAN method untuk generate data sederhana:
+    generateSimpleChartData() {
+        // Generate data chart tanpa menyimpan instance Chart.js
+        const data = this.generateChartData();
+        
+        return {
+            labels: data.labels,
+            datasets: data.datasets.map(dataset => ({
+                label: dataset.label,
+                data: dataset.data,
+                borderColor: dataset.borderColor,
+                backgroundColor: dataset.backgroundColor
+            }))
+        };
+    }
+
+    // TAMBAHKAN method untuk restore dari config:
+    restoreChartFromConfig() {
+        if (!this.preservedChartConfig) {
+            console.log('ℹ️ No preserved chart config found');
+            return false;
+        }
+        
+        console.log('🔄 Restoring chart from config...');
+        
+        const container = document.getElementById(this.chartContainerId);
+        const canvas = document.getElementById(this.canvasId);
+        
+        if (!container || !canvas) {
+            console.warn('⚠️ Chart container or canvas not found');
+            return false;
+        }
+        
+        try {
+            // Restore period settings
+            this.currentPeriod = this.preservedChartConfig.currentPeriod;
+            this.customPeriod = this.preservedChartConfig.customPeriod;
+            
+            // Update chart dengan data yang disimpan
+            this.updateChartWithPreservedData();
+            
+            console.log('✅ Chart restored from config');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error restoring chart from config:', error);
+            return false;
+        }
+    }
+
+    // TAMBAHKAN method untuk update chart dengan data yang disimpan:
+    updateChartWithPreservedData() {
+        if (!this.preservedChartConfig || !this.chartInstance) return;
+        
+        try {
+            // Update chart data
+            this.chartInstance.data.labels = this.preservedChartConfig.chartData.labels;
+            this.chartInstance.data.datasets = this.preservedChartConfig.chartData.datasets;
+            
+            // Update chart
+            this.chartInstance.update('none');
+            
+        } catch (error) {
+            console.error('Error updating chart with preserved data:', error);
+            // Fallback: generate new data
+            const newData = this.generateChartData();
+            this.chartInstance.data = newData;
+            this.chartInstance.update('none');
+        }
+    }
+
+    ensureChartJsLoaded() {
+        if (typeof Chart !== 'undefined') {
+            this.isChartJsLoaded = true;
+            console.log('✅ Chart.js already loaded');
+            return Promise.resolve();
+        }
+        
+        if (this.chartReadyPromise) {
+            return this.chartReadyPromise;
+        }
+        
+        this.chartReadyPromise = new Promise((resolve, reject) => {
+            console.log('📦 Ensuring Chart.js is loaded...');
+            
+            // Cek jika sudah ada script
+            if (document.querySelector('script[src*="chart.js"]')) {
+                console.log('📦 Chart.js script already exists, waiting...');
+                
+                // Tunggu hingga Chart tersedia
+                const checkInterval = setInterval(() => {
+                    if (typeof Chart !== 'undefined') {
+                        clearInterval(checkInterval);
+                        this.isChartJsLoaded = true;
+                        console.log('✅ Chart.js loaded from existing script');
+                        resolve();
+                    }
+                }, 100);
+                
+                // Timeout setelah 5 detik
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    if (typeof Chart !== 'undefined') {
+                        this.isChartJsLoaded = true;
+                        resolve();
+                    } else {
+                        reject(new Error('Chart.js failed to load'));
+                    }
+                }, 5000);
+                
+                return;
+            }
+            
+            // Load Chart.js
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'; // Version 4.4.0 yang stabil
+            script.async = true;
+            script.defer = true;
+            
+            script.onload = () => {
+                console.log('✅ Chart.js loaded successfully');
+                this.isChartJsLoaded = true;
+                resolve();
+            };
+            
+            script.onerror = (error) => {
+                console.error('❌ Failed to load Chart.js:', error);
+                reject(error);
+            };
+            
+            document.head.appendChild(script);
+        });
+        
+        return this.chartReadyPromise;
     }
 
         // ====== PRELOAD CHART.JS ======
@@ -39,26 +191,174 @@ class ChartManager {
     // ====== CHART INITIALIZATION ======
     
     initializeChart() {
+        // Cek jika chart sudah ada
+        if (this.chartInstance && this.chartInitialized) {
+            console.log('✅ Chart already initialized, skipping...');
+            return;
+        }
+        
+        // Cek jika sedang menginisialisasi
+        if (this.isInitializing) {
+            console.log('⏳ Chart initialization already in progress');
+            return;
+        }
+        
+        this.isInitializing = true;
         console.log('📊 Initializing chart...');
         
-        this.chartRetryCount = 0;
-
-        // Check if we're on dashboard
+        // Pastikan kita di dashboard
         if (this.app.state.activeTab !== 'dashboard') {
-            console.log('ℹ️ Not on dashboard, skipping chart initialization');
+            console.log('ℹ️ Not on dashboard, skipping chart');
+            this.isInitializing = false;
             return;
         }
         
-        // Check if chart container exists
+        // Dapatkan chart container
         const container = document.getElementById('chartContainer');
         if (!container) {
-            console.warn('⚠️ Chart container not found, retrying...');
-            setTimeout(() => this.initializeChart(), 100);
+            console.error('❌ Chart container not found');
+            this.isInitializing = false;
             return;
         }
-        this.destroyChart();
         
-        // Try to initialize with retry logic
+        // Dapatkan atau buat canvas
+        const canvas = this.getOrCreateCanvas();
+        if (!canvas) {
+            console.error('❌ Failed to get or create canvas');
+            this.isInitializing = false;
+            return;
+        }
+        
+        // Pastikan Chart.js tersedia
+        if (typeof Chart === 'undefined') {
+            console.log('📦 Loading Chart.js...');
+            this.loadChartJsAndInitialize(canvas);
+            return;
+        }
+        
+        // Buat chart instance
+        this.createChart(canvas);
+        this.isInitializing = false;
+    }
+
+
+    loadChartJsAndInitialize(canvas) {
+        // Cek apakah sudah ada script
+        if (document.querySelector('script[src*="chart.js"]')) {
+            console.log('⏳ Chart.js already loading, waiting...');
+            
+            // Tunggu hingga Chart.js siap
+            const checkInterval = setInterval(() => {
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(checkInterval);
+                    console.log('✅ Chart.js loaded, creating chart...');
+                    this.createChart(canvas);
+                }
+            }, 100);
+            
+            // Timeout setelah 5 detik
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                if (typeof Chart !== 'undefined') {
+                    this.createChart(canvas);
+                } else {
+                    console.error('❌ Chart.js failed to load');
+                    this.showFallbackChart();
+                }
+            }, 5000);
+            
+            return;
+        }
+        
+        // Load Chart.js
+        console.log('📦 Loading Chart.js from CDN...');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+        script.async = true;
+        
+        script.onload = () => {
+            console.log('✅ Chart.js loaded successfully');
+            setTimeout(() => {
+                this.createChart(canvas);
+            }, 100);
+        };
+        
+        script.onerror = () => {
+            console.error('❌ Failed to load Chart.js');
+            this.showFallbackChart();
+        };
+        
+        document.head.appendChild(script);
+    }
+
+    createChart(canvas) {
+        try {
+            console.log('🎨 Creating chart instance...');
+            
+            const ctx = canvas.getContext('2d');
+            const chartData = this.generateChartData();
+            
+            this.chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: this.getChartOptions()
+            });
+            
+            this.chartInitialized = true;
+            console.log('✅ Chart created successfully');
+            
+            // Dispatch event
+            document.dispatchEvent(new CustomEvent('chartReady', {
+                detail: { chart: this.chartInstance }
+            }));
+            
+        } catch (error) {
+            console.error('❌ Error creating chart:', error);
+            this.chartInitialized = false;
+            this.showFallbackChart(error);
+        }
+    }
+
+
+    // TAMBAHKAN method baru untuk menunggu dimensi:
+    tryInitializeChartWithDimensions(retryCount = 0) {
+        const maxDimensionRetries = 5;
+        
+        const container = document.getElementById('chartContainer');
+        const canvas = container?.querySelector('#financeChart');
+        
+        // Cek apakah container ada dan memiliki dimensi
+        if (!container || !canvas) {
+            console.log(`🔄 Retry ${retryCount + 1}: Container not ready...`);
+            
+            if (retryCount < maxDimensionRetries) {
+                setTimeout(() => this.tryInitializeChartWithDimensions(retryCount + 1), 300);
+                return;
+            }
+            
+            console.error('❌ Chart container not found after retries');
+            this.showFallbackChart();
+            return;
+        }
+        
+        // Cek dimensi container
+        const hasDimensions = container.offsetWidth > 0 && container.offsetHeight > 0;
+        
+        if (!hasDimensions) {
+            console.log(`📏 Retry ${retryCount + 1}: Waiting for container dimensions...`);
+            
+            // Force layout untuk memastikan dimensi dihitung
+            container.style.display = 'none';
+            container.offsetHeight; // Trigger reflow
+            container.style.display = '';
+            
+            if (retryCount < maxDimensionRetries) {
+                setTimeout(() => this.tryInitializeChartWithDimensions(retryCount + 1), 300);
+                return;
+            }
+        }
+        
+        // Sekarang buat chart
         this.tryInitializeChart();
     }
 
@@ -77,9 +377,47 @@ class ChartManager {
         const container = document.getElementById('chartContainer');
         if (!container) {
             console.error('❌ Chart container not found');
-            this.scheduleRetry();
+            if (this.chartRetryCount < this.maxRetries) {
+                setTimeout(() => this.tryInitializeChart(), 500);
+            }
             return;
         }
+        
+        // Get or create canvas
+        const canvas = this.getOrCreateCanvas();
+        if (!canvas) {
+            if (this.chartRetryCount < this.maxRetries) {
+                setTimeout(() => this.tryInitializeChart(), 500);
+            }
+            return;
+        }
+        
+        // Check container dimensions
+        const hasDimensions = container.offsetWidth > 0 && container.offsetHeight > 0;
+        
+        if (!hasDimensions) {
+            console.warn('⚠️ Container has no dimensions, forcing layout...');
+            
+            // Force container to have dimensions
+            container.style.width = '100%';
+            container.style.height = '300px';
+            container.style.minHeight = '300px';
+            container.style.position = 'relative';
+            container.style.display = 'block';
+            
+            // Force layout reflow
+            container.offsetHeight;
+            
+            if (this.chartRetryCount < this.maxRetries) {
+                setTimeout(() => this.tryInitializeChart(), 300);
+                return;
+            }
+        }
+        
+        console.log('✅ Container ready with dimensions:', {
+            width: container.offsetWidth,
+            height: container.offsetHeight
+        });
         
         // Check if Chart.js is available
         if (typeof Chart === 'undefined') {
@@ -88,14 +426,10 @@ class ChartManager {
             if (this.chartRetryCount === 1) {
                 this.loadChartJsDynamically();
             }
-            this.scheduleRetry();
-            return;
-        }
-        
-        // Create or get canvas
-        const canvas = this.prepareCanvas();
-        if (!canvas) {
-            this.scheduleRetry();
+            
+            if (this.chartRetryCount < this.maxRetries) {
+                setTimeout(() => this.tryInitializeChart(), 1000);
+            }
             return;
         }
         
@@ -116,6 +450,51 @@ class ChartManager {
             this.handleChartError(error);
         }
     }
+
+    // TAMBAHKAN method baru untuk getOrCreateCanvas
+    getOrCreateCanvas() {
+        console.log('🔍 Looking for chart container...');
+        
+        // Cari chart container
+        let container = document.getElementById('chartContainer');
+        
+        if (!container) {
+            console.warn('⚠️ Chart container not found, searching in DOM...');
+            
+            // Coba cari di berbagai tempat
+            container = document.querySelector('.chart-container div');
+            
+            if (!container) {
+                console.error('❌ Chart container really not found anywhere');
+                return null;
+            }
+        }
+        
+        // Pastikan container memiliki dimensi
+        container.style.height = '300px';
+        container.style.minHeight = '300px';
+        container.style.width = '100%';
+        container.style.display = 'block';
+        container.style.position = 'relative';
+        
+        // Cek apakah canvas sudah ada
+        let canvas = container.querySelector('#financeChart');
+        
+        if (!canvas) {
+            console.log('🎨 Creating canvas element...');
+            canvas = document.createElement('canvas');
+            canvas.id = 'financeChart';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.display = 'block';
+            
+            container.innerHTML = '';
+            container.appendChild(canvas);
+        }
+        
+        return canvas;
+    }
+
 
     // ====== EVENT DISPATCH ======
     dispatchChartReadyEvent() {
@@ -243,10 +622,36 @@ class ChartManager {
     }
 
     generateCustomData() {
-        // Default to last 6 months
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6);
+        console.log('📊 Generating custom data...', this.customPeriod);
+        
+        let startDate, endDate;
+        
+        // ✅ PERBAIKAN: Gunakan customPeriod jika ada
+        if (this.customPeriod && this.customPeriod.startDate && this.customPeriod.endDate) {
+            startDate = new Date(this.customPeriod.startDate);
+            endDate = new Date(this.customPeriod.endDate);
+            
+            // Validasi tanggal
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                console.warn('⚠️ Invalid custom dates, using default');
+                // Fallback ke default jika tanggal invalid
+                endDate = new Date();
+                startDate = new Date();
+                startDate.setMonth(startDate.getMonth() - 6);
+            }
+        } else {
+            // Default ke last 6 months jika tidak ada customPeriod
+            endDate = new Date();
+            startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 6);
+            console.log('📊 No custom period found, using default');
+        }
+        
+        console.log('📅 Date range for custom data:', {
+            start: startDate.toLocaleDateString('id-ID'),
+            end: endDate.toLocaleDateString('id-ID'),
+            days: Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+        });
         
         const { groupBy = 'monthly' } = this.customPeriod || {};
         
@@ -260,6 +665,40 @@ class ChartManager {
             default:
                 return this.generateMonthlyDataForRange(startDate, endDate);
         }
+    }
+
+    generateYearlyDataForRange(startDate, endDate) {
+        const labels = [];
+        const incomeData = [];
+        const expenseData = [];
+        
+        let yearStart = new Date(startDate.getFullYear(), 0, 1); // Mulai dari awal tahun
+        let yearEnd = new Date(endDate.getFullYear(), 11, 31); // Akhir tahun
+        
+        // Jika range kurang dari 1 tahun, handle khusus
+        if (endDate.getFullYear() === startDate.getFullYear()) {
+            labels.push(startDate.getFullYear().toString());
+            incomeData.push(this.getTransactionsForDateRange('income', startDate, endDate));
+            expenseData.push(this.getTransactionsForDateRange('expenses', startDate, endDate));
+            return { labels, income: incomeData, expenses: expenseData };
+        }
+        
+        // Untuk multiple years
+        for (let year = startDate.getFullYear(); year <= endDate.getFullYear(); year++) {
+            labels.push(year.toString());
+            
+            const yearStartDate = new Date(year, 0, 1);
+            const yearEndDate = new Date(year, 11, 31);
+            
+            // Adjust untuk tahun pertama dan terakhir
+            const actualStart = year === startDate.getFullYear() ? startDate : yearStartDate;
+            const actualEnd = year === endDate.getFullYear() ? endDate : yearEndDate;
+            
+            incomeData.push(this.getTransactionsForDateRange('income', actualStart, actualEnd));
+            expenseData.push(this.getTransactionsForDateRange('expenses', actualStart, actualEnd));
+        }
+        
+        return { labels, income: incomeData, expenses: expenseData };
     }
 
     // ====== DATA AGGREGATION HELPERS ======
@@ -536,23 +975,47 @@ class ChartManager {
     }
 
     applyCustomFilter() {
-        const startDate = document.getElementById('customStartDate')?.value;
-        const endDate = document.getElementById('customEndDate')?.value;
+        const startDateStr = document.getElementById('customStartDate')?.value;
+        const endDateStr = document.getElementById('customEndDate')?.value;
         const groupBy = document.getElementById('customGroupBy')?.value;
         
-        if (!startDate || !endDate) {
+        console.log('🎯 Applying custom filter:', { 
+            startDateStr, 
+            endDateStr, 
+            groupBy 
+        });
+        
+        if (!startDateStr || !endDateStr) {
             this.app.uiManager.showNotification('Pilih tanggal mulai dan akhir', 'error');
             return;
         }
         
-        if (new Date(startDate) > new Date(endDate)) {
+        // Parse tanggal
+        const startDate = new Date(startDateStr);
+        const endDate = new Date(endDateStr);
+        
+        // Validasi tanggal
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            this.app.uiManager.showNotification('Format tanggal tidak valid', 'error');
+            return;
+        }
+        
+        if (startDate > endDate) {
             this.app.uiManager.showNotification('Tanggal mulai tidak boleh setelah tanggal akhir', 'error');
             return;
         }
         
-        // Update chart with custom period
+        // ✅ PERBAIKAN: Simpan dengan format yang konsisten
         this.currentPeriod = 'custom';
-        this.customPeriod = { startDate, endDate, groupBy };
+        this.customPeriod = { 
+            startDate: startDateStr,  // Simpan sebagai string 'YYYY-MM-DD'
+            endDate: endDateStr,      // Simpan sebagai string 'YYYY-MM-DD'
+            groupBy: groupBy || 'monthly'
+        };
+        
+        console.log('✅ Custom period set:', this.customPeriod);
+        
+        // Force update chart
         this.updateChart();
         
         // Update active button
@@ -563,16 +1026,50 @@ class ChartManager {
             }
         });
         
+        // Format untuk notifikasi
+        const formatter = new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        
         this.app.uiManager.closeModal('customDateModal');
-        this.app.uiManager.showNotification(`Chart custom diterapkan (${groupBy})`, 'success');
+        this.app.uiManager.showNotification(
+            `Filter custom diterapkan: ${formatter.format(startDate)} - ${formatter.format(endDate)}`, 
+            'success'
+        );
     }
 
     // ====== CHART OPTIONS ======
     
     getChartOptions() {
         const isDark = document.body.classList.contains('dark-mode');
-        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)';
-        const textColor = isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.6)';
+        
+        // Gunakan CSS variables untuk warna dinamis
+        const rootStyles = getComputedStyle(document.documentElement);
+        const gridColor = isDark 
+            ? 'rgba(255, 255, 255, 0.05)' 
+            : 'rgba(0, 0, 0, 0.03)';
+        
+        const textColor = isDark 
+            ? 'rgba(255, 255, 255, 0.8)' 
+            : 'rgba(0, 0, 0, 0.8)'; // Diperbaiki: lebih gelap untuk light mode
+        
+        const backgroundColor = isDark 
+            ? 'rgba(30, 41, 59, 0.95)' 
+            : 'rgba(255, 255, 255, 0.95)';
+        
+        const titleColor = isDark 
+            ? 'rgba(255, 255, 255, 0.9)' 
+            : 'rgba(0, 0, 0, 0.9)';
+        
+        const bodyColor = isDark 
+            ? 'rgba(255, 255, 255, 0.7)' 
+            : 'rgba(0, 0, 0, 0.7)';
+        
+        // PERBAIKAN: Pastikan font size cukup besar untuk readability
+        const baseFontSize = 12;
+        const labelFontSize = 11;
         
         return {
             responsive: true,
@@ -583,7 +1080,7 @@ class ChartManager {
                     labels: {
                         color: textColor,
                         font: {
-                            size: 12,
+                            size: baseFontSize,
                             family: 'Inter, sans-serif',
                             weight: '600'
                         },
@@ -595,9 +1092,16 @@ class ChartManager {
                 tooltip: {
                     mode: 'index',
                     intersect: false,
-                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                    titleColor: isDark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.9)',
-                    bodyColor: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+                    backgroundColor: backgroundColor,
+                    titleColor: titleColor,
+                    bodyColor: bodyColor,
+                    titleFont: {
+                        size: baseFontSize,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: baseFontSize
+                    },
                     borderColor: 'rgba(67, 97, 238, 0.2)',
                     borderWidth: 1,
                     cornerRadius: 8,
@@ -617,13 +1121,17 @@ class ChartManager {
                     grid: { 
                         display: true, 
                         color: gridColor,
-                        drawBorder: false
+                        drawBorder: false,
+                        drawTicks: false
                     },
                     ticks: { 
                         color: textColor,
                         font: {
-                            size: 11
-                        }
+                            size: labelFontSize,
+                            family: 'Inter, sans-serif',
+                            weight: '500'
+                        },
+                        padding: 8
                     }
                 },
                 y: {
@@ -631,13 +1139,17 @@ class ChartManager {
                     grid: { 
                         display: true, 
                         color: gridColor,
-                        drawBorder: false
+                        drawBorder: false,
+                        drawTicks: false
                     },
                     ticks: {
                         color: textColor,
                         font: {
-                            size: 11
+                            size: labelFontSize,
+                            family: 'Inter, sans-serif',
+                            weight: '500'
                         },
+                        padding: 8,
                         callback: (value) => {
                             if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
                             if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
@@ -659,7 +1171,8 @@ class ChartManager {
                 point: { 
                     radius: 4, 
                     hoverRadius: 6,
-                    hoverBorderWidth: 2
+                    hoverBorderWidth: 2,
+                    hoverBorderColor: '#ffffff'
                 },
                 line: { 
                     tension: 0.3,
@@ -705,7 +1218,7 @@ class ChartManager {
         setTimeout(() => {
             // Cek apakah masih di dashboard sebelum retry
             if (this.app.state.activeTab === 'dashboard') {
-                this.tryInitializeChart();
+                this.tryInitializeChartWithDimensions();
             }
         }, delay);
     }
@@ -785,17 +1298,22 @@ class ChartManager {
     
     loadChartJsDynamically() {
         // Cek jika sudah ada script
-        if (document.querySelector('script[src*="chart.js"]')) {
+        const existingScript = document.querySelector('script[src*="chart.js"]');
+        if (existingScript) {
             console.log('📦 Chart.js script already exists');
             return;
         }
         
         console.log('📦 Loading Chart.js dynamically...');
         
+        // Hapus preload link yang tidak digunakan
+        const preloadLinks = document.querySelectorAll('link[rel="preload"][href*="chart.js"]');
+        preloadLinks.forEach(link => link.remove());
+        
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
         script.async = true;
-        script.defer = true;
+        script.crossOrigin = 'anonymous';
         
         script.onload = () => {
             console.log('✅ Chart.js loaded successfully');
@@ -821,10 +1339,26 @@ class ChartManager {
             try {
                 this.chartInstance.destroy();
                 this.chartInstance = null;
-                console.log('🗑️ Previous chart destroyed');
+                this.chartInitialized = false;
+                console.log('🗑️ Chart destroyed');
             } catch (error) {
                 console.warn('⚠️ Error destroying chart:', error);
             }
+        }
+    }
+
+    isChartValid() {
+        if (!this.chartInstance) return false;
+        
+        try {
+            // Cek jika canvas masih ada di DOM
+            const canvas = document.getElementById('financeChart');
+            if (!canvas) return false;
+            
+            // Cek jika chart masih bisa diakses
+            return !!this.chartInstance.canvas;
+        } catch (error) {
+            return false;
         }
     }
 

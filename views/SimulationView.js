@@ -11,6 +11,7 @@ class SimulationView {
         const html = this.getSimulationHTML();
         this.app.elements.mainContent.innerHTML = html;
         
+        this.app.elements.mainContent.className = 'main-content simulation-view';
         // Initialize after DOM is ready
         setTimeout(() => {
             this.initialize();
@@ -19,16 +20,11 @@ class SimulationView {
 
     getSimulationHTML() {
         return `
-            <div class="section-title">📈 Simulasi Keuangan</div>
+        <div class="section-title">📈 Simulasi Keuangan</div>
             
-            <div class="dashboard-grid" style="
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: var(--space-6);
-                align-items: start;
-            ">
+            <div class="dashboard-grid">
                 <!-- Investment Calculator -->
-                <div class="activity-section" style="height: 100%;">
+                <div class="activity-section">
                     <h3 class="section-title">Kalkulator Investasi</h3>
                     <div style="padding: var(--space-4);">
                         <div class="form-group">
@@ -65,7 +61,7 @@ class SimulationView {
                 </div>
                 
                 <!-- Loan Calculator -->
-                <div class="activity-section" style="height: 100%;">
+                <div class="activity-section">
                     <h3 class="section-title">Kalkulator Pinjaman</h3>
                     <div style="padding: var(--space-4);">
                         <div class="form-group">
@@ -106,10 +102,55 @@ class SimulationView {
             </div>
             
             <!-- Investment Scenarios -->
-            ${this.getInvestmentScenariosHTML()}
+            <div class="activity-section mt-6">
+                <h3 class="section-title">Skenario Investasi Populer</h3>
+                <div class="actions-grid" style="margin-top: var(--space-4);">
+                    <button class="action-btn" onclick="app.loadInvestmentScenario('saving')">
+                        <div class="action-icon">🏦</div>
+                        <div style="font-weight: 600;">Tabungan Dana Darurat</div>
+                        <div class="text-muted" style="font-size: 0.875rem;">6x pengeluaran bulanan</div>
+                    </button>
+                    
+                    <button class="action-btn" onclick="app.loadInvestmentScenario('dp_rumah')">
+                        <div class="action-icon">🏠</div>
+                        <div style="font-weight: 600;">DP Rumah</div>
+                        <div class="text-muted" style="font-size: 0.875rem;">20% dari harga rumah</div>
+                    </button>
+                    
+                    <button class="action-btn" onclick="app.loadInvestmentScenario('pensiun')">
+                        <div class="action-icon">👴</div>
+                        <div style="font-weight: 600;">Dana Pensiun</div>
+                        <div class="text-muted" style="font-size: 0.875rem;">Persiapan masa tua</div>
+                    </button>
+                    
+                    <button class="action-btn" onclick="app.loadInvestmentScenario('pendidikan')">
+                        <div class="action-icon">🎓</div>
+                        <div style="font-weight: 600;">Dana Pendidikan</div>
+                        <div class="text-muted" style="font-size: 0.875rem;">Biaya kuliah anak</div>
+                    </button>
+                </div>
+            </div>
             
             <!-- Investment Tips -->
-            ${this.getInvestmentTipsHTML()}
+            <div class="activity-section mt-6">
+                <h3 class="section-title">💡 Tips Investasi</h3>
+                <div style="margin-top: var(--space-4);">
+                    <div style="background: var(--bg-surface); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                        <div style="font-weight: 600; margin-bottom: var(--space-2);">Mulai Sedini Mungkin</div>
+                        <div style="color: var(--text-muted);">Compound interest bekerja paling baik dalam jangka panjang.</div>
+                    </div>
+                    
+                    <div style="background: var(--bg-surface); padding: var(--space-4); border-radius: var(--radius-lg); margin-bottom: var(--space-4);">
+                        <div style="font-weight: 600; margin-bottom: var(--space-2);">Diversifikasi</div>
+                        <div style="color: var(--text-muted);">Jangan taruh semua telur dalam satu keranjang.</div>
+                    </div>
+                    
+                    <div style="background: var(--bg-surface); padding: var(--space-4); border-radius: var(--radius-lg);">
+                        <div style="font-weight: 600; margin-bottom: var(--space-2);">Risk Management</div>
+                        <div style="color: var(--text-muted);">Sesuaikan risiko dengan usia dan tujuan finansial.</div>
+                    </div>
+                </div>
+            </div>
         `;
     }
 

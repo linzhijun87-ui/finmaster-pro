@@ -11,6 +11,7 @@ class IncomeView {
         const html = this.getIncomeHTML();
         this.app.elements.mainContent.innerHTML = html;
         
+        this.app.elements.mainContent.className = 'main-content income-view';
         // Initialize after DOM is ready
         setTimeout(() => {
             this.initialize();
@@ -105,7 +106,7 @@ class IncomeView {
                 <div class="activity-amount" style="color: var(--success);">
                     + ${this.app.calculator.formatCurrency(income.amount)}
                 </div>
-                <button class="btn-outline" style="margin-left: var(--space-2); font-size: 0.875rem;" 
+                <button class="btn-outline btn-delete btn-delete-sm" 
                         onclick="handleDeleteTransaction('income', ${income.id})">
                     Hapus
                 </button>

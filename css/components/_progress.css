@@ -1,0 +1,355 @@
+/* ====== PROGRESS COMPONENTS ====== */
+
+/* Linear Progress Bar */
+.progress-container {
+  width: 100%;
+  margin: var(--space-4) 0;
+}
+
+.progress-track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: progressShimmer 2s infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes progressShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Progress with Label */
+.progress-with-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.progress-label {
+  min-width: 80px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.progress-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary);
+}
+
+/* Progress Sizes */
+.progress-xs .progress-track {
+  height: 4px;
+}
+
+.progress-sm .progress-track {
+  height: 6px;
+}
+
+.progress-md .progress-track {
+  height: 8px;
+}
+
+.progress-lg .progress-track {
+  height: 12px;
+}
+
+.progress-xl .progress-track {
+  height: 16px;
+}
+
+/* Progress Colors */
+.progress-primary .progress-fill {
+  background: var(--gradient-primary);
+}
+
+.progress-success .progress-fill {
+  background: var(--gradient-success);
+}
+
+.progress-danger .progress-fill {
+  background: var(--gradient-danger);
+}
+
+.progress-warning .progress-fill {
+  background: var(--gradient-warning);
+}
+
+.progress-info .progress-fill {
+  background: var(--gradient-info);
+}
+
+/* Progress with Steps */
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin: var(--space-6) 0;
+  padding: 0 var(--space-4);
+}
+
+.progress-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  z-index: 2;
+}
+
+.progress-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border-color);
+  z-index: 1;
+}
+
+.progress-step.completed:not(:last-child)::before {
+  background: var(--success);
+}
+
+.progress-step-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+  position: relative;
+  z-index: 2;
+  transition: all var(--transition-normal);
+}
+
+.progress-step.completed .progress-step-icon {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.progress-step.active .progress-step-icon {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.progress-step-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  text-align: center;
+  max-width: 100px;
+  word-wrap: break-word;
+}
+
+.progress-step-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: var(--space-1);
+  max-width: 100px;
+}
+
+/* Circular Progress */
+.progress-circular {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.progress-circular-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(var(--primary) 0%, var(--border-color) 0%);
+  position: relative;
+}
+
+.progress-circular-inner {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  background: var(--bg-elevated);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.progress-circular-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.progress-circular-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Progress with Animation */
+.progress-animated .progress-fill {
+  animation: progressGrow 1.5s ease-out forwards;
+}
+
+@keyframes progressGrow {
+  from {
+    width: 0%;
+  }
+}
+
+/* Progress States */
+.progress-indeterminate .progress-fill {
+  width: 30% !important;
+  animation: indeterminate 1.5s infinite ease-in-out;
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.progress-striped .progress-fill {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 20px 20px;
+  animation: striped 1s linear infinite;
+}
+
+@keyframes striped {
+  from {
+    background-position: 20px 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* Progress in Cards */
+.card .progress-container {
+  margin: var(--space-3) 0;
+}
+
+.card .progress-label {
+  font-size: var(--font-size-xs);
+}
+
+/* Dark Mode Adjustments */
+[data-theme="dark"] {
+  .progress-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .progress-step-icon {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+  }
+  
+  .progress-circular-inner {
+    background: var(--gray-800);
+  }
+  
+  .progress-striped .progress-fill {
+    background-image: linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.1) 25%,
+      transparent 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0.1) 75%,
+      transparent 75%,
+      transparent
+    );
+  }
+}
+
+/* Responsive Progress */
+@media (max-width: 768px) {
+  .progress-steps {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  
+  .progress-step {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+  }
+  
+  .progress-step:not(:last-child)::before {
+    top: 50%;
+    left: 16px;
+    width: 2px;
+    height: 100%;
+    transform: translateY(-50%);
+  }
+  
+  .progress-step-icon {
+    margin-bottom: 0;
+    margin-right: var(--space-3);
+  }
+  
+  .progress-step-label,
+  .progress-step-description {
+    text-align: left;
+    max-width: none;
+  }
+  
+  .progress-circular {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .progress-circular-value {
+    font-size: var(--font-size-xl);
+  }
+}

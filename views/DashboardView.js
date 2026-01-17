@@ -5,29 +5,85 @@ class DashboardView {
         this.app = app;
         this.chartManager = app.chartManager;
         this.initialized = false;
+        this.hasRenderedChart = false; // Flag untuk track apakah chart sudah dirender
     }
 
     render() {
         console.log('📊 Rendering Dashboard...');
         
+        // Jika sudah ada chart, kita hanya update content di sekitarnya
+        if (this.hasRenderedChart && document.getElementById('chartContainer')) {
+            console.log('🔄 Dashboard already has chart, updating content only...');
+            this.updateDashboardContent();
+            return;
+        }
+        
         const html = this.getDashboardHTML();
         this.app.elements.mainContent.innerHTML = html;
         
-        // Tampilkan loading state untuk chart
-        const chartContainer = document.getElementById('chartContainer');
-        if (chartContainer) {
-            chartContainer.innerHTML = `
-                <div class="chart-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Memuat chart...</p>
-                </div>
+        this.app.elements.mainContent.className = 'main-content dashboard-view';
+        
+        // Initialize components
+        setTimeout(() => {
+            this.initializeComponents();
+            this.hasRenderedChart = true;
+        }, 100);
+    }
+
+    // TAMBAHKAN method baru untuk update content tanpa merusak chart:
+    updateDashboardContent() {
+        console.log('📝 Updating dashboard content around chart...');
+        
+        // Update stats grid
+        const statsGrid = document.querySelector('.stats-grid');
+        if (statsGrid) {
+            statsGrid.innerHTML = `
+                ${this.getStatCardHTML('income', 'Total Pendapatan', this.app.state.finances.income, 'success', '💰')}
+                ${this.getStatCardHTML('expense', 'Total Pengeluaran', this.app.state.finances.expenses, 'danger', '💸')}
+                ${this.getStatCardHTML('savings', 'Total Tabungan', this.app.state.finances.savings, 'primary', '🏦')}
             `;
         }
         
-        // Initialize components setelah DOM ready
-        setTimeout(() => {
-            this.initializeComponents();
-        }, 50);
+        // Update progress section
+        const progressSection = document.querySelector('.progress-section');
+        if (progressSection) {
+            progressSection.innerHTML = this.getProgressSectionHTML();
+        }
+        
+        // Update quick actions
+        const quickActions = document.querySelector('.quick-actions');
+        if (quickActions) {
+            quickActions.innerHTML = this.getQuickActionsHTML();
+            this.setupQuickActions(); // Setup event listeners lagi
+        }
+        
+        // Update recent activity
+        const recentActivity = document.getElementById('recentActivity');
+        if (recentActivity) {
+            recentActivity.innerHTML = this.getRecentActivityHTML();
+        }
+        
+        // Update goals section
+        const goalsSection = document.querySelector('.goals-section');
+        if (goalsSection) {
+            goalsSection.innerHTML = this.getGoalsSectionHTML();
+        }
+        
+        // Update trends
+        this.calculateTrends();
+        
+        console.log('✅ Dashboard content updated (chart preserved)');
+    }
+
+
+    // TAMBAHKAN method baru untuk memastikan chart container
+    ensureChartContainer() {
+        // Pastikan chart container tersedia di DOM
+        if (!document.getElementById('chartContainer')) {
+            console.log('📦 Chart container not in DOM, adding placeholder...');
+            
+            // Jika tidak ada, kita akan menambahkannya di getDashboardHTML
+        }
     }
 
     getDashboardHTML() {
@@ -57,8 +113,9 @@ class DashboardView {
                             <button class="chart-btn" data-period="custom">Custom</button>
                         </div>
                     </div>
-                    <div class="chart-placeholder" id="chartContainer">
-                        <canvas id="financeChart"></canvas>
+                    <!-- CHART CONTAINER AKAN DITAMBAHKAN OLEH initializeChart() -->
+                    <div id="chartContainer" style="height: 280px; min-height: 280px; width: 100%; position: relative;">
+                        <!-- Canvas akan dibuat oleh ChartManager -->
                     </div>
                 </div>
                 
@@ -74,6 +131,50 @@ class DashboardView {
             <!-- GOALS SECTION -->
             ${this.getGoalsSectionHTML()}
         `;
+    }
+
+    initializeBasicComponents() {
+        console.log('⚙️ Initializing basic dashboard components...');
+        
+        // Calculate trends
+        this.calculateTrends();
+        
+        // Setup quick actions
+        this.setupQuickActions();
+        
+        // Setup chart controls (hanya setup event listeners)
+        this.setupChartControls();
+        
+        console.log('✅ Basic components initialized');
+    }
+
+    // TAMBAHKAN method setupChartControls yang sederhana:
+    setupChartControls() {
+        const chartActions = document.querySelector('.chart-actions');
+        if (!chartActions) return;
+        
+        chartActions.addEventListener('click', (e) => {
+            const btn = e.target.closest('.chart-btn');
+            if (!btn) return;
+            
+            e.preventDefault();
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+            
+            // Add active class to clicked button
+            btn.classList.add('active');
+            
+            // Get period and update chart
+            const period = btn.dataset.period;
+            if (period === 'custom') {
+                this.app.chartManager.showCustomDateModal();
+            } else {
+                this.app.chartManager.currentPeriod = period;
+                this.app.chartManager.updateChart();
+                this.app.uiManager.showNotification(`Chart diperbarui: Periode ${period}`, 'success');
+            }
+        });
     }
 
     getStatCardHTML(type, title, amount, color, icon) {
@@ -249,14 +350,174 @@ class DashboardView {
         // Setup chart controls
         this.setupChartControls();
         
-        // Initialize chart dengan delay yang lebih tepat
-        setTimeout(() => {
-            if (this.chartManager) {
-                this.chartManager.initializeChart();
-            }
-        }, 300); // Beri waktu untuk DOM benar-benar siap
+        // Initialize chart jika belum ada
+        this.initializeChartIfNeeded();
         
         this.initialized = true;
+        console.log('✅ Dashboard components initialized');
+    }
+
+    // TAMBAHKAN method untuk initialize chart jika diperlukan:
+    initializeChartIfNeeded() {
+        // Cek apakah chart container ada
+        const chartContainer = document.getElementById('chartContainer');
+        if (!chartContainer) {
+            console.error('❌ Chart container not found');
+            return;
+        }
+        
+        // Cek apakah chart sudah ada
+        if (this.app.chartManager && this.app.chartManager.chartInstance) {
+            console.log('✅ Chart already exists, updating data...');
+            this.updateChartData();
+            return;
+        }
+        
+        // Jika belum ada, initialize chart
+        if (this.app.chartManager) {
+            console.log('📊 Initializing new chart...');
+            
+            // Pastikan canvas ada
+            if (!chartContainer.querySelector('canvas')) {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'financeChart';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.display = 'block';
+                chartContainer.appendChild(canvas);
+            }
+            
+            // Initialize chart
+            setTimeout(() => {
+                this.app.chartManager.initializeChart();
+            }, 200);
+        }
+    }
+
+    // TAMBAHKAN method untuk update chart data:
+    updateChartData() {
+        if (!this.app.chartManager || !this.app.chartManager.chartInstance) {
+            console.log('ℹ️ No chart instance to update');
+            return;
+        }
+        
+        try {
+            const newData = this.app.chartManager.generateChartData();
+            this.app.chartManager.chartInstance.data = newData;
+            this.app.chartManager.chartInstance.update('none');
+            console.log('📊 Chart data updated');
+        } catch (error) {
+            console.error('Error updating chart data:', error);
+        }
+    }
+
+
+    // TAMBAHKAN method baru untuk inisialisasi chart yang aman
+    initializeChartSafely() {
+        console.log('🔄 Initializing chart safely...');
+        
+        // Tunggu hingga DOM benar-benar siap
+        setTimeout(() => {
+            const chartContainer = document.getElementById('chartContainer');
+            const chartCanvas = document.getElementById('financeChart');
+            
+            if (!chartContainer) {
+                console.error('❌ Chart container not found in DOM');
+                this.showChartFallback('Chart container tidak ditemukan');
+                return;
+            }
+            
+            if (!chartCanvas) {
+                console.log('🎨 Creating chart canvas...');
+                // Buat canvas jika belum ada
+                const canvas = document.createElement('canvas');
+                canvas.id = 'financeChart';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.display = 'block';
+                chartContainer.appendChild(canvas);
+            }
+            
+            // Force layout untuk memastikan container memiliki dimensi
+            chartContainer.style.display = 'block';
+            chartContainer.style.position = 'relative';
+            chartContainer.style.height = '300px';
+            chartContainer.style.minHeight = '300px';
+            
+            // Tunggu 1 frame untuk layout
+            requestAnimationFrame(() => {
+                // Cek dimensi container
+                const hasDimensions = chartContainer.offsetWidth > 0 && chartContainer.offsetHeight > 0;
+                
+                console.log('📏 Chart container dimensions:', {
+                    width: chartContainer.offsetWidth,
+                    height: chartContainer.offsetHeight,
+                    clientWidth: chartContainer.clientWidth,
+                    clientHeight: chartContainer.clientHeight
+                });
+                
+                if (!hasDimensions) {
+                    console.warn('⚠️ Chart container has no dimensions, forcing resize...');
+                    // Force resize
+                    chartContainer.style.width = '100%';
+                    chartContainer.style.height = '300px';
+                }
+                
+                // Tunggu sedikit lagi untuk memastikan layout stabil
+                setTimeout(() => {
+                    if (this.chartManager) {
+                        console.log('🚀 Calling ChartManager.initializeChart()');
+                        this.chartManager.initializeChart();
+                    } else {
+                        console.error('❌ ChartManager not available');
+                        this.showChartFallback('Chart manager tidak tersedia');
+                    }
+                }, 50);
+            });
+        }, 200); // Delay lebih panjang untuk memastikan DOM siap
+    }
+
+    // TAMBAHKAN method untuk fallback chart
+    showChartFallback(message) {
+        const chartContainer = document.getElementById('chartContainer');
+        if (!chartContainer) return;
+        
+        chartContainer.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                <div style="font-weight: 600; margin-bottom: 8px;">Chart tidak tersedia</div>
+                <div style="margin-bottom: 20px;">${message}</div>
+                <button onclick="app.showView('dashboard')" 
+                        style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    🔄 Coba Lagi
+                </button>
+            </div>
+        `;
+    }
+
+    initializeChartWithValidation() {
+        // Tunggu sebentar untuk memastikan DOM benar-benar siap
+        setTimeout(() => {
+            const chartContainer = document.getElementById('chartContainer');
+            
+            if (!chartContainer) {
+                console.error('❌ Chart container not found in DOM');
+                return;
+            }
+            
+            // Force container untuk memiliki dimensi
+            chartContainer.style.minHeight = '300px';
+            chartContainer.style.position = 'relative';
+            
+            // Tunggu 1 frame untuk memastikan layout stabil
+            requestAnimationFrame(() => {
+                // Initialize chart melalui app
+                if (this.app.chartManager) {
+                    console.log('📊 Initializing chart via ChartManager...');
+                    this.app.chartManager.initializeChart();
+                }
+            });
+        }, 100);
     }
 
     calculateTrends() {
@@ -405,26 +666,18 @@ class DashboardView {
     }
 
     refresh() {
-        if (!this.initialized) return;
+        console.log('🔄 Refreshing dashboard...');
         
-        // Update stats
-        this.updateStats();
-        
-        // Update recent activity
-        this.updateRecentActivity();
-        
-        // Update goals
-        this.updateGoals();
-        
-        // Update progress section
-        this.updateProgressSection();
-        
-        // Update chart if needed
-        if (this.chartManager && this.chartManager.chartInstance) {
-            setTimeout(() => {
-                this.chartManager.updateChart();
-            }, 100);
+        if (!this.initialized) {
+            this.render();
+            return;
         }
+        
+        // Update dashboard content tanpa merusak chart
+        this.updateDashboardContent();
+        
+        // Update chart data
+        this.updateChartData();
     }
 
     updateStats() {

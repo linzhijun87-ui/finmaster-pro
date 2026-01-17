@@ -12,11 +12,11 @@
     <link rel="icon" href="assets/icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
     
-    <!-- Preload Chart.js untuk performa lebih baik -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js" as="script">
+    <!-- Preload Chart.js untuk performa lebih baik
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js" as="script"> -->
 
     <!-- Styles -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/main.css">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -272,46 +272,51 @@
         </div>
     </div>
     
-    <!-- Custom Date Modal (for chart) -->
-    <div class="modal" id="customDateModal" style="display: none;">
+    <!-- Custom Date Filter Modal -->
+    <div id="customDateModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📅 Custom Periode Chart</h3>
-                <button class="modal-close">&times;</button>
+                <h3>Filter Tanggal Custom</h3>
+                <button class="modal-close" onclick="app.uiManager.closeModal('customDateModal')">
+                    &times;
+                </button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="customStartDate">Tanggal Mulai</label>
-                    <input type="date" id="customStartDate" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label for="customEndDate">Tanggal Akhir</label>
-                    <input type="date" id="customEndDate" class="form-control">
-                </div>
-                
-                <div class="form-group">
-                    <label for="customGroupBy">Group By</label>
-                    <select id="customGroupBy" class="form-control">
-                        <option value="daily">Harian</option>
-                        <option value="weekly">Mingguan</option>
-                        <option value="monthly" selected>Bulanan</option>
-                        <option value="yearly">Tahunan</option>
-                    </select>
-                </div>
-                
-                <div class="button-group" style="display: flex; gap: var(--space-3); margin-top: var(--space-6);">
-                    <button class="btn-outline" id="cancelCustomModal" style="flex: 1;">
-                        Batal
-                    </button>
-                    <button class="btn" id="applyCustomFilter" style="flex: 1;">
-                        Terapkan Filter
-                    </button>
-                </div>
+                <form id="customDateForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="customStartDate">Tanggal Mulai</label>
+                        <input type="date" id="customStartDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customEndDate">Tanggal Akhir</label>
+                        <input type="date" id="customEndDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customGroupBy">Kelompokkan Berdasarkan</label>
+                        <select id="customGroupBy">
+                            <option value="daily">Harian</option>
+                            <option value="weekly">Mingguan</option>
+                            <option value="monthly" selected>Bulanan</option>
+                            <option value="yearly">Tahunan</option>
+                        </select>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" id="cancelCustomModal" class="btn btn-outline">
+                            Batal
+                        </button>
+                        <button type="button" id="applyCustomFilter" class="btn">
+                            Terapkan Filter
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
-    
+    <div id="customDateModalOverlay" class="modal-overlay"></div>
+        
     <!-- Scripts - TYPE MODULE untuk ES6 modules -->
     <script type="module" src="app.js"></script>
     
@@ -346,9 +351,86 @@
             }
         }
     </script>
+
+    <!-- TAMBAHKAN script ini SEBELUM penutup </body> -->
+    <script>
+        // Fix untuk memastikan chart container selalu ada
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM ready, setting up chart container fix...');
+            
+            // Function untuk memastikan chart container ada
+            function ensureChartContainer() {
+                const container = document.getElementById('chartContainer');
+                
+                if (!container) {
+                    console.log('🏗️ Creating missing chart container...');
+                    
+                    // Cari chart section
+                    const chartSection = document.querySelector('.chart-container');
+                    if (chartSection) {
+                        const newContainer = document.createElement('div');
+                        newContainer.id = 'chartContainer';
+                        newContainer.style.height = '300px';
+                        newContainer.style.minHeight = '300px';
+                        newContainer.style.width = '100%';
+                        newContainer.style.position = 'relative';
+                        newContainer.style.display = 'block';
+                        
+                        // Tambahkan canvas
+                        const canvas = document.createElement('canvas');
+                        canvas.id = 'financeChart';
+                        canvas.style.width = '100%';
+                        canvas.style.height = '100%';
+                        canvas.style.display = 'block';
+                        
+                        newContainer.appendChild(canvas);
+                        
+                        // Cari posisi yang tepat untuk menambahkan
+                        const existingPlaceholder = chartSection.querySelector('.chart-placeholder');
+                        if (existingPlaceholder) {
+                            existingPlaceholder.replaceWith(newContainer);
+                        } else {
+                            // Cari di mana harus menambahkan
+                            const chartHeader = chartSection.querySelector('.chart-header');
+                            if (chartHeader) {
+                                chartHeader.insertAdjacentElement('afterend', newContainer);
+                            } else {
+                                chartSection.appendChild(newContainer);
+                            }
+                        }
+                        
+                        console.log('✅ Chart container created');
+                    }
+                }
+            }
+            
+            // Jalankan saat DOM ready
+            ensureChartContainer();
+            
+            // Juga jalankan saat halaman selesai loading
+            window.addEventListener('load', function() {
+                setTimeout(ensureChartContainer, 500);
+            });
+            
+            // Monitor untuk perubahan DOM (mutation observer)
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        ensureChartContainer();
+                    }
+                });
+            });
+            
+            // Observe body untuk perubahan
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        });
+    </script>
     
     <!-- Error handling for older browsers -->
-    <script>
+    <!-- <script>
         // Check for ES6 module support
         if (!('noModule' in HTMLScriptElement.prototype)) {
             document.write('<script src="legacy-app.js"><\/script>');
@@ -372,6 +454,6 @@
                 }, 5000);
             }
         });
-    </script>
+    </script> -->
 </body>
 </html>

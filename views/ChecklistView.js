@@ -11,6 +11,7 @@ class ChecklistView {
         const html = this.getChecklistHTML();
         this.app.elements.mainContent.innerHTML = html;
         
+        this.app.elements.mainContent.className = 'main-content checklist-view';
         // Initialize after DOM is ready
         setTimeout(() => {
             this.initialize();
@@ -109,7 +110,7 @@ class ChecklistView {
                         <span>Created: ${this.app.uiManager.formatDate(task.created || new Date().toISOString())}</span>
                     </div>
                 </div>
-                <button class="btn-outline" style="margin-left: auto; font-size: 0.875rem;" 
+                <button class="btn-outline btn-delete btn-delete-sm" 
                         onclick="app.deleteChecklistTask(${task.id})">
                     Hapus
                 </button>

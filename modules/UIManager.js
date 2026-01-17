@@ -195,16 +195,14 @@ class UIManager {
         const toggleBtn = document.getElementById('darkModeToggle');
         if (!toggleBtn) return;
         
-        const theme = this.app.state.settings.theme || 'auto';
-        const isDarkMode = document.body.classList.contains('dark-mode');
+        const currentTheme = this.app.state.settings.theme || 'auto';
         
-        // Update button text berdasarkan kondisi saat ini
-        if (theme === 'dark') {
+        if (currentTheme === 'dark') {
             toggleBtn.innerHTML = '☀️ Light Mode';
-        } else if (theme === 'light') {
+        } else if (currentTheme === 'light') {
             toggleBtn.innerHTML = '🌙 Dark Mode';
         } else { // 'auto'
-            // Untuk auto mode, lihat class di body
+            const isDarkMode = document.body.classList.contains('dark-mode');
             toggleBtn.innerHTML = isDarkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
         }
     }
@@ -223,33 +221,43 @@ class UIManager {
     }
 
     toggleDarkMode() {
+        const html = document.documentElement;
         const currentTheme = this.app.state.settings.theme || 'auto';
         let newTheme;
         
-        // Logika toggle
+        // Jika auto mode, cek preferensi sistem
         if (currentTheme === 'auto') {
-            // Jika sedang auto, kita lihat state saat ini
-            const isCurrentlyDark = document.body.classList.contains('dark-mode');
-            newTheme = isCurrentlyDark ? 'light' : 'dark';
-        } else if (currentTheme === 'dark') {
-            newTheme = 'light';
-        } else { // currentTheme === 'light'
-            newTheme = 'dark';
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            newTheme = systemPrefersDark ? 'light' : 'dark';
+        } else {
+            // Toggle antara light dan dark
+            newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         }
+        
+        // Update HTML attribute dan body class
+        html.setAttribute('data-theme', newTheme);
+        document.body.classList.toggle('dark-mode', newTheme === 'dark');
         
         // Update setting
         this.app.state.settings.theme = newTheme;
         
-        // Terapkan tema baru
-        this.applyTheme(); // Ini akan update class body DAN button text
+        // Update button text
+        this.updateThemeToggleButton();
         
-        // Simpan
+        // Save
         this.app.dataManager.saveData(true);
         
         this.showNotification(
-            `Mode diubah ke: ${newTheme === 'dark' ? 'Dark' : 'Light'}`,
+            `Mode diubah ke: ${newTheme === 'dark' ? '🌙 Dark' : '☀️ Light'}`,
             'success'
         );
+        
+        // Update chart jika ada
+        if (this.app.chartManager && this.app.chartManager.chartInstance) {
+            setTimeout(() => {
+                this.app.chartManager.chartInstance.update();
+            }, 100);
+        }
     }
 
     // ====== RESPONSIVE DESIGN ======

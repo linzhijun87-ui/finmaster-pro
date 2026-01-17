@@ -7,6 +7,44 @@ class EventManager {
         this.app = app;
         this.resizeTimeout = null;
         this.eventHandlers = new Map();
+        this.setupChartObserver();
+    }
+
+    setupChartObserver() {
+        // Observer untuk memantau perubahan pada chart container
+        const chartObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    // Cek jika chart container dihapus
+                    const removedNodes = Array.from(mutation.removedNodes);
+                    const chartRemoved = removedNodes.some(node => 
+                        node.id === 'chartContainer' || 
+                        node.querySelector && node.querySelector('#chartContainer')
+                    );
+                    
+                    if (chartRemoved && this.app.state.activeTab === 'dashboard') {
+                        console.warn('⚠️ Chart container was removed!');
+                        
+                        // Coba restore chart setelah delay
+                        setTimeout(() => {
+                            if (this.app.chartManager && this.app.chartManager.chartInstance) {
+                                console.log('🔄 Attempting to reattach chart...');
+                                this.app.chartManager.initializeChart();
+                            }
+                        }, 300);
+                    }
+                }
+            });
+        });
+        
+        // Observe body untuk perubahan pada chart container
+        const body = document.body;
+        if (body) {
+            chartObserver.observe(body, {
+                childList: true,
+                subtree: true
+            });
+        }
     }
 
     // ====== EVENT SETUP ======
@@ -54,6 +92,12 @@ class EventManager {
             
             const tab = tabButton.dataset.tab;
             if (tab) {
+                // SPECIAL HANDLING: Jika keluar dari dashboard, jangan destroy chart
+                if (this.app.state.activeTab === 'dashboard' && tab !== 'dashboard') {
+                    console.log('🚪 Leaving dashboard, keeping chart alive...');
+                    // Chart tetap dipertahankan di memory
+                }
+                
                 this.app.showView(tab);
             }
         });
@@ -319,6 +363,23 @@ class EventManager {
                 }, 100);
             }
         });
+
+        // Page visibility - sederhana saja
+        this.addEventHandler(document, 'visibilitychange', () => {
+            if (!document.hidden && this.app.state.activeTab === 'dashboard') {
+                console.log('👁️ Dashboard visible again');
+                
+                // Tunggu sebentar lalu update chart jika perlu
+                setTimeout(() => {
+                    if (this.app.chartManager && this.app.chartManager.chartInstance) {
+                        // Update chart data
+                        const newData = this.app.chartManager.generateChartData();
+                        this.app.chartManager.chartInstance.data = newData;
+                        this.app.chartManager.chartInstance.update('none');
+                    }
+                }, 300);
+            }
+        });
         
         // Before unload (save data)
         this.addEventHandler(window, 'beforeunload', () => {
@@ -461,6 +522,94 @@ class EventManager {
         if (this.app.pwaInstaller) {
             this.app.pwaInstaller.updateButtonVisibility();
         }
+    }
+
+    // ====== MODAL EVENTS ======
+    setupModalEvents() {
+        // Modal close buttons
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            this.addEventHandler(btn, 'click', () => this.app.uiManager.closeModal());
+        });
+        
+        // Modal overlay
+        if (this.app.elements.modalOverlay) {
+            this.addEventHandler(this.app.elements.modalOverlay, 'click', () => this.app.uiManager.closeModal());
+        }
+        
+        // ====== CUSTOM DATE MODAL ======
+        // Gunakan event delegation untuk modal yang dinamis
+        this.addEventHandler(document, 'click', (e) => {
+            // Apply custom filter button
+            if (e.target.closest('#applyCustomFilter')) {
+                e.preventDefault();
+                this.handleApplyCustomFilter();
+            }
+            
+            // Cancel custom modal button
+            if (e.target.closest('#cancelCustomModal')) {
+                e.preventDefault();
+                this.app.uiManager.closeModal('customDateModal');
+            }
+        });
+        
+        // Event untuk input di modal custom date
+        this.addEventHandler(document, 'change', (e) => {
+            if (e.target.id === 'customStartDate' || e.target.id === 'customEndDate') {
+                this.validateCustomDateRange();
+            }
+        });
+    }
+
+    // ====== CUSTOM DATE FILTER HANDLER ======
+    handleApplyCustomFilter() {
+        const startDate = document.getElementById('customStartDate')?.value;
+        const endDate = document.getElementById('customEndDate')?.value;
+        const groupBy = document.getElementById('customGroupBy')?.value;
+        
+        console.log('🔍 Applying custom filter:', { startDate, endDate, groupBy });
+        
+        if (!startDate || !endDate) {
+            this.app.uiManager.showNotification('Pilih tanggal mulai dan akhir', 'error');
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            this.app.uiManager.showNotification('Tanggal mulai tidak boleh setelah tanggal akhir', 'error');
+            return;
+        }
+        
+        // Update chart melalui ChartManager
+        if (this.app.chartManager) {
+            this.app.chartManager.currentPeriod = 'custom';
+            this.app.chartManager.customPeriod = { startDate, endDate, groupBy };
+            this.app.chartManager.updateChart();
+            
+            // Update active button
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.period === 'custom') {
+                    btn.classList.add('active');
+                }
+            });
+            
+            this.app.uiManager.closeModal('customDateModal');
+            this.app.uiManager.showNotification(`Filter custom diterapkan (${groupBy})`, 'success');
+        }
+    }
+
+    validateCustomDateRange() {
+        const startDate = document.getElementById('customStartDate')?.value;
+        const endDate = document.getElementById('customEndDate')?.value;
+        
+        if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+            document.getElementById('customStartDate').classList.add('error');
+            document.getElementById('customEndDate').classList.add('error');
+            return false;
+        }
+        
+        document.getElementById('customStartDate')?.classList.remove('error');
+        document.getElementById('customEndDate')?.classList.remove('error');
+        return true;
     }
 
     // ====== UTILITY METHODS ======

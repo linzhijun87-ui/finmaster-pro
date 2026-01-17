@@ -10,6 +10,7 @@ class ExpensesView {
         
         const html = this.getExpensesHTML();
         this.app.elements.mainContent.innerHTML = html;
+        this.app.elements.mainContent.className = 'main-content expenses-view';
         
         // Initialize after DOM is ready
         setTimeout(() => {
@@ -102,7 +103,7 @@ class ExpensesView {
                 <div class="activity-amount" style="color: var(--danger);">
                     - ${this.app.calculator.formatCurrency(expense.amount)}
                 </div>
-                <button class="btn-outline" style="margin-left: var(--space-2); font-size: 0.875rem;" 
+                <button class="btn-outline btn-delete btn-delete-sm" 
                         onclick="handleDeleteTransaction('expenses', ${expense.id})">
                     Hapus
                 </button>
