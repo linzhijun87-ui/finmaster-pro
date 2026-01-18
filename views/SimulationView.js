@@ -7,10 +7,10 @@ class SimulationView {
 
     render() {
         console.log('📈 Rendering Simulation View...');
-        
+
         const html = this.getSimulationHTML();
         this.app.elements.mainContent.innerHTML = html;
-        
+
         this.app.elements.mainContent.className = 'main-content simulation-view';
         // Initialize after DOM is ready
         setTimeout(() => {
@@ -216,18 +216,18 @@ class SimulationView {
         document.getElementById('calculateInvestment')?.addEventListener('click', () => {
             this.calculateInvestment();
         });
-        
+
         // Loan calculator
         document.getElementById('calculateLoan')?.addEventListener('click', () => {
             this.calculateLoan();
         });
-        
+
         // Investment scenarios
         document.querySelectorAll('[onclick*="loadInvestmentScenario"]').forEach(btn => {
             btn.onclick = (e) => {
                 const scenarioType = e.target.closest('.action-btn').querySelector('div:nth-child(2)').textContent.includes('Dana Darurat') ? 'saving' :
-                                   e.target.closest('.action-btn').querySelector('div:nth-child(2)').textContent.includes('DP Rumah') ? 'dp_rumah' :
-                                   e.target.closest('.action-btn').querySelector('div:nth-child(2)').textContent.includes('Pensiun') ? 'pensiun' : 'pendidikan';
+                    e.target.closest('.action-btn').querySelector('div:nth-child(2)').textContent.includes('DP Rumah') ? 'dp_rumah' :
+                        e.target.closest('.action-btn').querySelector('div:nth-child(2)').textContent.includes('Pensiun') ? 'pensiun' : 'pendidikan';
                 this.loadInvestmentScenario(scenarioType);
             };
         });
@@ -238,22 +238,51 @@ class SimulationView {
         const monthly = parseInt(document.getElementById('monthlyContribution').value) || 0;
         const years = parseInt(document.getElementById('investmentPeriod').value) || 1;
         const annualReturn = parseFloat(document.getElementById('expectedReturn').value) || 0;
-        
+
         const monthlyReturn = annualReturn / 12 / 100;
         const months = years * 12;
-        
+
         // Future value calculation
         let futureValue = initial * Math.pow(1 + monthlyReturn, months);
-        
+
         // Add monthly contributions
         for (let i = 0; i < months; i++) {
             futureValue += monthly * Math.pow(1 + monthlyReturn, months - i - 1);
         }
-        
+
         const totalContributions = initial + (monthly * months);
         const totalEarnings = futureValue - totalContributions;
         const roi = totalContributions > 0 ? (totalEarnings / totalContributions) * 100 : 0;
-        
+
+        // Generate yearly data for chart
+        const labels = [];
+        const dataInvested = [];
+        const dataInterest = [];
+
+        let currentFutureValue = initial;
+        let currentTotalContributed = initial;
+
+        for (let y = 0; y <= years; y++) {
+            labels.push(`Tahun ${y}`);
+
+            if (y === 0) {
+                dataInvested.push(initial);
+                dataInterest.push(0);
+            } else {
+                // Approximate yearly calculation for chart
+                for (let m = 0; m < 12; m++) {
+                    // Match main formula: End of Month contribution
+                    // 1. Apply interest to existing balance
+                    // 2. Add monthly contribution
+                    currentFutureValue = (currentFutureValue * (1 + monthlyReturn)) + monthly;
+                }
+                currentTotalContributed += (monthly * 12);
+
+                dataInvested.push(Math.round(currentTotalContributed));
+                dataInterest.push(Math.round(currentFutureValue - currentTotalContributed));
+            }
+        }
+
         // Display results
         const resultHTML = `
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4);">
@@ -285,6 +314,11 @@ class SimulationView {
                     </div>
                 </div>
             </div>
+
+            <!-- Investment Chart -->
+            <div style="margin-top: var(--space-6); height: 250px; position: relative;">
+                <canvas id="investmentChart"></canvas>
+            </div>
             
             <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border-color);">
                 <div style="font-size: 0.875rem; color: var(--text-muted);">
@@ -293,10 +327,21 @@ class SimulationView {
                 </div>
             </div>
         `;
-        
+
         document.getElementById('resultDetails').innerHTML = resultHTML;
         document.getElementById('investmentResult').style.display = 'block';
-        
+
+        // Render chart
+        setTimeout(() => {
+            if (this.app.chartManager) {
+                this.app.chartManager.renderInvestmentChart({
+                    labels,
+                    invested: dataInvested,
+                    interest: dataInterest
+                });
+            }
+        }, 100);
+
         this.app.uiManager.showNotification('Simulasi investasi selesai!', 'success');
     }
 
@@ -305,14 +350,14 @@ class SimulationView {
         const years = parseInt(document.getElementById('loanTerm').value) || 1;
         const annualRate = parseFloat(document.getElementById('interestRate').value) || 0;
         const type = document.getElementById('loanType').value;
-        
+
         const months = years * 12;
         const monthlyRate = annualRate / 12 / 100;
-        
+
         let monthlyPayment = 0;
         let totalPayment = 0;
         let totalInterest = 0;
-        
+
         if (type === 'flat') {
             // Flat rate calculation
             totalInterest = amount * annualRate / 100 * years;
@@ -320,14 +365,14 @@ class SimulationView {
             monthlyPayment = totalPayment / months;
         } else {
             // Annuity calculation
-            monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, months)) / 
-                            (Math.pow(1 + monthlyRate, months) - 1);
+            monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, months)) /
+                (Math.pow(1 + monthlyRate, months) - 1);
             totalPayment = monthlyPayment * months;
             totalInterest = totalPayment - amount;
         }
-        
+
         const effectiveRate = (totalInterest / amount * 100 / years).toFixed(1);
-        
+
         const resultHTML = `
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4);">
                 <div style="text-align: center;">
@@ -366,10 +411,10 @@ class SimulationView {
                 </div>
             </div>
         `;
-        
+
         document.getElementById('loanDetails').innerHTML = resultHTML;
         document.getElementById('loanResult').style.display = 'block';
-        
+
         this.app.uiManager.showNotification('Simulasi pinjaman selesai!', 'success');
     }
 
@@ -400,17 +445,17 @@ class SimulationView {
                 return: 9
             }
         };
-        
+
         const scenario = scenarios[type];
         if (!scenario) return;
-        
+
         document.getElementById('initialInvestment').value = scenario.initial;
         document.getElementById('monthlyContribution').value = scenario.monthly;
         document.getElementById('investmentPeriod').value = scenario.years;
         document.getElementById('expectedReturn').value = scenario.return;
-        
+
         this.app.uiManager.showNotification(`Skenario ${type} dimuat!`, 'success');
-        
+
         // Auto calculate
         setTimeout(() => {
             this.calculateInvestment();

@@ -10,69 +10,97 @@ class DashboardView {
 
     render() {
         console.log('📊 Rendering Dashboard...');
-        
+
         // Jika sudah ada chart, kita hanya update content di sekitarnya
         if (this.hasRenderedChart && document.getElementById('chartContainer')) {
             console.log('🔄 Dashboard already has chart, updating content only...');
             this.updateDashboardContent();
             return;
         }
-        
+
         const html = this.getDashboardHTML();
         this.app.elements.mainContent.innerHTML = html;
-        
+
         this.app.elements.mainContent.className = 'main-content dashboard-view';
-        
+
         // Initialize components
         setTimeout(() => {
             this.initializeComponents();
             this.hasRenderedChart = true;
+            this.app.uiManager.setupScrollReveal(); // Trigger reveal for new content
         }, 100);
     }
 
     // TAMBAHKAN method baru untuk update content tanpa merusak chart:
     updateDashboardContent() {
         console.log('📝 Updating dashboard content around chart...');
-        
+
         // Update stats grid
         const statsGrid = document.querySelector('.stats-grid');
         if (statsGrid) {
-            statsGrid.innerHTML = `
-                ${this.getStatCardHTML('income', 'Total Pendapatan', this.app.state.finances.income, 'success', '💰')}
-                ${this.getStatCardHTML('expense', 'Total Pengeluaran', this.app.state.finances.expenses, 'danger', '💸')}
-                ${this.getStatCardHTML('savings', 'Total Tabungan', this.app.state.finances.savings, 'primary', '🏦')}
-            `;
+            // Re-render is safest for structure, but we want to animate values if elements exist
+            // Check if we can just update values
+            const incomeVal = document.getElementById('totalIncome');
+            if (incomeVal) {
+                this.updateFinancialCards();
+            } else {
+                statsGrid.innerHTML = `
+                    ${this.getStatCardHTML('income', 'Total Pendapatan', this.app.state.finances.income, 'success', '💰')}
+                    ${this.getStatCardHTML('expense', 'Total Pengeluaran', this.app.state.finances.expenses, 'danger', '💸')}
+                    ${this.getStatCardHTML('savings', 'Total Tabungan', this.app.state.finances.savings, 'primary', '🏦')}
+                 `;
+            }
         }
-        
+
         // Update progress section
         const progressSection = document.querySelector('.progress-section');
         if (progressSection) {
             progressSection.innerHTML = this.getProgressSectionHTML();
         }
-        
+
         // Update quick actions
         const quickActions = document.querySelector('.quick-actions');
         if (quickActions) {
             quickActions.innerHTML = this.getQuickActionsHTML();
-            this.setupQuickActions(); // Setup event listeners lagi
+            this.setupQuickActions();
         }
-        
+
         // Update recent activity
         const recentActivity = document.getElementById('recentActivity');
         if (recentActivity) {
             recentActivity.innerHTML = this.getRecentActivityHTML();
         }
-        
+
         // Update goals section
         const goalsSection = document.querySelector('.goals-section');
         if (goalsSection) {
             goalsSection.innerHTML = this.getGoalsSectionHTML();
         }
-        
+
         // Update trends
         this.calculateTrends();
-        
+
         console.log('✅ Dashboard content updated (chart preserved)');
+    }
+
+    updateFinancialCards() {
+        const finances = this.app.state.finances;
+
+        // Helper to animate if element exists
+        const animateIfFound = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) {
+                const current = parseInt(el.getAttribute('data-value') || 0);
+                if (current !== value) {
+                    this.app.uiManager.animateValue(el, current, value, 1500);
+                    el.setAttribute('data-value', value);
+                }
+            }
+        };
+
+        animateIfFound('totalIncome', finances.income);
+        animateIfFound('totalExpenses', finances.expenses);
+        animateIfFound('totalSavings', finances.savings);
     }
 
 
@@ -81,7 +109,7 @@ class DashboardView {
         // Pastikan chart container tersedia di DOM
         if (!document.getElementById('chartContainer')) {
             console.log('📦 Chart container not in DOM, adding placeholder...');
-            
+
             // Jika tidak ada, kita akan menambahkannya di getDashboardHTML
         }
     }
@@ -89,22 +117,26 @@ class DashboardView {
     getDashboardHTML() {
         return `
             <!-- STATS GRID -->
-            <div class="stats-grid">
+            <div class="stats-grid stagger-children">
                 ${this.getStatCardHTML('income', 'Total Pendapatan', this.app.state.finances.income, 'success', '💰')}
                 ${this.getStatCardHTML('expense', 'Total Pengeluaran', this.app.state.finances.expenses, 'danger', '💸')}
                 ${this.getStatCardHTML('savings', 'Total Tabungan', this.app.state.finances.savings, 'primary', '🏦')}
             </div>
             
             <!-- PROGRESS SECTION -->
-            ${this.getProgressSectionHTML()}
+            <div class="reveal-on-scroll">
+                ${this.getProgressSectionHTML()}
+            </div>
             
             <!-- QUICK ACTIONS -->
-            ${this.getQuickActionsHTML()}
+            <div class="reveal-on-scroll">
+                ${this.getQuickActionsHTML()}
+            </div>
             
             <!-- DASHBOARD GRID -->
             <div class="dashboard-grid">
                 <!-- CHART -->
-                <div class="chart-container">
+                <div class="chart-container animate-fadeInUp" style="animation-delay: 0.3s;">
                     <div class="chart-header">
                         <h3 class="section-title">Analytics Trends</h3>
                         <div class="chart-actions">
@@ -114,13 +146,13 @@ class DashboardView {
                         </div>
                     </div>
                     <!-- CHART CONTAINER AKAN DITAMBAHKAN OLEH initializeChart() -->
-                    <div id="chartContainer" style="height: 280px; min-height: 280px; width: 100%; position: relative;">
+                    <div id="chartContainer" class="chart-canvas-wrapper">
                         <!-- Canvas akan dibuat oleh ChartManager -->
                     </div>
                 </div>
                 
                 <!-- RECENT ACTIVITY -->
-                <div class="activity-section">
+                <div class="activity-section reveal-on-scroll">
                     <h3 class="section-title">Aktivitas Terbaru</h3>
                     <div class="activity-list" id="recentActivity">
                         ${this.getRecentActivityHTML()}
@@ -129,22 +161,24 @@ class DashboardView {
             </div>
             
             <!-- GOALS SECTION -->
-            ${this.getGoalsSectionHTML()}
+            <div class="reveal-on-scroll">
+                ${this.getGoalsSectionHTML()}
+            </div>
         `;
     }
 
     initializeBasicComponents() {
         console.log('⚙️ Initializing basic dashboard components...');
-        
+
         // Calculate trends
         this.calculateTrends();
-        
+
         // Setup quick actions
         this.setupQuickActions();
-        
+
         // Setup chart controls (hanya setup event listeners)
         this.setupChartControls();
-        
+
         console.log('✅ Basic components initialized');
     }
 
@@ -152,19 +186,19 @@ class DashboardView {
     setupChartControls() {
         const chartActions = document.querySelector('.chart-actions');
         if (!chartActions) return;
-        
+
         chartActions.addEventListener('click', (e) => {
             const btn = e.target.closest('.chart-btn');
             if (!btn) return;
-            
+
             e.preventDefault();
-            
+
             // Remove active class from all buttons
             document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-            
+
             // Add active class to clicked button
             btn.classList.add('active');
-            
+
             // Get period and update chart
             const period = btn.dataset.period;
             if (period === 'custom') {
@@ -180,7 +214,7 @@ class DashboardView {
     getStatCardHTML(type, title, amount, color, icon) {
         const trendId = `${type}Trend`;
         const formattedAmount = this.app.calculator.formatCurrency(amount);
-        
+
         return `
             <div class="stat-card ${type}">
                 <div class="stat-header">
@@ -201,7 +235,7 @@ class DashboardView {
 
     getProgressSectionHTML() {
         const progressData = this.calculateTotalProgress();
-        
+
         return `
             <section class="progress-section">
                 <div class="progress-header">
@@ -269,40 +303,53 @@ class DashboardView {
             ...this.app.state.transactions.income.map(t => ({ ...t, type: 'income' })),
             ...this.app.state.transactions.expenses.map(t => ({ ...t, type: 'expense' }))
         ]
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 5);
-        
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5);
+
         if (allTransactions.length === 0) {
-            return '<div class="text-center text-muted mt-4">Belum ada aktivitas</div>';
-        }
-        
-        return allTransactions.map(transaction => `
-            <div class="activity-item ${transaction.type}-activity">
-                <div class="activity-icon">
-                    ${transaction.type === 'income' ? '💰' : '💸'}
-                </div>
-                <div class="activity-details">
-                    <div class="activity-title">${transaction.name}</div>
-                    <div class="activity-meta">
-                        <span>${this.app.uiManager.formatDate(transaction.date)}</span>
-                        <span>•</span>
-                        <span>${this.app.uiManager.getCategoryName(transaction.category)}</span>
+            return `
+                <div class="empty-state empty-activity">
+                    <div class="empty-state-icon">📝</div>
+                    <div class="empty-state-title">Belum Ada Aktivitas</div>
+                    <div class="empty-state-description">Mulai catat pemasukan dan pengeluaranmu hari ini.</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-sm" onclick="app.uiManager.openModal('addExpenseModal')">Tambah Transaksi</button>
                     </div>
                 </div>
-                <div class="activity-amount" style="color: ${transaction.type === 'income' ? 'var(--success)' : 'var(--danger)'};">
-                    ${transaction.type === 'income' ? '+' : '-'} ${this.app.calculator.formatCurrency(transaction.amount)}
-                </div>
+            `;
+        }
+
+        return `
+            <div class="stagger-children">
+                ${allTransactions.map(transaction => `
+                    <div class="activity-item ${transaction.type}-activity">
+                        <div class="activity-icon">
+                            ${transaction.type === 'income' ? '💰' : '💸'}
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">${transaction.name}</div>
+                            <div class="activity-meta">
+                                <span>${this.app.uiManager.formatDate(transaction.date)}</span>
+                                <span>•</span>
+                                <span>${this.app.uiManager.getCategoryName(transaction.category)}</span>
+                            </div>
+                        </div>
+                        <div class="activity-amount" style="color: ${transaction.type === 'income' ? 'var(--success)' : 'var(--danger)'};">
+                            ${transaction.type === 'income' ? '+' : '-'} ${this.app.calculator.formatCurrency(transaction.amount)}
+                        </div>
+                    </div>
+                `).join('')}
             </div>
-        `).join('');
+        `;
     }
 
     getGoalsSectionHTML() {
         const goalsHTML = this.getGoalsHTML();
-        
+
         return `
             <section class="goals-section">
                 <h3 class="section-title" style="color: white;">Financial Goals</h3>
-                <div class="goals-grid" id="goalsGrid">
+                <div class="goals-grid stagger-children" id="goalsGrid">
                     ${goalsHTML}
                 </div>
             </section>
@@ -311,9 +358,16 @@ class DashboardView {
 
     getGoalsHTML() {
         if (this.app.state.goals.length === 0) {
-            return '<div class="text-center" style="color: rgba(255,255,255,0.8);">Belum ada goals yang dibuat</div>';
+            return `
+                <div class="empty-state empty-goals" style="grid-column: 1 / -1;">
+                    <div class="empty-state-icon">🎯</div>
+                    <div class="empty-state-title">Tetapkan Goal Pertamamu</div>
+                    <div class="empty-state-description">Wujudkan impianmu dengan menabung secara terencana.</div>
+                    <button class="btn btn-sm" onclick="app.uiManager.openModal('addGoalModal')">Buat Goal Baru</button>
+                </div>
+            `;
         }
-        
+
         return this.app.state.goals.map(goal => `
             <div class="goal-card" data-goal-id="${goal.id}">
                 <div style="font-weight: 600; margin-bottom: var(--space-2);">${goal.name}</div>
@@ -340,19 +394,19 @@ class DashboardView {
 
     initializeComponents() {
         console.log('⚙️ Initializing dashboard components...');
-        
+
         // Calculate trends
         this.calculateTrends();
-        
+
         // Setup quick actions
         this.setupQuickActions();
-        
+
         // Setup chart controls
         this.setupChartControls();
-        
+
         // Initialize chart jika belum ada
         this.initializeChartIfNeeded();
-        
+
         this.initialized = true;
         console.log('✅ Dashboard components initialized');
     }
@@ -365,18 +419,28 @@ class DashboardView {
             console.error('❌ Chart container not found');
             return;
         }
-        
-        // Cek apakah chart sudah ada
+
+        // Cek apakah chart sudah ada DAN canvas masih ada di DOM
         if (this.app.chartManager && this.app.chartManager.chartInstance) {
-            console.log('✅ Chart already exists, updating data...');
-            this.updateChartData();
-            return;
+            const isCanvasAttached = this.app.chartManager.chartInstance.canvas &&
+                document.body.contains(this.app.chartManager.chartInstance.canvas);
+
+            if (isCanvasAttached) {
+                console.log('✅ Chart already exists and attached, updating data...');
+                this.updateChartData();
+                return;
+            }
+
+            console.log('⚠️ Chart DETACHED from DOM, re-initializing...');
+            // Reset instance to force re-initialization
+            this.app.chartManager.chartInstance.destroy();
+            this.app.chartManager.chartInstance = null;
         }
-        
+
         // Jika belum ada, initialize chart
         if (this.app.chartManager) {
             console.log('📊 Initializing new chart...');
-            
+
             // Pastikan canvas ada
             if (!chartContainer.querySelector('canvas')) {
                 const canvas = document.createElement('canvas');
@@ -386,7 +450,7 @@ class DashboardView {
                 canvas.style.display = 'block';
                 chartContainer.appendChild(canvas);
             }
-            
+
             // Initialize chart
             setTimeout(() => {
                 this.app.chartManager.initializeChart();
@@ -400,7 +464,7 @@ class DashboardView {
             console.log('ℹ️ No chart instance to update');
             return;
         }
-        
+
         try {
             const newData = this.app.chartManager.generateChartData();
             this.app.chartManager.chartInstance.data = newData;
@@ -415,18 +479,18 @@ class DashboardView {
     // TAMBAHKAN method baru untuk inisialisasi chart yang aman
     initializeChartSafely() {
         console.log('🔄 Initializing chart safely...');
-        
+
         // Tunggu hingga DOM benar-benar siap
         setTimeout(() => {
             const chartContainer = document.getElementById('chartContainer');
             const chartCanvas = document.getElementById('financeChart');
-            
+
             if (!chartContainer) {
                 console.error('❌ Chart container not found in DOM');
                 this.showChartFallback('Chart container tidak ditemukan');
                 return;
             }
-            
+
             if (!chartCanvas) {
                 console.log('🎨 Creating chart canvas...');
                 // Buat canvas jika belum ada
@@ -437,32 +501,32 @@ class DashboardView {
                 canvas.style.display = 'block';
                 chartContainer.appendChild(canvas);
             }
-            
+
             // Force layout untuk memastikan container memiliki dimensi
             chartContainer.style.display = 'block';
             chartContainer.style.position = 'relative';
             chartContainer.style.height = '300px';
             chartContainer.style.minHeight = '300px';
-            
+
             // Tunggu 1 frame untuk layout
             requestAnimationFrame(() => {
                 // Cek dimensi container
                 const hasDimensions = chartContainer.offsetWidth > 0 && chartContainer.offsetHeight > 0;
-                
+
                 console.log('📏 Chart container dimensions:', {
                     width: chartContainer.offsetWidth,
                     height: chartContainer.offsetHeight,
                     clientWidth: chartContainer.clientWidth,
                     clientHeight: chartContainer.clientHeight
                 });
-                
+
                 if (!hasDimensions) {
                     console.warn('⚠️ Chart container has no dimensions, forcing resize...');
                     // Force resize
                     chartContainer.style.width = '100%';
                     chartContainer.style.height = '300px';
                 }
-                
+
                 // Tunggu sedikit lagi untuk memastikan layout stabil
                 setTimeout(() => {
                     if (this.chartManager) {
@@ -481,7 +545,7 @@ class DashboardView {
     showChartFallback(message) {
         const chartContainer = document.getElementById('chartContainer');
         if (!chartContainer) return;
-        
+
         chartContainer.innerHTML = `
             <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
                 <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
@@ -499,16 +563,16 @@ class DashboardView {
         // Tunggu sebentar untuk memastikan DOM benar-benar siap
         setTimeout(() => {
             const chartContainer = document.getElementById('chartContainer');
-            
+
             if (!chartContainer) {
                 console.error('❌ Chart container not found in DOM');
                 return;
             }
-            
+
             // Force container untuk memiliki dimensi
             chartContainer.style.minHeight = '300px';
             chartContainer.style.position = 'relative';
-            
+
             // Tunggu 1 frame untuk memastikan layout stabil
             requestAnimationFrame(() => {
                 // Initialize chart melalui app
@@ -524,13 +588,13 @@ class DashboardView {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        
+
         // Helper function to get total for a specific month
         const getMonthTotal = (transactions, monthOffset = 0) => {
             const targetMonth = currentMonth - monthOffset;
             const targetYear = currentYear - (targetMonth < 0 ? 1 : 0);
             const actualMonth = targetMonth < 0 ? targetMonth + 12 : targetMonth;
-            
+
             return transactions.reduce((total, transaction) => {
                 try {
                     const date = new Date(transaction.date);
@@ -543,7 +607,7 @@ class DashboardView {
                 return total;
             }, 0);
         };
-        
+
         // Get current and previous month totals
         const currentIncome = getMonthTotal(this.app.state.transactions.income, 0);
         const previousIncome = getMonthTotal(this.app.state.transactions.income, 1);
@@ -551,9 +615,9 @@ class DashboardView {
         const previousExpense = getMonthTotal(this.app.state.transactions.expenses, 1);
         const currentSavings = currentIncome - currentExpense;
         const previousSavings = previousIncome - previousExpense;
-        
+
         // Calculate percentage changes
-        const incomeChange = previousIncome > 0 
+        const incomeChange = previousIncome > 0
             ? ((currentIncome - previousIncome) / previousIncome * 100).toFixed(1)
             : '0.0';
         const expenseChange = previousExpense > 0
@@ -562,12 +626,12 @@ class DashboardView {
         const savingsChange = previousSavings > 0 && currentSavings > 0
             ? ((currentSavings - previousSavings) / previousSavings * 100).toFixed(1)
             : currentSavings > 0 ? '100.0' : '0.0';
-        
+
         // Determine trends
         const incomeTrend = currentIncome >= previousIncome ? 'up' : 'down';
         const expenseTrend = currentExpense <= previousExpense ? 'down' : 'up';
         const savingsTrend = currentSavings >= previousSavings ? 'up' : 'down';
-        
+
         // Update trend displays
         this.updateTrendElement('incomeTrend', incomeTrend, incomeChange);
         this.updateTrendElement('expenseTrend', expenseTrend, expenseChange);
@@ -590,18 +654,18 @@ class DashboardView {
         const totalTarget = this.app.state.goals.reduce((sum, goal) => sum + goal.target, 0);
         const totalCurrent = this.app.state.goals.reduce((sum, goal) => sum + goal.current, 0);
         const totalProgress = totalTarget > 0 ? Math.round((totalCurrent / totalTarget) * 100) : 0;
-        
+
         // Calculate days until nearest deadline
         const now = new Date();
         const upcomingDeadlines = this.app.state.goals
             .map(g => new Date(g.deadline))
             .filter(d => d > now)
             .sort((a, b) => a - b);
-        
-        const daysLeft = upcomingDeadlines.length > 0 
+
+        const daysLeft = upcomingDeadlines.length > 0
             ? Math.ceil((upcomingDeadlines[0] - now) / (1000 * 60 * 60 * 24))
             : 0;
-        
+
         return {
             target: totalTarget,
             current: totalCurrent,
@@ -615,17 +679,17 @@ class DashboardView {
         document.getElementById('quickAddExpense')?.addEventListener('click', () => {
             this.app.uiManager.openModal('addExpenseModal');
         });
-        
+
         // Quick add income
         document.getElementById('quickAddIncome')?.addEventListener('click', () => {
             this.app.uiManager.openModal('addIncomeModal');
         });
-        
+
         // Quick add goal
         document.getElementById('quickAddGoal')?.addEventListener('click', () => {
             this.app.uiManager.openModal('addGoalModal');
         });
-        
+
         // Quick generate report
         document.getElementById('quickGenerateReport')?.addEventListener('click', () => {
             this.app.reportGenerator.generatePrintableReport();
@@ -635,24 +699,24 @@ class DashboardView {
     setupChartControls() {
         const chartActions = document.querySelector('.chart-actions');
         if (!chartActions) return;
-        
+
         // Remove old event listeners
         const newChartActions = chartActions.cloneNode(true);
         chartActions.parentNode.replaceChild(newChartActions, chartActions);
-        
+
         // Add new event listeners
         document.querySelector('.chart-actions').addEventListener('click', (e) => {
             const btn = e.target.closest('.chart-btn');
             if (!btn) return;
-            
+
             e.preventDefault();
-            
+
             // Remove active class from all buttons
             document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-            
+
             // Add active class to clicked button
             btn.classList.add('active');
-            
+
             // Get period and update chart
             const period = btn.dataset.period;
             if (period === 'custom') {
@@ -667,15 +731,15 @@ class DashboardView {
 
     refresh() {
         console.log('🔄 Refreshing dashboard...');
-        
+
         if (!this.initialized) {
             this.render();
             return;
         }
-        
+
         // Update dashboard content tanpa merusak chart
         this.updateDashboardContent();
-        
+
         // Update chart data
         this.updateChartData();
     }
@@ -686,46 +750,84 @@ class DashboardView {
         if (incomeEl) {
             incomeEl.textContent = this.app.calculator.formatCurrency(this.app.state.finances.income);
         }
-        
+
         // Update expense
         const expenseEl = document.getElementById('totalExpense');
         if (expenseEl) {
             expenseEl.textContent = this.app.calculator.formatCurrency(this.app.state.finances.expenses);
         }
-        
+
         // Update savings
         const savingsEl = document.getElementById('totalSavings');
         if (savingsEl) {
             savingsEl.textContent = this.app.calculator.formatCurrency(this.app.state.finances.savings);
         }
-        
+
         // Update trends
         this.calculateTrends();
     }
 
-    updateRecentActivity() {
-        const recentActivityEl = document.getElementById('recentActivity');
-        if (recentActivityEl) {
-            recentActivityEl.innerHTML = this.getRecentActivityHTML();
+    getRecentActivityHTML() {
+        const allTransactions = [
+            ...this.app.state.transactions.income.map(t => ({ ...t, type: 'income' })),
+            ...this.app.state.transactions.expenses.map(t => ({ ...t, type: 'expense' }))
+        ]
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5);
+
+        if (allTransactions.length === 0) {
+            return '<div class="text-center text-muted mt-4">Belum ada aktivitas</div>';
         }
+
+        // Add stagger-children class to wrapper in the updating method, or ensure items render with animation
+        // Since this returns string, we rely on the parent container having .stagger-children or add animations here.
+        // Better: wrap the result in a div with .stagger-children if replacing innerHTML
+        return `
+            <div class="stagger-children">
+                ${allTransactions.map(transaction => `
+                    <div class="activity-item ${transaction.type}-activity">
+                        <div class="activity-icon">
+                            ${transaction.type === 'income' ? '💰' : '💸'}
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">${transaction.name}</div>
+                            <div class="activity-meta">
+                                <span>${this.app.uiManager.formatDate(transaction.date)}</span>
+                                <span>•</span>
+                                <span>${this.app.uiManager.getCategoryName(transaction.category)}</span>
+                            </div>
+                        </div>
+                        <div class="activity-amount" style="color: ${transaction.type === 'income' ? 'var(--success)' : 'var(--danger)'};">
+                            ${transaction.type === 'income' ? '+' : '-'} ${this.app.calculator.formatCurrency(transaction.amount)}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     }
 
-    updateGoals() {
-        const goalsGridEl = document.getElementById('goalsGrid');
-        if (goalsGridEl) {
-            goalsGridEl.innerHTML = this.getGoalsHTML();
-        }
+    getGoalsSectionHTML() {
+        const goalsHTML = this.getGoalsHTML();
+
+        return `
+            <section class="goals-section">
+                <h3 class="section-title" style="color: white;">Financial Goals</h3>
+                <div class="goals-grid stagger-children" id="goalsGrid">
+                    ${goalsHTML}
+                </div>
+            </section>
+        `;
     }
 
     updateProgressSection() {
         const progressData = this.calculateTotalProgress();
-        
+
         const progressBar = document.getElementById('progressBar');
         const totalProgressEl = document.getElementById('totalProgress');
         const totalTargetEl = document.getElementById('totalTarget');
         const totalCurrentEl = document.getElementById('totalCurrent');
         const daysLeftEl = document.getElementById('daysLeft');
-        
+
         if (progressBar) {
             progressBar.style.width = `${progressData.progress}%`;
         }

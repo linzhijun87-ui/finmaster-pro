@@ -7,10 +7,10 @@ class SettingsView {
 
     render() {
         console.log('⚙️ Rendering Settings View...');
-        
+
         const html = this.getSettingsHTML();
         this.app.elements.mainContent.innerHTML = html;
-        
+
         this.app.elements.mainContent.className = 'main-content settings-view';
         // Initialize after DOM is ready
         setTimeout(() => {
@@ -48,7 +48,7 @@ class SettingsView {
 
     getProfileSettingsHTML() {
         const profileStats = this.getProfileStats();
-        
+
         return `
             <div class="settings-section">
                 <div class="settings-section-header">
@@ -102,24 +102,24 @@ class SettingsView {
             'light': 'Light Mode',
             'dark': 'Dark Mode'
         };
-        
+
         const currencyOptions = {
             'IDR': 'IDR (Rp)',
             'USD': 'USD ($)',
             'EUR': 'EUR (€)',
             'SGD': 'SGD (S$)'
         };
-        
+
         const themeSelectOptions = Object.entries(themeOptions).map(([value, label]) => {
             const selected = this.app.state.settings.theme === value ? 'selected' : '';
             return `<option value="${value}" ${selected}>${label}</option>`;
         }).join('');
-        
+
         const currencySelectOptions = Object.entries(currencyOptions).map(([value, label]) => {
             const selected = this.app.state.settings.currency === value ? 'selected' : '';
             return `<option value="${value}" ${selected}>${label}</option>`;
         }).join('');
-        
+
         return `
             <div class="settings-section">
                 <div class="settings-section-header">
@@ -142,7 +142,7 @@ class SettingsView {
                             <div class="setting-description">Pilih tampilan light atau dark mode</div>
                         </div>
                         <div class="setting-control">
-                            <select id="themeSelect" class="setting-select" onchange="app.changeTheme(this.value)">
+                            <select id="themeSelect" class="setting-select">
                                 ${themeSelectOptions}
                             </select>
                         </div>
@@ -292,7 +292,7 @@ class SettingsView {
     initialize() {
         // Setup event listeners for settings
         this.setupEventListeners();
-        
+
         // Update app status
         this.updateAppStatus();
     }
@@ -302,7 +302,7 @@ class SettingsView {
         document.getElementById('editProfileBtn')?.addEventListener('click', () => {
             this.editProfile();
         });
-        
+
         // Theme select
         const themeSelect = document.getElementById('themeSelect');
         if (themeSelect) {
@@ -310,7 +310,7 @@ class SettingsView {
                 this.app.uiManager.changeTheme(e.target.value);
             };
         }
-        
+
         // Currency select
         const currencySelect = document.getElementById('currencySelect');
         if (currencySelect) {
@@ -318,7 +318,7 @@ class SettingsView {
                 this.changeCurrency(e.target.value);
             };
         }
-        
+
         // Auto-save toggle
         const autoSaveToggle = document.getElementById('autoSaveToggle');
         if (autoSaveToggle) {
@@ -326,7 +326,7 @@ class SettingsView {
                 this.app.toggleSetting('autoSave', e.target.checked);
             };
         }
-        
+
         // Notifications toggle
         const notificationsToggle = document.getElementById('notificationsToggle');
         if (notificationsToggle) {
@@ -334,7 +334,7 @@ class SettingsView {
                 this.app.toggleSetting('notifications', e.target.checked);
             };
         }
-        
+
         // Export buttons
         document.querySelectorAll('[onclick*="exportData"]').forEach(btn => {
             btn.onclick = (e) => {
@@ -346,22 +346,22 @@ class SettingsView {
                 }
             };
         });
-        
+
         // PDF export button
         document.querySelector('[onclick*="generateProfessionalPDF"]')?.addEventListener('click', () => {
             this.app.reportGenerator.generateProfessionalPDF();
         });
-        
+
         // Import data button
         document.querySelector('[onclick*="importData"]')?.addEventListener('click', () => {
             this.app.dataManager.importData();
         });
-        
+
         // Reset settings button
         document.querySelector('[onclick*="resetSettingsToDefault"]')?.addEventListener('click', () => {
             this.resetSettingsToDefault();
         });
-        
+
         // Clear data button
         document.querySelector('[onclick*="clearData"]')?.addEventListener('click', () => {
             this.app.dataManager.clearData();
@@ -421,15 +421,15 @@ class SettingsView {
         // Refresh profile section
         const profileAvatar = document.getElementById('profileAvatar');
         const profileName = document.getElementById('profileName');
-        
+
         if (profileAvatar) {
             profileAvatar.textContent = this.app.state.user.avatar;
         }
-        
+
         if (profileName) {
             profileName.textContent = this.app.state.user.name;
         }
-        
+
         // Refresh profile stats
         const profileStats = this.getProfileStats();
         const profileStatElements = document.querySelectorAll('.profile-stat .stat-value');
@@ -437,7 +437,7 @@ class SettingsView {
             profileStatElements[1].textContent = profileStats.totalTransactions;
             profileStatElements[2].textContent = profileStats.activeGoals;
         }
-        
+
         // Refresh settings controls
         this.refreshSettingsControls();
     }
@@ -448,19 +448,19 @@ class SettingsView {
         if (themeSelect) {
             themeSelect.value = this.app.state.settings.theme;
         }
-        
+
         // Currency select
         const currencySelect = document.getElementById('currencySelect');
         if (currencySelect) {
             currencySelect.value = this.app.state.settings.currency;
         }
-        
+
         // Auto-save toggle
         const autoSaveToggle = document.getElementById('autoSaveToggle');
         if (autoSaveToggle) {
             autoSaveToggle.checked = this.app.state.settings.autoSave;
         }
-        
+
         // Notifications toggle
         const notificationsToggle = document.getElementById('notificationsToggle');
         if (notificationsToggle) {

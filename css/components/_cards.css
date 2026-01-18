@@ -3,6 +3,8 @@
 /* Base Card */
 .card {
   background: var(--bg-elevated);
+  /* Glassmorphism hint */
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
@@ -12,12 +14,14 @@
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
   transform: translateY(-4px);
+  border-color: var(--primary-200);
 }
 
 .card:active {
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 /* Card Variants */
@@ -135,14 +139,15 @@
   border-radius: var(--radius-xl);
   border: 1px solid var(--border-color);
   padding: var(--space-6);
-  transition: all var(--transition-normal);
+  transition: all var(--transition-bounce);
   position: relative;
   overflow: hidden;
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary-200);
 }
 
 .stat-card::before {
@@ -153,12 +158,15 @@
   right: 0;
   height: 4px;
   background: var(--gradient-primary);
-  opacity: 0;
+  opacity: 0.5;
+  /* Always visible hint */
   transition: opacity var(--transition-normal);
 }
 
 .stat-card:hover::before {
   opacity: 1;
+  height: 6px;
+  /* Grow on hover */
 }
 
 .stat-card.income::before {
@@ -380,12 +388,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent);
   animation: wave 2s infinite;
 }
 
@@ -681,28 +687,28 @@
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .actions-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .goals-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .card-header,
   .card-footer {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
   }
-  
+
   .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-3);
   }
-  
+
   .chart-actions {
     width: 100%;
     justify-content: center;
@@ -715,27 +721,27 @@
     background: rgba(30, 41, 59, 0.75);
     border-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .stat-card {
     background: var(--gray-800);
   }
-  
+
   .activity-item {
     background: var(--gray-800);
   }
-  
+
   .chart-container {
     background: var(--gray-800);
   }
-  
+
   .action-btn {
     background: var(--gray-800);
   }
-  
+
   .settings-section {
     background: var(--gray-800);
   }
-  
+
   .profile-stats {
     background: var(--gray-700);
   }

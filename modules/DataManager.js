@@ -20,10 +20,14 @@ class DataManager {
                 const parsed = JSON.parse(savedData);
                 
                 // Merge with default state
+                const mergedSettings = {
+                    ...this.app.state.settings,
+                    ...(parsed.settings || {})
+                };
                 this.app.state = {
                     ...this.app.state,
                     ...parsed,
-                    // Keep current UI state
+                    settings: mergedSettings,
                     activeTab: this.app.state.activeTab,
                     isLoading: false
                 };

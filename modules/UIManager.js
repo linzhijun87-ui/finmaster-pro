@@ -12,28 +12,28 @@ class UIManager {
     // ====== UI INITIALIZATION ======
     updateUI() {
         console.log('🔄 Updating UI...');
-        
+
         // Update user info
         if (this.app.elements.userName) {
             this.app.elements.userName.textContent = this.app.state.user.name;
         }
-        
+
         if (this.app.elements.userAvatar) {
             this.app.elements.userAvatar.textContent = this.app.state.user.avatar;
         }
-        
+
         // Update badges
         this.updateBadges();
-        
+
         // Update footer
         this.updateFooter();
-        
+
         console.log('✅ UI updated');
     }
 
     updateBadges() {
         console.log('🔄 Updating badges...');
-        
+
         // Update expense badge
         if (this.app.elements.expenseBadge) {
             try {
@@ -48,14 +48,14 @@ class UIManager {
                         return false;
                     }
                 }).length;
-                
+
                 this.app.elements.expenseBadge.textContent = pendingExpenses;
             } catch (error) {
                 console.error('Error updating expense badge:', error);
                 this.app.elements.expenseBadge.textContent = '0';
             }
         }
-        
+
         // Update checklist badge
         if (this.app.elements.checklistBadge) {
             try {
@@ -73,7 +73,7 @@ class UIManager {
         if (this.app.elements.appVersion) {
             this.app.elements.appVersion.textContent = '2.1.0';
         }
-        
+
         // Update app mode (online/offline)
         this.updateOnlineStatus();
     }
@@ -82,7 +82,7 @@ class UIManager {
     updateNavigation(activeTab) {
         const tabs = this.app.elements.navTabs?.querySelectorAll('.nav-tab');
         if (!tabs) return;
-        
+
         tabs.forEach(tab => {
             if (tab.dataset.tab === activeTab) {
                 tab.classList.add('active');
@@ -96,16 +96,16 @@ class UIManager {
     openModal(modalId) {
         const modal = document.getElementById(modalId);
         const overlay = this.app.elements.modalOverlay;
-        
+
         if (modal && overlay) {
             // Close any other open modals first
             this.closeModal();
-            
+
             // Open new modal
             modal.classList.add('active');
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
-            
+
             // Set default dates
             const today = new Date().toISOString().split('T')[0];
             const dateInputs = modal.querySelectorAll('input[type="date"]');
@@ -114,7 +114,7 @@ class UIManager {
                     input.value = today;
                 }
             });
-            
+
             // Focus management for accessibility
             setTimeout(() => {
                 // Try to focus first input
@@ -124,11 +124,11 @@ class UIManager {
                     'textarea:not([disabled]), ' +
                     'button:not([disabled])'
                 );
-                
+
                 if (focusable.length > 0) {
                     // Skip close button, focus on first input
-                    const firstInput = focusable[0].classList.contains('modal-close') 
-                        ? focusable[1] 
+                    const firstInput = focusable[0].classList.contains('modal-close')
+                        ? focusable[1]
                         : focusable[0];
                     if (firstInput) firstInput.focus();
                 }
@@ -138,17 +138,17 @@ class UIManager {
 
     closeModal(modalId = null) {
         let shouldCloseOverlay = true;
-        
+
         if (modalId) {
             // Close specific modal
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.remove('active');
-                
+
                 // Check if there are other active modals
                 const otherActiveModals = Array.from(document.querySelectorAll('.modal.active'))
                     .filter(m => m.id !== modalId);
-                
+
                 shouldCloseOverlay = otherActiveModals.length === 0;
             }
         } else {
@@ -157,13 +157,13 @@ class UIManager {
                 modal.classList.remove('active');
             });
         }
-        
+
         // Only close overlay if no modals are active
         if (shouldCloseOverlay && this.app.elements.modalOverlay) {
             this.app.elements.modalOverlay.classList.remove('active');
             document.body.style.overflow = '';
         }
-        
+
         // Return focus to previous element (for accessibility)
         if (this.lastFocusedElement) {
             this.lastFocusedElement.focus();
@@ -174,29 +174,31 @@ class UIManager {
     // ====== THEME MANAGEMENT ======
     applyTheme() {
         const theme = this.app.state.settings.theme || 'auto';
-        
-        if (theme === 'dark') {
-            document.body.classList.add('dark-mode');
-        } else if (theme === 'light') {
-            document.body.classList.remove('dark-mode');
-        } else {
-            // Auto - follow system
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.body.classList.add('dark-mode');
-            } else {
-                document.body.classList.remove('dark-mode');
-            }
+
+        let activeTheme = theme;
+        if (activeTheme === 'auto') {
+            activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
-        
-        this.updateThemeToggleButton(); 
+
+        // Set Attribute for CSS variables (Critical for main.css)
+        document.documentElement.setAttribute('data-theme', activeTheme);
+
+        // Set Body Class for legacy support
+        if (activeTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+
+        this.updateThemeToggleButton();
     }
 
     updateThemeToggleButton() {
         const toggleBtn = document.getElementById('darkModeToggle');
         if (!toggleBtn) return;
-        
+
         const currentTheme = this.app.state.settings.theme || 'auto';
-        
+
         if (currentTheme === 'dark') {
             toggleBtn.innerHTML = '☀️ Light Mode';
         } else if (currentTheme === 'light') {
@@ -210,13 +212,13 @@ class UIManager {
     changeTheme(theme) {
         // Update setting
         this.app.state.settings.theme = theme;
-        
+
         // Terapkan tema
         this.applyTheme(); // Ini akan update class body DAN button text
-        
+
         // Simpan
         this.app.dataManager.saveData(true);
-        
+
         this.showNotification(`Tema diubah ke: ${theme}`, 'success');
     }
 
@@ -224,7 +226,7 @@ class UIManager {
         const html = document.documentElement;
         const currentTheme = this.app.state.settings.theme || 'auto';
         let newTheme;
-        
+
         // Jika auto mode, cek preferensi sistem
         if (currentTheme === 'auto') {
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -233,25 +235,25 @@ class UIManager {
             // Toggle antara light dan dark
             newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         }
-        
+
         // Update HTML attribute dan body class
         html.setAttribute('data-theme', newTheme);
         document.body.classList.toggle('dark-mode', newTheme === 'dark');
-        
+
         // Update setting
         this.app.state.settings.theme = newTheme;
-        
+
         // Update button text
         this.updateThemeToggleButton();
-        
+
         // Save
         this.app.dataManager.saveData(true);
-        
+
         this.showNotification(
             `Mode diubah ke: ${newTheme === 'dark' ? '🌙 Dark' : '☀️ Light'}`,
             'success'
         );
-        
+
         // Update chart jika ada
         if (this.app.chartManager && this.app.chartManager.chartInstance) {
             setTimeout(() => {
@@ -269,7 +271,7 @@ class UIManager {
             viewportMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
             document.head.appendChild(viewportMeta);
         }
-        
+
         // Add responsive CSS classes
         if (!document.querySelector('style[data-responsive-styles]')) {
             const style = document.createElement('style');
@@ -277,10 +279,10 @@ class UIManager {
             style.textContent = this.getResponsiveCSS();
             document.head.appendChild(style);
         }
-        
+
         // Initial responsive setup
         this.handleResize();
-        
+
         // Listen for resize events
         window.addEventListener('resize', () => {
             this.handleResize();
@@ -344,16 +346,16 @@ class UIManager {
         const isMobile = windowWidth < 768;
         const isTablet = windowWidth >= 768 && windowWidth < 1024;
         const isDesktop = windowWidth >= 1024;
-        
+
         // Update responsive classes
         this.updateResponsiveClasses(isMobile);
-        
+
         // Update layout based on screen size
         this.updateLayoutForScreenSize(isMobile, isTablet, isDesktop);
-        
+
         // Adjust modals
         this.adjustModalPositions();
-        
+
         // Update chart if exists
         if (this.app.chartManager) {
             this.app.chartManager.resizeChart();
@@ -362,7 +364,7 @@ class UIManager {
 
     updateResponsiveClasses(isMobile) {
         const body = document.body;
-        
+
         if (isMobile) {
             body.classList.add('mobile-view');
             body.classList.remove('desktop-view');
@@ -387,7 +389,7 @@ class UIManager {
                 statsGrid.style.gap = 'var(--space-4)';
             }
         }
-        
+
         // Update dashboard grid
         const dashboardGrid = document.querySelector('.dashboard-grid');
         if (dashboardGrid) {
@@ -403,7 +405,7 @@ class UIManager {
 
     adjustModalPositions() {
         const modals = document.querySelectorAll('.modal.active');
-        
+
         modals.forEach(modal => {
             const modalContent = modal.querySelector('.modal-content');
             if (modalContent) {
@@ -427,22 +429,22 @@ class UIManager {
         // Remove existing notification
         const existing = document.querySelector('.notification');
         if (existing) existing.remove();
-        
+
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
-        
-        const icon = type === 'success' ? '✅' : 
-                    type === 'error' ? '❌' : 
-                    type === 'warning' ? '⚠️' : 'ℹ️';
-        
+
+        const icon = type === 'success' ? '✅' :
+            type === 'error' ? '❌' :
+                type === 'warning' ? '⚠️' : 'ℹ️';
+
         notification.innerHTML = `
             <div class="notification-content">
                 <span class="notification-icon">${icon}</span>
                 <span>${message}</span>
             </div>
         `;
-        
+
         // Add styles
         notification.style.cssText = `
             position: fixed;
@@ -457,7 +459,7 @@ class UIManager {
             animation: slideIn 0.3s ease;
             max-width: 300px;
         `;
-        
+
         // Add animation styles if not already added
         if (!document.querySelector('#notification-styles')) {
             const style = document.createElement('style');
@@ -474,13 +476,13 @@ class UIManager {
             `;
             document.head.appendChild(style);
         }
-        
+
         // Add to DOM
         document.body.appendChild(notification);
-        
+
         // Store reference
         this.notifications.push(notification);
-        
+
         // Auto remove after duration
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease';
@@ -497,7 +499,7 @@ class UIManager {
     showLoading(containerId, message = 'Memuat...') {
         const container = document.getElementById(containerId);
         if (!container) return;
-        
+
         container.innerHTML = `
             <div class="loading-container">
                 <div class="loading-spinner"></div>
@@ -526,12 +528,12 @@ class UIManager {
     updateOnlineStatus() {
         const isOnline = navigator.onLine;
         const appModeElement = this.app.elements.appMode;
-        
+
         if (appModeElement) {
             appModeElement.textContent = isOnline ? '🟢 Online' : '🔴 Offline';
             appModeElement.style.color = isOnline ? COLORS.success : COLORS.danger;
         }
-        
+
         if (!isOnline) {
             this.showNotification('Anda sedang offline. Data disimpan lokal.', 'warning', 3000);
         }
@@ -545,7 +547,7 @@ class UIManager {
                 this.validateAmountInput(e.target);
             }
         });
-        
+
         // Date validation
         document.addEventListener('change', (e) => {
             if (e.target.type === 'date') {
@@ -557,7 +559,7 @@ class UIManager {
     validateAmountInput(input) {
         const value = parseFloat(input.value);
         const min = parseFloat(input.min) || 0;
-        
+
         if (isNaN(value) || value < min) {
             input.style.borderColor = COLORS.danger;
             input.style.boxShadow = `0 0 0 2px ${COLORS.danger}20`;
@@ -570,10 +572,10 @@ class UIManager {
     validateDateInput(input) {
         const value = input.value;
         if (!value) return;
-        
+
         const date = new Date(value);
         const today = new Date();
-        
+
         if (date > today) {
             input.style.borderColor = COLORS.warning;
             this.showNotification('Tanggal di masa depan mungkin tidak valid', 'warning');
@@ -588,7 +590,7 @@ class UIManager {
         if (this.resizeTimeout) {
             clearTimeout(this.resizeTimeout);
         }
-        
+
         // Remove notifications
         this.notifications.forEach(notification => {
             if (notification.parentNode) {
@@ -596,6 +598,75 @@ class UIManager {
             }
         });
         this.notifications = [];
+    }
+    // ====== ANIMATIONS ======
+    animateValue(obj, start, end, duration) {
+        if (!obj) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+
+            // Easing function (easeOutExpo)
+            const easeOutExpo = (x) => x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+            const currentProgress = easeOutExpo(progress);
+
+            const currentVal = Math.floor(progress * (end - start) + start);
+
+            // Format while animating if it's a large number
+            if (end > 1000) {
+                obj.innerHTML = this.app.calculator.formatCurrency(currentVal);
+            } else {
+                obj.innerHTML = currentVal;
+            }
+
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                obj.innerHTML = this.app.calculator.formatCurrency(end);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }
+
+    // ====== SCROLL REVEAL ======
+    setupScrollReveal() {
+        // Disconnect existing observer if any
+        if (this.scrollObserver) {
+            this.scrollObserver.disconnect();
+        }
+
+        // Initialize IntersectionObserver
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        this.scrollObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, observerOptions);
+
+        // Target all elements with .reveal-on-scroll
+        const elements = document.querySelectorAll('.reveal-on-scroll');
+        elements.forEach(el => {
+            this.scrollObserver.observe(el);
+        });
+
+        // Also trigger manually after a short delay to catch any missed ones on load
+        setTimeout(() => {
+            elements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom >= 0) {
+                    el.classList.add('revealed');
+                }
+            });
+        }, 500);
     }
 }
 

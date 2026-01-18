@@ -1,17 +1,36 @@
 /* ====== CHART COMPONENTS ====== */
 
 /* Chart Container */
-.chart-wrapper {
+/* Chart Container */
+.chart-wrapper,
+.chart-canvas-wrapper {
   position: relative;
   width: 100%;
-  height: 100%;
-  min-height: 300px;
   background: var(--bg-elevated);
-  border-radius: var(--radius-lg);
+  /* Modern Glassmorphism & Gradient Touch */
+  background: linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
+  border-radius: var(--radius-xl);
   overflow: hidden;
+  box-shadow: var(--shadow-lg), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
 }
 
-.chart-canvas {
+/* Specific Height Control for Canvas Wrapper */
+.chart-canvas-wrapper {
+  height: 450px;
+  min-height: 450px;
+  padding-bottom: var(--space-2);
+}
+
+.chart-wrapper:hover,
+.chart-canvas-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.chart-canvas,
+.chart-canvas-wrapper canvas,
+#financeChart {
   width: 100% !important;
   height: 100% !important;
   display: block;
@@ -451,6 +470,7 @@
     opacity: 0.5;
     transform: scale(0.95);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -462,27 +482,27 @@
   .chart-wrapper {
     min-height: 250px;
   }
-  
+
   .chart-controls {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
+
   .chart-legend {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .chart-comparison {
     grid-template-columns: 1fr;
     gap: var(--space-4);
   }
-  
+
   .chart-filters {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .chart-filter-group {
     width: 100%;
   }
@@ -492,15 +512,15 @@
   .chart-wrapper {
     min-height: 200px;
   }
-  
+
   .chart-type-selector {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .chart-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .chart-export {
     flex-direction: column;
   }
@@ -511,21 +531,21 @@
   .chart-wrapper {
     background: var(--gray-800);
   }
-  
+
   .chart-loading {
     background: var(--gray-900);
   }
-  
+
   .chart-error {
     background: var(--gray-900);
   }
-  
+
   .chartjs-tooltip {
     background: var(--gray-800);
     border-color: var(--gray-700);
     color: var(--gray-100) !important;
   }
-  
+
   .chartjs-tooltip-header {
     color: var(--gray-100) !important;
   }
@@ -533,11 +553,11 @@
   .chartjs-tooltip-label {
     color: var(--gray-300) !important;
   }
-  
+
   .chartjs-tooltip-value {
     color: var(--gray-100) !important;
   }
-  
+
   .chart-legend-label {
     color: var(--gray-100) !important;
   }
@@ -545,89 +565,89 @@
   .chartjs-tooltip::after {
     border-top-color: var(--gray-800);
   }
-  
+
   .chart-legend {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .chart-legend-item:hover {
     background: var(--gray-800);
   }
-  
+
   .chart-controls {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .chart-control-btn:hover {
     background: var(--gray-800);
   }
-  
+
   .chart-type-btn {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .chart-type-btn:hover {
     background: var(--gray-800);
   }
-  
+
   .chart-stats {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .comparison-chart {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .chart-filters {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .chart-filter-select {
     background: var(--gray-800);
     border-color: var(--gray-700);
   }
-  
+
   .chart-export-btn {
     background: var(--gray-900);
     border-color: var(--gray-700);
   }
-  
+
   .chart-export-btn:hover {
     background: var(--gray-800);
   }
 }
 
 [data-theme="dark"] .chartjs-tooltip {
-    background: var(--gray-800) !important;
-    border-color: var(--gray-700) !important;
-    color: var(--gray-100) !important;
+  background: var(--gray-800) !important;
+  border-color: var(--gray-700) !important;
+  color: var(--gray-100) !important;
 }
 
 [data-theme="dark"] .chartjs-tooltip-header,
 [data-theme="dark"] .chartjs-tooltip-value {
-    color: var(--gray-100) !important;
+  color: var(--gray-100) !important;
 }
 
 [data-theme="dark"] .chartjs-tooltip-label {
-    color: var(--gray-300) !important;
+  color: var(--gray-300) !important;
 }
 
 /* LIGHT MODE TEXT FIX */
 .chartjs-tooltip {
-    color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
 }
 
 .chartjs-tooltip-header,
 .chartjs-tooltip-value {
-    color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
 }
 
 .chartjs-tooltip-label {
-    color: var(--text-secondary) !important;
+  color: var(--text-secondary) !important;
 }

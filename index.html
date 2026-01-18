@@ -1,32 +1,35 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Masterplan PRO | Aplikasi Keuangan Pribadi</title>
-    
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#4361ee">
     <meta name="description" content="Aplikasi perencanaan keuangan pribadi dengan analytics lengkap">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="assets/icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
-    
+
     <!-- Preload Chart.js untuk performa lebih baik
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js" as="script"> -->
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/main.css">
-    
+
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Chart.js will be loaded dynamically -->
     <!-- NOT loaded here to avoid blocking -->
 </head>
+
 <body>
     <!-- APP CONTAINER -->
     <div class="app-container" id="app">
@@ -37,12 +40,12 @@
                     <div class="logo-icon">F$</div>
                     <span>Financial Masterplan <strong>PRO</strong></span>
                 </div>
-                
+
                 <div class="header-actions">
                     <button class="btn-outline" id="exportBtn">
                         <span>📤</span> Export Data
                     </button>
-                    
+
                     <div class="user-profile" id="userProfile">
                         <div class="avatar" id="userAvatar">FL</div>
                         <div>
@@ -53,7 +56,7 @@
                 </div>
             </div>
         </header>
-        
+
         <!-- NAVIGATION -->
         <nav class="nav-container">
             <div class="nav-tabs" id="navTabs">
@@ -79,7 +82,7 @@
                 </button>
             </div>
         </nav>
-        
+
         <!-- MAIN CONTENT -->
         <main class="main-content" id="mainContent">
             <!-- Loading state -->
@@ -88,62 +91,66 @@
                 <p>Memuat Financial Masterplan PRO v2.1...</p>
             </div>
         </main>
-        
+
         <!-- FOOTER -->
         <footer class="footer" id="appFooter">
             <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Financial Masterplan PRO</h4>
-                    <p>Aplikasi perencanaan keuangan pribadi dengan tools lengkap untuk mencapai financial freedom.</p>
-                    <div style="margin-top: var(--space-4);">
-                        <button class="btn" id="installBtn" style="display: none;">
-                            📲 Install App
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Fitur Utama</h4>
-                    <ul class="footer-links">
-                        <li><a href="#" data-tab="dashboard">📊 Dashboard Analytics</a></li>
-                        <li><a href="#" data-tab="expenses">💸 Budget Planning</a></li>
-                        <li><a href="#" data-tab="simulation">📈 Investment Simulation</a></li>
-                        <li><a href="#" id="exportReport">📄 Report Generation</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul class="footer-links">
-                        <li><a href="#" id="helpBtn">📚 Documentation</a></li>
-                        <li><a href="#" id="tipsBtn">💡 Blog & Tips</a></li>
-                        <li><a href="#" data-tab="settings">⚙️ Settings</a></li>
-                        <li><a href="#" id="clearDataBtn">🔄 Reset Data</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>Status Sistem</h4>
-                    <div style="font-size: 0.9rem;">
-                        <div style="margin-bottom: var(--space-2);">
-                            <span class="text-muted">Mode:</span>
-                            <span id="appMode" style="color: var(--primary); font-weight: 600;">Online</span>
-                        </div>
-                        <div style="margin-bottom: var(--space-2);">
-                            <span class="text-muted">Storage:</span>
-                            <span id="storageStatus" style="color: var(--success); font-weight: 600;">Local</span>
-                        </div>
-                        <div style="margin-bottom: var(--space-2);">
-                            <span class="text-muted">Version:</span>
-                            <span id="appVersion" style="color: var(--info); font-weight: 600;">2.1.0</span>
+                <div class="footer-main">
+                    <div class="footer-section">
+                        <h4>Financial Masterplan PRO</h4>
+                        <p>Aplikasi perencanaan keuangan pribadi dengan tools lengkap untuk mencapai financial freedom.
+                        </p>
+                        <div style="margin-top: var(--space-4);">
+                            <button class="btn" id="installBtn" style="display: none;">
+                                📲 Install App
+                            </button>
                         </div>
                     </div>
+
+                    <div class="footer-section">
+                        <h4>Fitur Utama</h4>
+                        <ul class="footer-links">
+                            <li><a href="#" data-tab="dashboard">📊 Dashboard Analytics</a></li>
+                            <li><a href="#" data-tab="expenses">💸 Budget Planning</a></li>
+                            <li><a href="#" data-tab="simulation">📈 Investment Simulation</a></li>
+                            <li><a href="#" id="exportReport">📄 Report Generation</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4>Resources</h4>
+                        <ul class="footer-links">
+                            <li><a href="#" id="helpBtn">📚 Documentation</a></li>
+                            <li><a href="#" id="tipsBtn">💡 Blog & Tips</a></li>
+                            <li><a href="#" data-tab="settings">⚙️ Settings</a></li>
+                            <li><a href="#" id="clearDataBtn">🔄 Reset Data</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-section">
+                        <h4>Status Sistem</h4>
+                        <div style="font-size: 0.9rem;">
+                            <div style="margin-bottom: var(--space-2);">
+                                <span class="text-muted">Mode:</span>
+                                <span id="appMode" style="color: var(--primary); font-weight: 600;">Online</span>
+                            </div>
+                            <div style="margin-bottom: var(--space-2);">
+                                <span class="text-muted">Storage:</span>
+                                <span id="storageStatus" style="color: var(--success); font-weight: 600;">Local</span>
+                            </div>
+                            <div style="margin-bottom: var(--space-2);">
+                                <span class="text-muted">Version:</span>
+                                <span id="appVersion" style="color: var(--info); font-weight: 600;">2.1.0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
+
                 <div class="footer-status">
                     <div>&copy; 2026 Financial Masterplan PRO. All rights reserved.</div>
                     <div style="display: flex; gap: var(--space-4);">
-                        <button id="darkModeToggle" style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                        <button id="darkModeToggle"
+                            style="background: none; border: none; color: var(--text-muted); cursor: pointer;">
                             🌙 Dark Mode
                         </button>
                         <a href="#" style="color: var(--text-muted);">Privacy Policy</a>
@@ -153,10 +160,10 @@
             </div>
         </footer>
     </div>
-    
+
     <!-- MODALS & OVERLAYS -->
     <div class="modal-overlay" id="modalOverlay"></div>
-    
+
     <!-- Add Expense Modal -->
     <div class="modal" id="addExpenseModal">
         <div class="modal-content">
@@ -198,7 +205,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Add Income Modal -->
     <div class="modal" id="addIncomeModal">
         <div class="modal-content">
@@ -238,7 +245,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Add Goal Modal -->
     <div class="modal" id="addGoalModal">
         <div class="modal-content">
@@ -270,8 +277,8 @@
                 </form>
             </div>
         </div>
-    </div> 
-    
+    </div>
+
     <!-- Custom Date Filter Modal -->
     <div id="customDateModal" class="modal">
         <div class="modal-content">
@@ -287,12 +294,12 @@
                         <label for="customStartDate">Tanggal Mulai</label>
                         <input type="date" id="customStartDate" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="customEndDate">Tanggal Akhir</label>
                         <input type="date" id="customEndDate" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="customGroupBy">Kelompokkan Berdasarkan</label>
                         <select id="customGroupBy">
@@ -302,7 +309,7 @@
                             <option value="yearly">Tahunan</option>
                         </select>
                     </div>
-                    
+
                     <div class="button-group">
                         <button type="button" id="cancelCustomModal" class="btn btn-outline">
                             Batal
@@ -316,10 +323,10 @@
         </div>
     </div>
     <div id="customDateModalOverlay" class="modal-overlay"></div>
-        
+
     <!-- Scripts - TYPE MODULE untuk ES6 modules -->
     <script type="module" src="app.js"></script>
-    
+
     <!-- PWA Service Worker Registration -->
     <script>
         // Register service worker
@@ -328,7 +335,7 @@
                 navigator.serviceWorker.register('sw.js')
                     .then(registration => {
                         console.log('✅ ServiceWorker registered:', registration.scope);
-                        
+
                         // Update app mode in footer
                         const appModeElement = document.getElementById('appMode');
                         if (appModeElement) {
@@ -340,7 +347,7 @@
                     });
             });
         }
-        
+
         // Check if app is running as PWA
         if (window.matchMedia('(display-mode: standalone)').matches) {
             console.log('📱 Running as PWA');
@@ -352,83 +359,8 @@
         }
     </script>
 
-    <!-- TAMBAHKAN script ini SEBELUM penutup </body> -->
-    <script>
-        // Fix untuk memastikan chart container selalu ada
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔧 DOM ready, setting up chart container fix...');
-            
-            // Function untuk memastikan chart container ada
-            function ensureChartContainer() {
-                const container = document.getElementById('chartContainer');
-                
-                if (!container) {
-                    console.log('🏗️ Creating missing chart container...');
-                    
-                    // Cari chart section
-                    const chartSection = document.querySelector('.chart-container');
-                    if (chartSection) {
-                        const newContainer = document.createElement('div');
-                        newContainer.id = 'chartContainer';
-                        newContainer.style.height = '300px';
-                        newContainer.style.minHeight = '300px';
-                        newContainer.style.width = '100%';
-                        newContainer.style.position = 'relative';
-                        newContainer.style.display = 'block';
-                        
-                        // Tambahkan canvas
-                        const canvas = document.createElement('canvas');
-                        canvas.id = 'financeChart';
-                        canvas.style.width = '100%';
-                        canvas.style.height = '100%';
-                        canvas.style.display = 'block';
-                        
-                        newContainer.appendChild(canvas);
-                        
-                        // Cari posisi yang tepat untuk menambahkan
-                        const existingPlaceholder = chartSection.querySelector('.chart-placeholder');
-                        if (existingPlaceholder) {
-                            existingPlaceholder.replaceWith(newContainer);
-                        } else {
-                            // Cari di mana harus menambahkan
-                            const chartHeader = chartSection.querySelector('.chart-header');
-                            if (chartHeader) {
-                                chartHeader.insertAdjacentElement('afterend', newContainer);
-                            } else {
-                                chartSection.appendChild(newContainer);
-                            }
-                        }
-                        
-                        console.log('✅ Chart container created');
-                    }
-                }
-            }
-            
-            // Jalankan saat DOM ready
-            ensureChartContainer();
-            
-            // Juga jalankan saat halaman selesai loading
-            window.addEventListener('load', function() {
-                setTimeout(ensureChartContainer, 500);
-            });
-            
-            // Monitor untuk perubahan DOM (mutation observer)
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'childList') {
-                        ensureChartContainer();
-                    }
-                });
-            });
-            
-            // Observe body untuk perubahan
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-        });
-    </script>
-    
+
+
     <!-- Error handling for older browsers -->
     <!-- <script>
         // Check for ES6 module support
@@ -456,4 +388,5 @@
         });
     </script> -->
 </body>
+
 </html>

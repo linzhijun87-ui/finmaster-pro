@@ -8,20 +8,20 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: 500;
   line-height: var(--line-height-normal);
   color: white;
   background: var(--gradient-primary);
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
   position: relative;
   overflow: hidden;
   user-select: none;
   white-space: nowrap;
-  box-shadow: var(--shadow-md);
-  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+  letter-spacing: 0.01em;
 }
 
 .btn::before {
@@ -31,14 +31,16 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
   opacity: 0;
-  transition: opacity var(--transition-normal);
+  transition: opacity var(--transition-fast);
 }
 
 .btn:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.05);
+  /* Slightly brighter on hover */
 }
 
 .btn:hover::before {
@@ -46,13 +48,15 @@
 }
 
 .btn:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-md);
+  transform: translateY(1px) scale(0.98);
+  /* Satisfying press effect */
+  box-shadow: var(--shadow-xs);
 }
 
 .btn:focus-visible {
   outline: 2px solid var(--primary-400);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--primary-100);
 }
 
 .btn:disabled {
@@ -430,20 +434,20 @@
 
 .btn-3d {
   box-shadow: 0 4px 0 var(--primary-800),
-              0 6px 8px rgba(0, 0, 0, 0.15);
+    0 6px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(0);
 }
 
 .btn-3d:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 0 var(--primary-800),
-              0 8px 12px rgba(0, 0, 0, 0.15);
+    0 8px 12px rgba(0, 0, 0, 0.15);
 }
 
 .btn-3d:active {
   transform: translateY(2px);
   box-shadow: 0 2px 0 var(--primary-800),
-              0 4px 6px rgba(0, 0, 0, 0.1);
+    0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Full Width Button */
@@ -456,15 +460,15 @@
   .btn {
     padding: var(--space-2) var(--space-4);
   }
-  
+
   .btn-lg {
     padding: var(--space-3) var(--space-6);
   }
-  
+
   .btn-xl {
     padding: var(--space-4) var(--space-8);
   }
-  
+
   .btn-fab {
     bottom: var(--space-4);
     right: var(--space-4);
@@ -478,7 +482,7 @@
   .btn {
     display: none;
   }
-  
+
   .btn-fab {
     display: none;
   }
@@ -487,55 +491,55 @@
 /* DELETE BUTTON VARIANTS - TAMBAHKAN DI BUTTON VARIANTS SECTION */
 
 .btn-delete {
-    background: var(--gradient-danger);
+  background: var(--gradient-danger);
 }
 
 .btn-delete:hover {
-    background: var(--danger-600);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: var(--danger-600);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .btn-delete:active {
-    background: var(--danger-700);
-    transform: translateY(0);
+  background: var(--danger-700);
+  transform: translateY(0);
 }
 
 /* Small Delete Button untuk activity items */
 .btn-delete-sm {
-    padding: var(--space-1) var(--space-3);
-    font-size: var(--font-size-xs);
-    background: var(--danger-50);
-    color: var(--danger);
-    border: 1px solid var(--danger-200);
-    box-shadow: none;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  background: var(--danger-50);
+  color: var(--danger);
+  border: 1px solid var(--danger-200);
+  box-shadow: none;
 }
 
 .btn-delete-sm:hover {
-    background: var(--danger);
-    color: white;
-    border-color: var(--danger);
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
 }
 
 /* Outline Delete Button */
 .btn-outline.btn-delete {
-    background: transparent;
-    color: var(--danger);
-    border: 2px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  border: 2px solid var(--danger);
 }
 
 .btn-outline.btn-delete:hover {
-    background: var(--danger);
-    color: white;
+  background: var(--danger);
+  color: white;
 }
 
 /* Ghost Delete Button */
 .btn-ghost.btn-delete {
-    background: transparent;
-    color: var(--danger);
+  background: transparent;
+  color: var(--danger);
 }
 
 .btn-ghost.btn-delete:hover {
-    background: var(--danger-50);
-    color: var(--danger-700);
+  background: var(--danger-50);
+  color: var(--danger-700);
 }

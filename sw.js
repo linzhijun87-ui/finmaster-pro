@@ -1,9 +1,9 @@
 // Financial Masterplan PRO - Service Worker
-const CACHE_NAME = 'finmaster-pro-v2.1';
+const CACHE_NAME = 'finmaster-pro-v2.3'; // Bump version to force update
 const urlsToCache = [
   './',
   './index.html',
-  './style.css',
+  './css/main.css',
   './app.js',
   './manifest.json',
   './assets/icons/icon-72x72.png',
@@ -20,7 +20,7 @@ const urlsToCache = [
 // Install Service Worker
 self.addEventListener('install', event => {
   console.log('🛠️ FinMaster PRO: Installing Service Worker...');
-  
+
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -40,7 +40,7 @@ self.addEventListener('install', event => {
 // Activate Service Worker
 self.addEventListener('activate', event => {
   console.log('⚡ FinMaster PRO: Activating Service Worker...');
-  
+
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -52,10 +52,10 @@ self.addEventListener('activate', event => {
         })
       );
     })
-    .then(() => {
-      console.log('✅ Service Worker ready');
-      return self.clients.claim();
-    })
+      .then(() => {
+        console.log('✅ Service Worker ready');
+        return self.clients.claim();
+      })
   );
 });
 
@@ -63,13 +63,13 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
-  
+
   // Skip Chrome extensions
   if (event.request.url.startsWith('chrome-extension://')) return;
-  
+
   // Skip analytics
   if (event.request.url.includes('google-analytics')) return;
-  
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
@@ -109,7 +109,7 @@ self.addEventListener('message', event => {
 // Push Notifications
 self.addEventListener('push', event => {
   console.log('📱 Push notification received');
-  
+
   const options = {
     body: event.data?.text() || 'Pengingat dari Financial Masterplan PRO',
     icon: './assets/icons/icon-192x192.png',
@@ -129,7 +129,7 @@ self.addEventListener('push', event => {
       }
     ]
   };
-  
+
   event.waitUntil(
     self.registration.showNotification('Financial Masterplan PRO', options)
   );
@@ -138,13 +138,13 @@ self.addEventListener('push', event => {
 // Notification Click
 self.addEventListener('notificationclick', event => {
   console.log('🖱️ Notification clicked');
-  
+
   event.notification.close();
-  
+
   if (event.action === 'close') {
     return;
   }
-  
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clientList => {
@@ -153,7 +153,7 @@ self.addEventListener('notificationclick', event => {
             return client.focus();
           }
         }
-        
+
         if (clients.openWindow) {
           return clients.openWindow('./');
         }

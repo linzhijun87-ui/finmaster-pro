@@ -2,12 +2,15 @@
 
 /* Footer Container */
 .footer {
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
+  /* Slightly different from main bg */
   border-top: 1px solid var(--border-color);
   padding: var(--space-8) 0 0;
   margin-top: auto;
   position: relative;
   z-index: var(--z-10);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.03);
+  /* Subtle shadow getting up */
 }
 
 .footer::before {
@@ -16,9 +19,9 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: var(--gradient-primary);
-  opacity: 0.8;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0.5;
 }
 
 .footer-content {
@@ -30,7 +33,8 @@
 /* FOOTER GRID - PERBAIKAN LAYOUT HORIZONTAL */
 .footer-main {
   display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr); /* Desktop: 4 kolom, kolom pertama lebih lebar */
+  grid-template-columns: 2fr repeat(3, 1fr);
+  /* Desktop: 4 kolom, kolom pertama lebih lebar */
   gap: var(--space-8);
   margin-bottom: var(--space-8);
 }
@@ -40,6 +44,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -61,10 +66,21 @@
   transform: translateY(10px);
 }
 
-.footer-section:nth-child(1) { animation-delay: 0.1s; }
-.footer-section:nth-child(2) { animation-delay: 0.2s; }
-.footer-section:nth-child(3) { animation-delay: 0.3s; }
-.footer-section:nth-child(4) { animation-delay: 0.4s; }
+.footer-section:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.footer-section:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.footer-section:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.footer-section:nth-child(4) {
+  animation-delay: 0.4s;
+}
 
 
 @keyframes sectionFadeIn {
@@ -154,7 +170,7 @@
   margin-top: var(--space-8);
 }
 
-.footer-status > div:first-child {
+.footer-status>div:first-child {
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
@@ -339,7 +355,8 @@
 
 @media (max-width: 1024px) {
   .footer-main {
-    grid-template-columns: repeat(2, 1fr); /* Tablet: 2 kolom */
+    grid-template-columns: repeat(2, 1fr);
+    /* Tablet: 2 kolom */
     gap: var(--space-6);
   }
 }
@@ -348,9 +365,10 @@
   .footer {
     padding: var(--space-6) 0 0;
   }
-  
+
   .footer-main {
-    grid-template-columns: 1fr; /* Mobile: 1 kolom */
+    grid-template-columns: 1fr;
+    /* Mobile: 1 kolom */
     gap: var(--space-8);
   }
 
@@ -358,26 +376,26 @@
     grid-template-columns: 1fr;
     gap: var(--space-8);
   }
-  
+
   .footer-status {
     flex-direction: column;
     text-align: center;
     gap: var(--space-3);
   }
-  
+
   .footer-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .newsletter-form {
     flex-direction: column;
   }
-  
+
   .newsletter-btn {
     width: 100%;
   }
-  
+
   .footer-back-to-top {
     bottom: var(--space-4);
     right: var(--space-4);
@@ -390,11 +408,11 @@
   .footer-section h4 {
     font-size: var(--font-size-base);
   }
-  
+
   .footer-social {
     justify-content: center;
   }
-  
+
   .footer-badges {
     justify-content: center;
   }
@@ -406,52 +424,52 @@
     background: var(--gray-900);
     border-color: var(--gray-800);
   }
-  
+
   .footer-section p {
     color: var(--gray-300);
   }
-  
+
   .footer-links a:hover {
     background: var(--gray-800);
   }
-  
+
   .footer-status {
     background: var(--gray-800);
     border-color: var(--gray-700);
   }
-  
+
   .social-link {
     background: var(--gray-800);
     border-color: var(--gray-700);
   }
-  
+
   .social-link:hover {
     background: var(--primary);
     border-color: var(--primary);
   }
-  
+
   .newsletter-input {
     background: var(--gray-800);
     border-color: var(--gray-700);
   }
-  
+
   .footer-badge {
     background: var(--gray-800);
     border-color: var(--gray-700);
   }
-  
+
   .footer-badge.success {
     background: rgba(34, 197, 94, 0.2);
     border-color: rgba(34, 197, 94, 0.3);
     color: var(--success-300);
   }
-  
+
   .footer-badge.warning {
     background: rgba(245, 158, 11, 0.2);
     border-color: rgba(245, 158, 11, 0.3);
     color: var(--warning-300);
   }
-  
+
   .footer-badge.info {
     background: rgba(59, 130, 246, 0.2);
     border-color: rgba(59, 130, 246, 0.3);
