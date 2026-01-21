@@ -620,14 +620,18 @@
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
 
-  /* Layout */
+  /* Layout - Fixed to prevent clipping */
   height: auto;
   /* Let it grow with content */
+  min-height: 550px;
+  /* Accommodate header + chart canvas */
   display: flex;
   flex-direction: column;
   overflow: hidden;
   /* Ensure rounded corners clip content */
   position: relative;
+  padding-bottom: var(--space-4);
+  /* Extra padding to prevent bottom clipping */
   transition: all var(--transition-normal);
 }
 
