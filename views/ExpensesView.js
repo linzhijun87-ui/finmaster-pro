@@ -7,11 +7,11 @@ class ExpensesView {
 
     render() {
         console.log('💸 Rendering Expenses View...');
-        
+
         const html = this.getExpensesHTML();
         this.app.elements.mainContent.innerHTML = html;
         this.app.elements.mainContent.className = 'main-content expenses-view';
-        
+
         // Initialize after DOM is ready
         setTimeout(() => {
             this.initialize();
@@ -19,11 +19,22 @@ class ExpensesView {
     }
 
     getExpensesHTML() {
-        const totalExpenses = this.app.calculator.formatCurrency(this.app.state.finances.expenses);
+        // Calculate monthly total (current month only)
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const monthlyExpenses = this.app.state.transactions.expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate.getMonth() === currentMonth &&
+                expenseDate.getFullYear() === currentYear;
+        });
+
+        const monthlyTotal = monthlyExpenses.reduce((sum, item) => sum + item.amount, 0);
+        const totalExpenses = this.app.calculator.formatCurrency(monthlyTotal);
         const transactionCount = this.app.state.transactions.expenses.length;
-        const avgDaily = Math.round(this.app.state.finances.expenses / 30);
+        const avgDaily = Math.round(monthlyTotal / 30);
         const largestCategory = this.getLargestCategory();
-        
+
         return `
             <div class="section-title">💸 Pengeluaran</div>
             
@@ -88,7 +99,7 @@ class ExpensesView {
         if (this.app.state.transactions.expenses.length === 0) {
             return '<div class="text-center text-muted mt-6">Belum ada pengeluaran</div>';
         }
-        
+
         return this.app.state.transactions.expenses.map(expense => `
             <div class="activity-item expense-activity" data-expense-id="${expense.id}">
                 <div class="activity-icon">💸</div>
@@ -113,21 +124,21 @@ class ExpensesView {
 
     getLargestCategory() {
         const categoryTotals = {};
-        
+
         this.app.state.transactions.expenses.forEach(expense => {
             categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + expense.amount;
         });
-        
+
         let largestCategory = '-';
         let largestAmount = 0;
-        
+
         for (const [category, amount] of Object.entries(categoryTotals)) {
             if (amount > largestAmount) {
                 largestAmount = amount;
                 largestCategory = this.app.uiManager.getCategoryName(category);
             }
         }
-        
+
         return largestCategory;
     }
 
@@ -136,7 +147,7 @@ class ExpensesView {
         document.getElementById('addExpenseBtn')?.addEventListener('click', () => {
             this.app.uiManager.openModal('addExpenseModal');
         });
-        
+
         // Setup delete handlers
         this.setupDeleteHandlers();
     }
@@ -149,18 +160,18 @@ class ExpensesView {
         // 1. HITUNG ULANG TOTAL PENGELUARAN BULAN INI
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        
+
         const monthlyExpenses = this.app.state.transactions.expenses.filter(expense => {
             const expenseDate = new Date(expense.date);
-            return expenseDate.getMonth() === currentMonth && 
+            return expenseDate.getMonth() === currentMonth &&
                 expenseDate.getFullYear() === currentYear;
         });
-        
+
         const totalExpenses = monthlyExpenses.reduce((sum, item) => sum + item.amount, 0);
-        
+
         // Update state
         this.app.state.finances.expenses = totalExpenses;
-        
+
         // 2. UPDATE UI: TOTAL PENGELUARAN BULAN INI
         // Cari element yang menampilkan total (biasanya setelah section-title)
         const totalExpenseEl = document.querySelector('.section-title + div div:first-child div:first-child');
@@ -168,50 +179,50 @@ class ExpensesView {
             totalExpenseEl.textContent = this.app.calculator.formatCurrency(totalExpenses);
             totalExpenseEl.style.color = 'var(--danger)'; // Pastikan warna merah
         }
-        
+
         // 3. UPDATE EXPENSES LIST
         const expensesListEl = document.getElementById('expensesList');
         if (expensesListEl) {
             expensesListEl.innerHTML = this.getExpensesListHTML();
         }
-        
+
         // 4. UPDATE LARGEST CATEGORY
         const largestCategoryEl = document.getElementById('largestCategory');
         if (largestCategoryEl) {
             largestCategoryEl.textContent = this.getLargestCategory();
         }
-        
+
         // 5. UPDATE EXPENSE ANALYSIS
         const expenseAnalysisEl = document.getElementById('expenseAnalysis');
         if (expenseAnalysisEl) {
             expenseAnalysisEl.innerHTML = this.getExpenseAnalysis();
         }
-        
+
         // 6. UPDATE TRANSACTION COUNT (di activity section)
         const transactionCountEl = document.querySelector('.activity-section .text-muted');
         if (transactionCountEl) {
             transactionCountEl.textContent = `${this.app.state.transactions.expenses.length} transaksi`;
         }
-        
+
         // 7. UPDATE AVG MONTHLY (stat card pertama)
         const avgMonthly = Math.round(totalExpenses / 12);
         const avgMonthlyEl = document.querySelector('.stat-card:nth-child(1) .stat-value');
         if (avgMonthlyEl) {
             avgMonthlyEl.textContent = this.app.calculator.formatCurrency(avgMonthly);
         }
-        
+
         // 8. UPDATE TRANSACTION COUNT IN STAT CARD (stat card ketiga)
         const transactionCountCardEl = document.querySelector('.stat-card:nth-child(3) .stat-value');
         if (transactionCountCardEl) {
             transactionCountCardEl.textContent = this.app.state.transactions.expenses.length;
         }
-        
+
         // 9. UPDATE MONTHLY STATS
         const monthlyStatsEl = document.querySelector('.dashboard-grid:nth-of-type(2) .activity-section > div');
         if (monthlyStatsEl && monthlyStatsEl.parentElement.querySelector('.section-title').textContent.includes('Bulanan')) {
             monthlyStatsEl.innerHTML = this.getMonthlyStats();
         }
-        
+
         console.log('Expense view refreshed with total:', totalExpenses);
     }
 }

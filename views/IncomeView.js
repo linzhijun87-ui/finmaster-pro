@@ -7,10 +7,10 @@ class IncomeView {
 
     render() {
         console.log('💰 Rendering Income View...');
-        
+
         const html = this.getIncomeHTML();
         this.app.elements.mainContent.innerHTML = html;
-        
+
         this.app.elements.mainContent.className = 'main-content income-view';
         // Initialize after DOM is ready
         setTimeout(() => {
@@ -19,11 +19,22 @@ class IncomeView {
     }
 
     getIncomeHTML() {
-        const totalIncome = this.app.calculator.formatCurrency(this.app.state.finances.income);
+        // Calculate monthly total (current month only)
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const monthlyIncome = this.app.state.transactions.income.filter(income => {
+            const incomeDate = new Date(income.date);
+            return incomeDate.getMonth() === currentMonth &&
+                incomeDate.getFullYear() === currentYear;
+        });
+
+        const monthlyTotal = monthlyIncome.reduce((sum, item) => sum + item.amount, 0);
+        const totalIncome = this.app.calculator.formatCurrency(monthlyTotal);
         const transactionCount = this.app.state.transactions.income.length;
-        const avgMonthly = Math.round(this.app.state.finances.income / 12);
+        const avgMonthly = Math.round(monthlyTotal / 12);
         const largestSource = this.getLargestSource();
-        
+
         return `
             <div class="section-title">💰 Pendapatan</div>
             
@@ -91,7 +102,7 @@ class IncomeView {
         if (this.app.state.transactions.income.length === 0) {
             return '<div class="text-center text-muted mt-6">Belum ada pendapatan</div>';
         }
-        
+
         return this.app.state.transactions.income.map(income => `
             <div class="activity-item income-activity" data-income-id="${income.id}">
                 <div class="activity-icon">💰</div>
@@ -117,7 +128,7 @@ class IncomeView {
     getIncomeAnalysisHTML() {
         const incomeAnalysis = this.getIncomeAnalysis();
         const monthlyStats = this.getMonthlyStats();
-        
+
         return `
             <div class="dashboard-grid mt-6">
                 <div class="activity-section">
@@ -139,21 +150,21 @@ class IncomeView {
 
     getLargestSource() {
         const sourceTotals = {};
-        
+
         this.app.state.transactions.income.forEach(income => {
             sourceTotals[income.category] = (sourceTotals[income.category] || 0) + income.amount;
         });
-        
+
         let largestSource = '-';
         let largestAmount = 0;
-        
+
         for (const [category, amount] of Object.entries(sourceTotals)) {
             if (amount > largestAmount) {
                 largestAmount = amount;
                 largestSource = this.app.uiManager.getCategoryName(category);
             }
         }
-        
+
         return largestSource;
     }
 
@@ -161,13 +172,13 @@ class IncomeView {
         if (this.app.state.transactions.income.length === 0) {
             return '<div class="text-center text-muted">Tidak ada data untuk dianalisis</div>';
         }
-        
+
         // Group by category
         const categories = {};
         this.app.state.transactions.income.forEach(item => {
             categories[item.category] = (categories[item.category] || 0) + item.amount;
         });
-        
+
         let analysisHTML = '<div style="width: 100%;">';
         for (const [category, amount] of Object.entries(categories)) {
             const percentage = Math.round((amount / this.app.state.finances.income) * 100);
@@ -187,7 +198,7 @@ class IncomeView {
             `;
         }
         analysisHTML += '</div>';
-        
+
         return analysisHTML;
     }
 
@@ -199,15 +210,15 @@ class IncomeView {
             const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
             monthlyStats[monthYear] = (monthlyStats[monthYear] || 0) + item.amount;
         });
-        
+
         if (Object.keys(monthlyStats).length === 0) {
             return '<div class="text-center text-muted">Tidak ada data bulanan</div>';
         }
-        
+
         let statsHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-4);">';
-        
+
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-        
+
         for (const [monthYear, amount] of Object.entries(monthlyStats)) {
             const [year, month] = monthYear.split('-');
             const monthName = months[parseInt(month) - 1];
@@ -218,7 +229,7 @@ class IncomeView {
                 </div>
             `;
         }
-        
+
         statsHTML += '</div>';
         return statsHTML;
     }
@@ -228,7 +239,7 @@ class IncomeView {
         document.getElementById('addIncomeBtn')?.addEventListener('click', () => {
             this.app.uiManager.openModal('addIncomeModal');
         });
-        
+
         // Setup delete handlers
         this.setupDeleteHandlers();
     }
@@ -241,61 +252,61 @@ class IncomeView {
         // 1. UPDATE TOTAL PENDAPATAN
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        
+
         const monthlyIncome = this.app.state.transactions.income.filter(income => {
             const incomeDate = new Date(income.date);
-            return incomeDate.getMonth() === currentMonth && 
+            return incomeDate.getMonth() === currentMonth &&
                 incomeDate.getFullYear() === currentYear;
         });
-        
+
         const totalIncome = monthlyIncome.reduce((sum, item) => sum + item.amount, 0);
-        
+
         // Update state
         this.app.state.finances.income = totalIncome;
-        
+
         // Update UI: Total pendapatan bulan ini
         const totalIncomeEl = document.querySelector('.section-title + div div:first-child div:first-child');
         if (totalIncomeEl) {
             totalIncomeEl.textContent = this.app.calculator.formatCurrency(totalIncome);
         }
-        
+
         // 2. UPDATE INCOME LIST
         const incomeListEl = document.getElementById('incomeList');
         if (incomeListEl) {
             incomeListEl.innerHTML = this.getIncomeListHTML();
         }
-        
+
         // 3. UPDATE LARGEST SOURCE
         const largestSourceEl = document.getElementById('largestSource');
         if (largestSourceEl) {
             largestSourceEl.textContent = this.getLargestSource();
         }
-        
+
         // 4. UPDATE INCOME ANALYSIS
         const incomeAnalysisEl = document.getElementById('incomeAnalysis');
         if (incomeAnalysisEl) {
             incomeAnalysisEl.innerHTML = this.getIncomeAnalysis();
         }
-        
+
         // 5. UPDATE TRANSACTION COUNT
         const transactionCountEl = document.querySelector('.activity-section .text-muted');
         if (transactionCountEl) {
             transactionCountEl.textContent = `${this.app.state.transactions.income.length} transaksi`;
         }
-        
+
         // 6. UPDATE AVG MONTHLY
         const avgMonthly = Math.round(totalIncome / 12);
         const avgMonthlyEl = document.querySelector('.stat-card:nth-child(1) .stat-value');
         if (avgMonthlyEl) {
             avgMonthlyEl.textContent = this.app.calculator.formatCurrency(avgMonthly);
         }
-        
+
         // 7. UPDATE TRANSACTION COUNT IN STAT CARD
         const transactionCountCardEl = document.querySelector('.stat-card:nth-child(3) .stat-value');
         if (transactionCountCardEl) {
             transactionCountCardEl.textContent = this.app.state.transactions.income.length;
         }
-        
+
         console.log('Income view refreshed with total:', totalIncome);
     }
 }
