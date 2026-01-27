@@ -534,7 +534,12 @@ class FormHandlers {
             return;
         }
 
-        incomeListEl.innerHTML = incomeTransactions.map(income => `
+        // Sort by date DESC
+        const sortedIncome = [...incomeTransactions].sort((a, b) => {
+            return new Date(b.date) - new Date(a.date);
+        });
+
+        incomeListEl.innerHTML = sortedIncome.map(income => `
             <div class="activity-item income-activity" data-income-id="${income.id}">
                 <div class="activity-icon">💰</div>
                 <div class="activity-details">

@@ -100,7 +100,12 @@ class ExpensesView {
             return '<div class="text-center text-muted mt-6">Belum ada pengeluaran</div>';
         }
 
-        return this.app.state.transactions.expenses.map(expense => `
+        // Sort by date DESC
+        const sortedExpenses = [...this.app.state.transactions.expenses].sort((a, b) => {
+            return new Date(b.date) - new Date(a.date);
+        });
+
+        return sortedExpenses.map(expense => `
             <div class="activity-item expense-activity" data-expense-id="${expense.id}">
                 <div class="activity-icon">💸</div>
                 <div class="activity-details">

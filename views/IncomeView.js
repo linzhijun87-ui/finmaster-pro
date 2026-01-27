@@ -103,7 +103,12 @@ class IncomeView {
             return '<div class="text-center text-muted mt-6">Belum ada pendapatan</div>';
         }
 
-        return this.app.state.transactions.income.map(income => `
+        // Sort by date DESC
+        const sortedIncome = [...this.app.state.transactions.income].sort((a, b) => {
+            return new Date(b.date) - new Date(a.date);
+        });
+
+        return sortedIncome.map(income => `
             <div class="activity-item income-activity" data-income-id="${income.id}">
                 <div class="activity-icon">💰</div>
                 <div class="activity-details">
