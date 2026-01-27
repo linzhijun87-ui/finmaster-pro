@@ -279,6 +279,86 @@
         </div>
     </div>
 
+    <!-- Edit Goal Modal -->
+    <div class="modal" id="editGoalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Goal</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editGoalForm">
+                    <input type="hidden" id="editGoalId">
+                    <div class="form-group">
+                        <label for="editGoalName">Nama Goal</label>
+                        <input type="text" id="editGoalName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGoalTarget">Target (Rp)</label>
+                        <input type="number" id="editGoalTarget" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editGoalCurrent">Dana Terkumpul (Rp)</label>
+                        <input type="number" id="editGoalCurrent" required min="0">
+                        <small style="color: var(--text-muted); display: block; margin-top: 4px;">Mengubah ini akan
+                            mempengaruhi Dana Tersedia.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGoalDeadline">Deadline</label>
+                        <input type="date" id="editGoalDeadline" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGoalPriority">Prioritas (1-3, 1 Tertinggi)</label>
+                        <select id="editGoalPriority" required>
+                            <option value="1">1 (Tinggi)</option>
+                            <option value="2">2 (Sedang)</option>
+                            <option value="3">3 (Rendah)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💾 Simpan Perubahan
+                    </button>
+                    <button type="button" id="deleteGoalBtn" class="btn btn-danger"
+                        style="width: 100%; margin-top: var(--space-2); background: var(--danger); border: none;">
+                        🗑️ Hapus Goal
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Funds Modal (Manual Single Allocation) -->
+    <div class="modal" id="addFundsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>+ Tambah Dana Goal</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addFundsForm">
+                    <input type="hidden" id="addFundsGoalId">
+                    <div
+                        style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--success-50); border-radius: var(--radius-md);">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Dana Tersedia:</div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--success);"
+                            id="addFundsAvailableDisplay">Rp 0</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="addFundsAmount">Jumlah Alokasi (Rp)</label>
+                        <input type="number" id="addFundsAmount" required min="1" placeholder="Masukkan jumlah">
+                    </div>
+                    <div id="addFundsWarning"
+                        style="color: var(--danger); font-size: 0.875rem; display: none; margin-top: -10px; margin-bottom: 10px;">
+                        ⚠️ Melebihi dana tersedia
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%;">
+                        💾 Simpan Alokasi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Date Filter Modal -->
     <div id="customDateModal" class="modal">
         <div class="modal-content">
@@ -323,6 +403,24 @@
         </div>
     </div>
     <div id="customDateModalOverlay" class="modal-overlay"></div>
+
+    <!-- Financial Assistant Modal -->
+    <div class="modal" id="assistantModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🤖 Smart Financial Assistant</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="assistantModalBody">
+                <!-- Content will be injected by JavaScript -->
+            </div>
+            <div class="modal-footer" id="assistantModalFooter"
+                style="padding: var(--space-4); border-top: 1px solid var(--border-divider); display: flex; gap: var(--space-3); justify-content: flex-end;">
+                <!-- Buttons will be injected by JavaScript -->
+            </div>
+        </div>
+    </div>
+    <div id="assistantModalOverlay" class="modal-overlay"></div>
 
     <!-- Scripts - TYPE MODULE untuk ES6 modules -->
     <script type="module" src="app.js"></script>

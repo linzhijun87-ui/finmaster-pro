@@ -136,6 +136,36 @@ class EventManager {
                 this.handleAddGoal();
             });
         }
+
+        // Edit Goal form
+        const editGoalForm = document.getElementById('editGoalForm');
+        if (editGoalForm) {
+            this.addEventHandler(editGoalForm, 'submit', (e) => {
+                e.preventDefault();
+                this.handleEditGoalSubmit();
+            });
+        }
+
+        // Add Funds form
+        const addFundsForm = document.getElementById('addFundsForm');
+        if (addFundsForm) {
+            this.addEventHandler(addFundsForm, 'submit', (e) => {
+                e.preventDefault();
+                this.handleAddFunds();
+            });
+        }
+
+        // Delete Goal button
+        const deleteGoalBtn = document.getElementById('deleteGoalBtn');
+        if (deleteGoalBtn) {
+            this.addEventHandler(deleteGoalBtn, 'click', () => {
+                const id = document.getElementById('editGoalId').value;
+                if (confirm('Apakah Anda yakin ingin menghapus goal ini? Dana yang terkumpul tidak akan hilang.')) {
+                    this.app.deleteGoal(id);
+                    this.app.uiManager.closeModal('editGoalModal');
+                }
+            });
+        }
     }
 
     setupFormValidation() {
@@ -156,6 +186,9 @@ class EventManager {
 
     // ====== FORM HANDLERS ======
     handleAddExpense() {
+        const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
         const name = document.getElementById('expenseName')?.value;
         const amount = parseInt(document.getElementById('expenseAmount')?.value) || 0;
         const category = document.getElementById('expenseCategory')?.value;
@@ -163,6 +196,17 @@ class EventManager {
 
         if (!name || !amount || !category || !date) {
             this.app.uiManager.showNotification('Harap isi semua field', 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
+        // Check if expense exceeds available cash (buying power)
+        // Rule: Prevent Available Cash from ever going negative
+        const availableCash = this.app.state.finances.availableCash;
+        if (amount > availableCash) {
+            alert(`⚠️ WARNING: Saldo Tersedia tidak mencukupi!\n\nAnda memiliki Rp ${this.app.calculator.formatCurrency(availableCash)}, namun pengeluaran ini sebesar Rp ${this.app.calculator.formatCurrency(amount)}.\n\nSistem tidak mengizinkan saldo menjadi negatif. Mohon batalkan atau kurangi alokasi goal Anda terlebih dahulu.`);
+            this.app.uiManager.showNotification('Gagal: Saldo tidak mencukupi', 'error');
+            if (submitBtn) submitBtn.disabled = false;
             return;
         }
 
@@ -177,10 +221,16 @@ class EventManager {
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
         // Close modal
-        this.app.uiManager.closeModal();
+        this.app.uiManager.closeModal('addExpenseModal');
+
+        // Re-enable button after short delay
+        setTimeout(() => { if (submitBtn) submitBtn.disabled = false; }, 500);
     }
 
     handleAddIncome() {
+        const submitBtn = document.querySelector('#incomeForm button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
         const name = document.getElementById('incomeName')?.value;
         const amount = parseInt(document.getElementById('incomeAmount')?.value) || 0;
         const category = document.getElementById('incomeCategory')?.value;
@@ -188,6 +238,13 @@ class EventManager {
 
         if (!name || !amount || !category || !date) {
             this.app.uiManager.showNotification('Harap isi semua field', 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
+        if (amount < 0) {
+            this.app.uiManager.showNotification('Jumlah pendapatan tidak boleh negatif', 'error');
+            if (submitBtn) submitBtn.disabled = false;
             return;
         }
 
@@ -202,10 +259,16 @@ class EventManager {
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
         // Close modal
-        this.app.uiManager.closeModal();
+        this.app.uiManager.closeModal('addIncomeModal');
+
+        // Re-enable button after short delay
+        setTimeout(() => { if (submitBtn) submitBtn.disabled = false; }, 500);
     }
 
     handleAddGoal() {
+        const submitBtn = document.querySelector('#goalForm button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
         const name = document.getElementById('goalName')?.value;
         const target = parseInt(document.getElementById('goalTarget')?.value) || 0;
         const deadline = document.getElementById('goalDeadline')?.value;
@@ -213,11 +276,13 @@ class EventManager {
 
         if (!name || !target || !deadline) {
             this.app.uiManager.showNotification('Harap isi semua field yang diperlukan', 'error');
+            if (submitBtn) submitBtn.disabled = false;
             return;
         }
 
         if (current > target) {
             this.app.uiManager.showNotification('Jumlah saat ini tidak boleh melebihi target', 'error');
+            if (submitBtn) submitBtn.disabled = false;
             return;
         }
 
@@ -234,7 +299,79 @@ class EventManager {
         if (dateInput) dateInput.value = threeMonthsLater.toISOString().split('T')[0];
 
         // Close modal
-        this.app.uiManager.closeModal();
+        this.app.uiManager.closeModal('addGoalModal');
+
+        setTimeout(() => { if (submitBtn) submitBtn.disabled = false; }, 500);
+    }
+
+    handleEditGoalSubmit() {
+        const submitBtn = document.querySelector('#editGoalForm button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        const id = document.getElementById('editGoalId').value;
+        const name = document.getElementById('editGoalName').value;
+        const target = parseInt(document.getElementById('editGoalTarget').value) || 0;
+        const current = parseInt(document.getElementById('editGoalCurrent').value) || 0;
+        const deadline = document.getElementById('editGoalDeadline').value;
+        const priority = parseInt(document.getElementById('editGoalPriority').value) || 2;
+
+        if (!name || !target || !deadline) {
+            this.app.uiManager.showNotification('Harap isi semua field', 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
+        // Validate allocation change
+        const goal = this.app.state.goals.find(g => g.id == id);
+        if (goal) {
+            const oldCurrent = goal.current || 0;
+            const diff = current - oldCurrent;
+            const availableCash = this.app.state.finances.availableCash;
+
+            // If increasing allocation, check if we have enough cash
+            if (diff > 0 && diff > availableCash) {
+                this.app.uiManager.showNotification(`Dana tidak mencukupi! Kurang: ${this.app.calculator.formatCurrency(diff - availableCash)}`, 'error');
+                if (submitBtn) submitBtn.disabled = false;
+                return;
+            }
+        }
+
+        const updates = { name, target, current, deadline, priority };
+        this.app.updateGoal(id, updates);
+        this.app.uiManager.closeModal('editGoalModal');
+
+        setTimeout(() => { if (submitBtn) submitBtn.disabled = false; }, 500);
+    }
+
+    handleAddFunds() {
+        const submitBtn = document.querySelector('#addFundsForm button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        const id = document.getElementById('addFundsGoalId').value;
+        const amount = parseInt(document.getElementById('addFundsAmount').value) || 0;
+        const availableCash = this.app.state.finances.availableCash;
+
+        if (amount <= 0) {
+            this.app.uiManager.showNotification('Jumlah harus lebih dari 0', 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
+        if (amount > availableCash) {
+            this.app.uiManager.showNotification('Dana tidak mencukupi!', 'error');
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+        }
+
+        // Add funds to goal
+        const goal = this.app.state.goals.find(g => g.id == id);
+        if (goal) {
+            this.app.updateGoal(id, { current: (goal.current || 0) + amount });
+            this.app.uiManager.closeModal('addFundsModal');
+            document.getElementById('addFundsForm').reset();
+        }
+
+        setTimeout(() => { if (submitBtn) submitBtn.disabled = false; }, 500);
     }
 
     // ====== FOOTER EVENTS ======

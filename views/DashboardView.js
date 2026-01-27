@@ -40,14 +40,14 @@ class DashboardView {
         if (statsGrid) {
             // Re-render is safest for structure, but we want to animate values if elements exist
             // Check if we can just update values
-            const incomeVal = document.getElementById('totalIncome');
-            if (incomeVal) {
+            const netBalanceVal = document.getElementById('totalNetBalance');
+            if (netBalanceVal) {
                 this.updateFinancialCards();
             } else {
                 statsGrid.innerHTML = `
-                    ${this.getStatCardHTML('income', 'Total Pendapatan', this.app.state.finances.income, 'success', '💰')}
-                    ${this.getStatCardHTML('expense', 'Total Pengeluaran', this.app.state.finances.expenses, 'danger', '💸')}
-                    ${this.getStatCardHTML('savings', 'Total Tabungan', this.app.state.finances.savings, 'primary', '🏦')}
+                    ${this.getStatCardHTML('netBalance', 'Kekayaan Bersih', this.app.state.finances.netBalance, 'primary', '💰')}
+                    ${this.getStatCardHTML('availableCash', 'Dana Tersedia', this.app.state.finances.availableCash, 'success', '�')}
+                    ${this.getStatCardHTML('allocated', 'Dana Dialokasikan', this.app.state.finances.totalAllocated, 'warning', '🔒')}
                  `;
             }
         }
@@ -98,9 +98,9 @@ class DashboardView {
             }
         };
 
-        animateIfFound('totalIncome', finances.income);
-        animateIfFound('totalExpenses', finances.expenses);
-        animateIfFound('totalSavings', finances.savings);
+        animateIfFound('totalNetBalance', finances.netBalance);
+        animateIfFound('totalAvailableCash', finances.availableCash);
+        animateIfFound('totalAllocated', finances.totalAllocated);
     }
 
 
@@ -118,9 +118,9 @@ class DashboardView {
         return `
             <!-- STATS GRID -->
             <div class="stats-grid stagger-children">
-                ${this.getStatCardHTML('income', 'Total Pendapatan', this.app.state.finances.income, 'success', '💰')}
-                ${this.getStatCardHTML('expense', 'Total Pengeluaran', this.app.state.finances.expenses, 'danger', '💸')}
-                ${this.getStatCardHTML('savings', 'Total Tabungan', this.app.state.finances.savings, 'primary', '🏦')}
+                ${this.getStatCardHTML('netBalance', 'Kekayaan Bersih', this.app.state.finances.netBalance, 'primary', '💰')}
+                ${this.getStatCardHTML('availableCash', 'Dana Tersedia', this.app.state.finances.availableCash, 'success', '💵')}
+                ${this.getStatCardHTML('allocated', 'Dana Dialokasikan', this.app.state.finances.totalAllocated, 'warning', '🔒')}
             </div>
             
             <!-- PROGRESS SECTION -->
@@ -226,8 +226,9 @@ class DashboardView {
                     </div>
                     <div class="stat-icon">${icon}</div>
                 </div>
-                <div class="stat-trend trend-up" id="${trendId}">
-                    <span>📈</span> Loading trend...
+                <div class="stat-trend" id="${trendId}">
+                    <!-- Trend will be injected here by calculateTrends -->
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">-</span>
                 </div>
             </div>
         `;
@@ -384,10 +385,16 @@ class DashboardView {
                         Deadline: ${this.app.uiManager.formatDate(goal.deadline)}
                     </div>
                 </div>
-                <button class="btn-outline" style="margin-top: var(--space-3); width: 100%; font-size: 0.875rem;" 
-                        onclick="handleUpdateGoal(${goal.id})">
-                    + Tambah Dana
-                </button>
+                <div class="goal-buttons" style="display: flex; gap: var(--space-2); margin-top: var(--space-3);">
+                    <button class="btn-outline" style="flex: 1; font-size: 0.875rem;" 
+                            onclick="handleUpdateGoal(${goal.id})">
+                        + Dana
+                    </button>
+                    <button class="btn-outline" style="width: 40px; font-size: 0.875rem; padding: 0; display: flex; align-items: center; justify-content: center;"
+                            onclick="handleEditGoal('${goal.id}')">
+                        ✏️
+                    </button>
+                </div>
             </div>
         `).join('');
     }

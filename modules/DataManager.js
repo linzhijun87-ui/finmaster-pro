@@ -13,25 +13,34 @@ class DataManager {
     loadData() {
         try {
             console.log('📁 Loading data from localStorage...');
-            
+
             const savedData = localStorage.getItem(this.storageKey);
-            
+
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                
+
                 // Merge with default state
                 const mergedSettings = {
                     ...this.app.state.settings,
                     ...(parsed.settings || {})
                 };
+
+                // Preserve joinedDate or set it to now if not present
+                const mergedUser = {
+                    ...this.app.state.user,
+                    ...(parsed.user || {}),
+                    joinedDate: parsed.user?.joinedDate || new Date().toISOString()
+                };
+
                 this.app.state = {
                     ...this.app.state,
                     ...parsed,
+                    user: mergedUser,
                     settings: mergedSettings,
                     activeTab: this.app.state.activeTab,
                     isLoading: false
                 };
-                
+
                 console.log('✅ Data loaded from localStorage');
                 this.updateStorageStatus('Local Storage');
             } else {
@@ -39,7 +48,7 @@ class DataManager {
                 this.loadSampleData();
                 this.updateStorageStatus('Sample Data');
             }
-            
+
         } catch (error) {
             console.error('❌ Error loading data:', error);
             this.loadSampleData();
@@ -48,112 +57,112 @@ class DataManager {
 
     loadSampleData() {
         console.log('📊 Loading sample data...');
-        
+
         const now = new Date();
         const today = now.toISOString().split('T')[0];
         const lastMonth = new Date(now.setMonth(now.getMonth() - 1)).toISOString().split('T')[0];
-        
+
         this.app.state.transactions = {
             income: [
-                { 
-                    id: 1, 
-                    name: 'Gaji Bulanan', 
-                    amount: 8500000, 
-                    category: 'gaji', 
+                {
+                    id: 1,
+                    name: 'Gaji Bulanan',
+                    amount: 8500000,
+                    category: 'gaji',
                     date: today,
                     createdAt: new Date().toISOString()
                 },
-                { 
-                    id: 2, 
-                    name: 'Freelance Project', 
-                    amount: 2500000, 
-                    category: 'freelance', 
+                {
+                    id: 2,
+                    name: 'Freelance Project',
+                    amount: 2500000,
+                    category: 'freelance',
                     date: lastMonth,
                     createdAt: new Date().toISOString()
                 }
             ],
             expenses: [
-                { 
-                    id: 1, 
-                    name: 'Belanja Bulanan', 
-                    amount: 2100000, 
-                    category: 'kebutuhan', 
+                {
+                    id: 1,
+                    name: 'Belanja Bulanan',
+                    amount: 2100000,
+                    category: 'kebutuhan',
                     date: today,
                     createdAt: new Date().toISOString()
                 },
-                { 
-                    id: 2, 
-                    name: 'Bensin Mobil', 
-                    amount: 450000, 
-                    category: 'transport', 
+                {
+                    id: 2,
+                    name: 'Bensin Mobil',
+                    amount: 450000,
+                    category: 'transport',
                     date: lastMonth,
                     createdAt: new Date().toISOString()
                 },
-                { 
-                    id: 3, 
-                    name: 'Netflix Subscription', 
-                    amount: 120000, 
-                    category: 'hiburan', 
+                {
+                    id: 3,
+                    name: 'Netflix Subscription',
+                    amount: 120000,
+                    category: 'hiburan',
                     date: lastMonth,
                     createdAt: new Date().toISOString()
                 }
             ]
         };
-        
+
         this.app.state.goals = [
-            { 
-                id: 1, 
-                name: 'DP Rumah', 
-                target: 100000000, 
-                current: 45000000, 
-                deadline: '2026-01-01', 
+            {
+                id: 1,
+                name: 'DP Rumah',
+                target: 100000000,
+                current: 45000000,
+                deadline: '2026-01-01',
                 progress: 45,
                 created: new Date().toISOString()
             },
-            { 
-                id: 2, 
-                name: 'Liburan Japan', 
-                target: 25000000, 
-                current: 18000000, 
-                deadline: '2026-01-01', 
+            {
+                id: 2,
+                name: 'Liburan Japan',
+                target: 25000000,
+                current: 18000000,
+                deadline: '2026-01-01',
                 progress: 72,
                 created: new Date().toISOString()
             },
-            { 
-                id: 3, 
-                name: 'Emergency Fund', 
-                target: 50000000, 
-                current: 45000000, 
-                deadline: '2026-01-01', 
+            {
+                id: 3,
+                name: 'Emergency Fund',
+                target: 50000000,
+                current: 45000000,
+                deadline: '2026-01-01',
                 progress: 99,
                 created: new Date().toISOString()
             }
         ];
-        
+
         this.app.state.checklist = [
-            { 
-                id: 1, 
-                task: 'Bayar listrik bulanan', 
-                completed: true, 
+            {
+                id: 1,
+                task: 'Bayar listrik bulanan',
+                completed: true,
                 created: new Date().toISOString(),
                 completedAt: new Date().toISOString()
             },
-            { 
-                id: 2, 
-                task: 'Transfer tabungan', 
-                completed: false, 
+            {
+                id: 2,
+                task: 'Transfer tabungan',
+                completed: false,
                 created: new Date().toISOString()
             },
-            { 
-                id: 3, 
-                task: 'Review budget mingguan', 
-                completed: false, 
+            {
+                id: 3,
+                task: 'Review budget mingguan',
+                completed: false,
                 created: new Date().toISOString()
             }
         ];
-        
+
         this.app.state.isLoading = false;
-        
+
         // Save sample data
         this.saveData(true);
         console.log('✅ Sample data loaded');
@@ -171,31 +180,31 @@ class DataManager {
                 checklist: this.app.state.checklist,
                 settings: this.app.state.settings
             };
-            
+
             const dataString = JSON.stringify(dataToSave);
-            
+
             // Check data size
             const dataSize = new Blob([dataString]).size;
-            
+
             if (dataSize > this.maxStorageSize) {
                 this.app.uiManager.showNotification('Data terlalu besar, membersihkan data lama...', 'warning');
                 this.cleanupOldData();
                 return this.saveData(silent);
             }
-            
+
             localStorage.setItem(this.storageKey, dataString);
             console.log('💾 Data saved to localStorage');
-            
+
             if (!silent) {
                 this.app.uiManager.showNotification('Data tersimpan!', 'success');
             }
-            
+
             // Update storage status
             this.updateStorageStatus(`Local (${(dataSize / 1024).toFixed(2)} KB)`);
-            
+
         } catch (error) {
             console.error('❌ Error saving data:', error);
-            
+
             if (error.name === 'QuotaExceededError') {
                 this.app.uiManager.showNotification('Penyimpanan penuh, membersihkan data lama...', 'warning');
                 this.cleanupOldData();
@@ -210,7 +219,7 @@ class DataManager {
         // Keep only transactions from last 6 months
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        
+
         this.app.state.transactions.income = this.app.state.transactions.income.filter(t => {
             try {
                 return new Date(t.date) > sixMonthsAgo;
@@ -218,7 +227,7 @@ class DataManager {
                 return false;
             }
         });
-        
+
         this.app.state.transactions.expenses = this.app.state.transactions.expenses.filter(t => {
             try {
                 return new Date(t.date) > sixMonthsAgo;
@@ -226,7 +235,7 @@ class DataManager {
                 return false;
             }
         });
-        
+
         this.app.uiManager.showNotification('Data lama telah dibersihkan', 'info');
     }
 
@@ -244,17 +253,17 @@ class DataManager {
     // ====== TRANSACTION MANAGEMENT ======
     addTransaction(type, data) {
         const id = Date.now();
-        
+
         const transaction = {
             id,
             ...data,
             date: data.date || new Date().toISOString().split('T')[0],
             createdAt: new Date().toISOString()
         };
-        
+
         this.app.state.transactions[type].unshift(transaction);
         this.saveData(true);
-        
+
         console.log(`✅ ${type} transaction added:`, transaction);
         return transaction;
     }
@@ -269,39 +278,39 @@ class DataManager {
     addGoal(data) {
         const id = Date.now();
         const progress = data.current ? Math.round((data.current / data.target) * 100) : 0;
-        
+
         const goal = {
             id,
             ...data,
             progress,
             created: new Date().toISOString()
         };
-        
+
         this.app.state.goals.push(goal);
         this.saveData(true);
-        
+
         console.log('✅ Goal added:', goal);
         return goal;
     }
 
     updateGoal(id, updates) {
         const goalIndex = this.app.state.goals.findIndex(g => g.id === id);
-        
+
         if (goalIndex !== -1) {
             const goal = { ...this.app.state.goals[goalIndex], ...updates };
-            
+
             // Recalculate progress if current amount changed
             if (updates.current !== undefined) {
                 goal.progress = Math.round((goal.current / goal.target) * 100);
             }
-            
+
             this.app.state.goals[goalIndex] = goal;
             this.saveData(true);
-            
+
             console.log('✅ Goal updated:', goal);
             return goal;
         }
-        
+
         return null;
     }
 
@@ -314,29 +323,29 @@ class DataManager {
             completed: false,
             created: new Date().toISOString()
         };
-        
+
         this.app.state.checklist.unshift(task);
         this.saveData(true);
-        
+
         return task;
     }
 
     toggleChecklistTask(id) {
         const taskIndex = this.app.state.checklist.findIndex(t => t.id === id);
-        
+
         if (taskIndex !== -1) {
             this.app.state.checklist[taskIndex].completed = !this.app.state.checklist[taskIndex].completed;
-            
+
             if (this.app.state.checklist[taskIndex].completed) {
                 this.app.state.checklist[taskIndex].completedAt = new Date().toISOString();
             } else {
                 delete this.app.state.checklist[taskIndex].completedAt;
             }
-            
+
             this.saveData(true);
             return true;
         }
-        
+
         return false;
     }
 
@@ -350,15 +359,15 @@ class DataManager {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json,.csv';
-        
+
         input.onchange = (e) => {
             const file = e.target.files[0];
             const reader = new FileReader();
-            
+
             reader.onload = (event) => {
                 try {
                     const importedData = JSON.parse(event.target.result);
-                    
+
                     // Validate imported data
                     if (importedData && importedData.transactions) {
                         this.app.state = {
@@ -366,12 +375,12 @@ class DataManager {
                             ...importedData,
                             activeTab: this.app.state.activeTab
                         };
-                        
+
                         this.app.calculator.calculateFinances();
                         this.app.uiManager.updateUI();
                         this.app.showView(this.app.state.activeTab);
                         this.saveData();
-                        
+
                         this.app.uiManager.showNotification('Data berhasil diimport!', 'success');
                     } else {
                         this.app.uiManager.showNotification('Format data tidak valid', 'error');
@@ -381,10 +390,10 @@ class DataManager {
                     this.app.uiManager.showNotification('Gagal membaca file', 'error');
                 }
             };
-            
+
             reader.readAsText(file);
         };
-        
+
         input.click();
     }
 
@@ -412,7 +421,7 @@ class DataManager {
     getDataStats() {
         const dataString = JSON.stringify(this.app.state);
         const sizeKB = (new Blob([dataString]).size / 1024).toFixed(2);
-        
+
         return {
             sizeKB: sizeKB,
             totalTransactions: this.app.state.transactions.income.length + this.app.state.transactions.expenses.length,

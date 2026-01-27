@@ -8,6 +8,8 @@ import ChartManager from './modules/ChartManager.js';
 import ReportGenerator from './modules/ReportGenerator.js';
 import EventManager from './modules/EventManager.js';
 import PWAInstaller from './modules/PWAInstaller.js';
+import FinancialAssistant from './modules/FinancialAssistant.js';
+import FormHandlers from './modules/FormHandlers.js';
 
 // Import views
 import DashboardView from './views/DashboardView.js';
@@ -29,7 +31,8 @@ class FinancialApp {
             user: {
                 name: 'Ferdiansyah Lim',
                 avatar: 'FL',
-                isPremium: true
+                isPremium: true,
+                joinedDate: new Date().toISOString()
             },
             finances: {
                 income: 0,
@@ -74,9 +77,11 @@ class FinancialApp {
         this.calculator = new FinanceCalculator(this);
         this.uiManager = new UIManager(this);
         this.chartManager = new ChartManager(this);
+        this.assistant = new FinancialAssistant(this); // Initialize Assistant
         this.reportGenerator = new ReportGenerator(this);
         this.eventManager = new EventManager(this);
         this.pwaInstaller = new PWAInstaller(this);
+        this.formHandlers = new FormHandlers(this); // Form handling module
 
         // View modules
         this.views = {
@@ -97,8 +102,14 @@ class FinancialApp {
         // Cache DOM elements
         this.cacheElements();
 
-        // Load saved data
+        // Load data
         this.dataManager.loadData();
+
+        // Sync Goals
+        this.assistant.syncGoals();
+
+        // Ensure user goals are synced
+        this.assistant.syncGoals();
 
         // Setup event listeners
         this.eventManager.setupEventListeners();
@@ -109,11 +120,19 @@ class FinancialApp {
         // Apply theme
         this.uiManager.applyTheme();
 
-        // Calculate initial finances
+        // MIGRATION: Perform data migration to new model
+        this.performMigration();
+
+        // Calculate initial finances (re-calculate after migration just in case)
         this.calculator.calculateFinances();
 
         // Update UI
         this.uiManager.updateUI();
+
+        // Initialize Form Handlers (NEW)
+        if (this.formHandlers) {
+            this.formHandlers.initialize();
+        }
 
         // Show dashboard dengan sedikit delay untuk memastikan DOM siap
         setTimeout(() => {
@@ -127,6 +146,37 @@ class FinancialApp {
         this.setupChartReadyListener();
 
         console.log('✅ App initialized successfully');
+    }
+
+    performMigration() {
+        if (this.state.settings.migrationCompleted) {
+            return;
+        }
+
+        console.log('🚧 Performing migration to Net Balance Model...');
+
+        // 1. Recalculate finances with new logic (Net Balance - Allocation = Available)
+        this.calculator.calculateFinances();
+
+        // 2. Check for negative available cash
+        const { availableCash } = this.state.finances;
+
+        if (availableCash < 0) {
+            setTimeout(() => {
+                alert(
+                    '⚠️ PERHATIAN MIGRASI SISTEM ⚠️\n\n' +
+                    'Sistem telah diperbarui ke model Net Balance.\n' +
+                    `Total alokasi goal Anda melebihi dana tunai yang tersedia sebesar ${this.calculator.formatCurrency(Math.abs(availableCash))}.\n\n` +
+                    'Mohon tinjau kembali goal Anda dan sesuaikan target/alokasi agar sesuai dengan saldo riil.'
+                );
+            }, 1000);
+        } else {
+            this.uiManager.showNotification('Sistem keuangan diperbarui ke versi Net Balance', 'success');
+        }
+
+        // 3. Mark migration as complete
+        this.state.settings.migrationCompleted = true;
+        this.dataManager.saveData(true);
     }
 
     setupChartReadyListener() {
@@ -243,6 +293,9 @@ class FinancialApp {
         // Update UI
         this.uiManager.updateUI();
 
+        // --- ASSISTANT HOOK ---
+        this.handleAssistantSuggestions(type, data.amount);
+
         // Update chart if on dashboard
         if (this.state.activeTab === 'dashboard' && this.chartManager) {
             this.chartManager.updateChart();
@@ -251,17 +304,285 @@ class FinancialApp {
         // Update current view
         this.refreshCurrentView();
 
-        // Show notification
-        this.uiManager.showNotification(
-            `${type === 'income' ? 'Pendapatan' : 'Pengeluaran'} berhasil ditambahkan!`,
-            'success'
-        );
-
         return transaction;
+    }
+
+    handleAssistantSuggestions(type, amount) {
+        if (type === 'income') {
+            const suggestions = this.assistant.suggestAllocation(amount);
+            if (suggestions.length > 0) {
+                this.showAssistantModal('allocation-choice', suggestions, amount);
+            } else {
+                this.uiManager.showNotification('Pendapatan berhasil ditambahkan!', 'success');
+            }
+        } else if (type === 'expense') {
+            const rebalance = this.assistant.checkRebalance();
+            if (rebalance && rebalance.length > 0) {
+                this.showAssistantModal('rebalance', rebalance);
+            } else {
+                this.uiManager.showNotification('Pengeluaran berhasil ditambahkan!', 'success');
+            }
+        }
+    }
+
+    showAssistantModal(type, data, totalAmount, mode = 'ai') {
+        const modalBody = document.getElementById('assistantModalBody');
+        const modalFooter = document.getElementById('assistantModalFooter');
+
+        if (!modalBody || !modalFooter) {
+            console.error('Assistant modal elements not found');
+            return;
+        }
+
+        if (type === 'allocation-choice') {
+            const availableCash = this.state.finances.availableCash;
+            // If checking specifically on income add, totalAmount is the income
+            // But we want to show total available.
+            // Let's rely on the state for available cash text, but mention the income triggered it.
+
+            modalBody.innerHTML = `
+                <div class="assistant-choice">
+                    <p>Pendapatan berhasil dicatat! Total <strong>Dana Tersedia</strong> Anda saat ini: <strong>${this.calculator.formatCurrency(availableCash)}</strong>.</p>
+                    <p style="margin-top: var(--space-2);">Apakah Anda ingin mengalokasikan dana ini ke goals Anda?</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr; gap: var(--space-3); margin-top: var(--space-4);">
+                        <button class="btn btn-outline" id="pickAI" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: var(--space-4); height: auto; transition: all 0.2s;">
+                            <span style="font-weight: 700; font-size: 1.1rem; margin-bottom: 4px;">🤖 Gunakan Saran AI</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">Otomatis mengisi berdasarkan prioritas & deadline.</span>
+                        </button>
+                        <button class="btn btn-outline" id="pickManual" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: var(--space-4); height: auto; transition: all 0.2s;">
+                            <span style="font-weight: 700; font-size: 1.1rem; margin-bottom: 4px;">✍️ Alokasi Manual</span>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">Pilih sendiri jumlah untuk setiap goal Anda.</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            modalFooter.innerHTML = `
+                <button class="btn btn-ghost" id="skipAllocation">Nanti Saja</button>
+            `;
+
+            document.getElementById('pickAI')?.addEventListener('click', () => {
+                this.showAssistantModal('allocation', data, totalAmount, 'ai');
+            });
+            document.getElementById('pickManual')?.addEventListener('click', () => {
+                this.showAssistantModal('allocation', data, totalAmount, 'manual');
+            });
+            document.getElementById('skipAllocation')?.addEventListener('click', () => {
+                this.uiManager.closeModal('assistantModal');
+                this.uiManager.showNotification('Pendapatan ditambahkan tanpa alokasi.', 'info');
+            });
+            this.uiManager.openModal('assistantModal');
+            return;
+        }
+
+        let html = '';
+        let footerHtml = '';
+
+        if (type === 'allocation') {
+            const availableToAllocate = this.state.finances.availableCash;
+            html = `
+                <div class="assistant-suggestion">
+                    <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--primary-50); border-radius: var(--radius-md); border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Dana Tersedia:</div>
+                            <div style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">${this.calculator.formatCurrency(availableToAllocate)}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Metode:</div>
+                            <div style="font-size: 0.875rem; font-weight: 600;">${mode === 'ai' ? '🤖 AI Suggested' : '✍️ Manual'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="manual-allocation-container" style="max-height: 45vh; overflow-y: auto; padding-right: var(--space-2);">
+                        ${data.map(s => `
+                            <div class="allocation-row" style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3); padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);">
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600;">${s.name}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">Sisa: ${this.calculator.formatCurrency(s.remainingTarget)}</div>
+                                </div>
+                                <div style="width: 130px;">
+                                    <input type="number" 
+                                           class="allocation-input" 
+                                           data-goal-id="${s.goalId}" 
+                                           value="${mode === 'ai' ? s.aiAmount || 0 : 0}" 
+                                           min="0" 
+                                           style="width: 100%; padding: var(--space-2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-weight: 600;">
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div style="margin-top: var(--space-4); display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-3); border-top: 1px solid var(--border-divider);">
+                        <div style="font-weight: 600; font-size: 0.875rem;">Total Dialokasikan:</div>
+                        <div style="font-size: 1rem; font-weight: 700;" id="assistantTotalAllocated">Rp 0</div>
+                    </div>
+                    <div id="allocationWarning" style="color: var(--danger); font-size: 0.75rem; margin-top: var(--space-1); text-align: right; display: none;">
+                        ⚠️ Total melebihi pendapatan!
+                    </div>
+                </div>
+            `;
+            footerHtml = `
+                <button class="btn btn-outline" id="backToChoice">Kembali</button>
+                <button class="btn" id="confirmAllocation">Simpan Alokasi</button>
+            `;
+        } else if (type === 'rebalance') {
+            html = `
+                <div class="assistant-suggestion">
+                    <p>🚨 <strong>Peringatan Rebalancing</strong></p>
+                    <p>Pengeluaran baru ini menyebabkan alokasi goal Anda melebihi saldo yang tersedia. Anda mungkin perlu menyesuaikan alokasi goal berikut:</p>
+                    <div class="suggestion-list" style="margin-top: var(--space-4);">
+                        ${data.map(s => `
+                            <div style="padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md); margin-bottom: var(--space-2);">
+                                <div style="font-weight: 600;">${s.name}</div>
+                                <div style="font-size: 0.875rem; color: var(--danger);">Kurangi alokasi: ${this.calculator.formatCurrency(s.amount)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Saldo baru yang disarankan: ${this.calculator.formatCurrency(s.newCurrent)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p style="margin-top: var(--space-4); font-size: 0.875rem; color: var(--text-muted);">
+                        Anda tetap memegang kendali penuh. Ingin menerapkan penyesuaian ini sekarang?
+                    </p>
+                </div>
+            `;
+            footerHtml = `
+                <button class="btn btn-outline" id="skipRebalance">Tetap Gunakan Saldo Saat Ini</button>
+                <button class="btn btn-danger" id="confirmRebalance">Terapkan Penyesuaian</button>
+            `;
+        } else if (type === 'advice') {
+            html = `
+                <div class="assistant-advice" style="padding: var(--space-2);">
+                    <div style="display: flex; gap: var(--space-4); align-items: flex-start;">
+                        <div style="font-size: 2.5rem;">💡</div>
+                        <div>
+                            <h4 style="margin-bottom: var(--space-2);">Tips Financial Assistant</h4>
+                            <p style="line-height: 1.6;">${data}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            footerHtml = `
+                <button class="btn btn-primary" id="closeAdvice">Saya Mengerti</button>
+            `;
+        }
+
+        modalBody.innerHTML = html;
+        modalFooter.innerHTML = footerHtml;
+
+        // Add event listeners for buttons
+        if (type === 'allocation') {
+            const inputs = modalBody.querySelectorAll('.allocation-input');
+            const totalDisplay = document.getElementById('assistantTotalAllocated');
+            const confirmBtn = document.getElementById('confirmAllocation');
+            const warning = document.getElementById('allocationWarning');
+            // Use current Available Cash as the limit
+            const availableIncome = this.state.finances.availableCash;
+
+            const updateTotal = () => {
+                let total = 0;
+                inputs.forEach(input => {
+                    total += parseInt(input.value) || 0;
+                });
+                totalDisplay.textContent = this.calculator.formatCurrency(total);
+
+                if (total > availableIncome) {
+                    totalDisplay.style.color = 'var(--danger)';
+                    confirmBtn.disabled = true;
+                    warning.style.display = 'block';
+                } else {
+                    totalDisplay.style.color = 'inherit';
+                    confirmBtn.disabled = false;
+                    warning.style.display = 'none';
+                }
+            };
+
+            inputs.forEach(input => {
+                input.addEventListener('input', updateTotal);
+            });
+
+            // Initial update
+            updateTotal();
+
+            confirmBtn.addEventListener('click', () => {
+                const manualData = Array.from(inputs).map(input => ({
+                    goalId: input.dataset.goalId,
+                    amount: parseInt(input.value) || 0
+                }));
+                this.applyAssistantAction('manual-allocation', manualData);
+            });
+
+            document.getElementById('backToChoice')?.addEventListener('click', () => {
+                this.showAssistantModal('allocation-choice', data, totalAmount);
+            });
+        } else if (type === 'rebalance') {
+            document.getElementById('confirmRebalance')?.addEventListener('click', () => {
+                this.applyAssistantAction('rebalance', data);
+            });
+            document.getElementById('skipRebalance')?.addEventListener('click', () => {
+                this.uiManager.closeModal('assistantModal');
+                this.uiManager.showNotification('Goal tidak diubah. Hati-hati dengan saldo Anda!', 'warning');
+            });
+        } else if (type === 'advice') {
+            document.getElementById('closeAdvice')?.addEventListener('click', () => {
+                this.uiManager.closeModal('assistantModal');
+            });
+        }
+
+        this.uiManager.openModal('assistantModal');
+    }
+
+    applyAssistantAction(type, data) {
+        if (type === 'allocation') {
+            // Original auto-suggestion apply
+            data.forEach(s => {
+                const goal = this.state.goals.find(g => g.id === s.goalId);
+                if (goal) {
+                    goal.current = (goal.current || 0) + s.amount;
+                    goal.progress = this.calculator.calculateGoalProgress(goal);
+                }
+            });
+            this.uiManager.showNotification('Alokasi goal berhasil diperbarui!', 'success');
+        } else if (type === 'manual-allocation') {
+            // Applied from inputs
+            data.forEach(s => {
+                if (s.amount <= 0) return;
+                const goal = this.state.goals.find(g => g.id == s.goalId); // Handle string vs number id
+                if (goal) {
+                    const oldProgress = goal.progress;
+                    goal.current = (goal.current || 0) + s.amount;
+                    goal.progress = this.calculator.calculateGoalProgress(goal);
+
+                    // Completion notification
+                    if (goal.progress >= 100 && oldProgress < 100) {
+                        this.uiManager.showNotification(`🎉 Selamat! Goal "${goal.name}" telah terpenuhi!`, 'success');
+                    } else if (goal.current > goal.target) {
+                        this.uiManager.showNotification(`ℹ️ Alokasi "${goal.name}" melebihi target.`, 'info');
+                    }
+                }
+            });
+            this.uiManager.showNotification('Alokasi manual berhasil disimpan!', 'success');
+        } else if (type === 'rebalance') {
+            data.forEach(s => {
+                const goal = this.state.goals.find(g => g.id === s.goalId);
+                if (goal) {
+                    goal.current = s.newCurrent;
+                    goal.progress = this.calculator.calculateGoalProgress(goal);
+                }
+            });
+            this.uiManager.showNotification('Goal berhasil direbalance!', 'success');
+        }
+
+        this.dataManager.saveData(true);
+        this.uiManager.closeModal('assistantModal');
+        this.refreshCurrentView();
     }
 
     deleteTransaction(type, id) {
         console.log(`🗑️ Deleting ${type} transaction: ${id}`);
+
+        const transactions = this.state.transactions;
+        const transactionList = type === 'income' ? transactions.income : transactions.expenses;
+        const transaction = transactionList.find(t => t.id == id);
+        const amount = transaction ? transaction.amount : 0;
 
         this.dataManager.deleteTransaction(type, id);
         this.calculator.calculateFinances();
@@ -269,6 +590,14 @@ class FinancialApp {
         this.refreshCurrentView();
 
         this.uiManager.showNotification('Transaksi dihapus', 'info');
+
+        // Assistant advice on deletion
+        const advice = this.assistant.getDeletionAdvice(type === 'income' ? 'income' : 'expenses', amount);
+        if (advice) {
+            setTimeout(() => {
+                this.showAssistantModal('advice', advice);
+            }, 500);
+        }
     }
 
     // ====== GOAL MANAGEMENT ======
@@ -277,6 +606,13 @@ class FinancialApp {
         console.log('🎯 Adding new goal:', data);
 
         const goal = this.dataManager.addGoal(data);
+
+        // Recalculate finances (Allocated vs Available)
+        this.calculator.calculateFinances();
+
+        // Update UI (Badges, etc)
+        this.uiManager.updateUI();
+
         this.refreshCurrentView();
 
         this.uiManager.showNotification('Goal berhasil ditambahkan! 🎯', 'success');
@@ -290,11 +626,34 @@ class FinancialApp {
         const goal = this.dataManager.updateGoal(id, updates);
 
         if (goal) {
+            // Recalculate finances (Allocated vs Available)
+            this.calculator.calculateFinances();
+
+            // Update UI (Badges, stats if on dashboard)
+            this.uiManager.updateUI(); // Important for global stats
+
+            if (goal.progress >= 100) {
+                this.uiManager.showNotification(`🎉 Goal "${goal.name}" tercapai!`, 'success');
+            } else {
+                this.uiManager.showNotification('Goal diperbarui!', 'success');
+            }
             this.refreshCurrentView();
-            this.uiManager.showNotification('Goal diperbarui!', 'success');
         }
 
         return goal;
+    }
+
+    deleteGoal(id) {
+        console.log(`🗑️ Deleting goal: ${id}`);
+        this.state.goals = this.state.goals.filter(g => g.id != id);
+        this.dataManager.saveData(true);
+
+        // Recalculate finances
+        this.calculator.calculateFinances();
+        this.uiManager.updateUI();
+
+        this.refreshCurrentView();
+        this.uiManager.showNotification('Goal dihapus', 'info');
     }
 
     // ====== CHECKLIST MANAGEMENT ======
@@ -389,23 +748,51 @@ document.addEventListener('DOMContentLoaded', () => {
         window.app = appInstance;
 
         // Expose specific methods for inline event handlers
-        window.handleUpdateGoal = (goalId) => {
-            if (appInstance) {
-                const goal = appInstance.state.goals.find(g => g.id === goalId);
-                if (goal) {
-                    const amount = prompt('Masukkan jumlah tambahan dana:', '0');
-                    if (amount && !isNaN(parseInt(amount))) {
-                        const newCurrent = goal.current + parseInt(amount);
-                        appInstance.updateGoal(goalId, { current: newCurrent });
-                    }
+        // Global handler for Updating Goal (Add Funds)
+        window.handleUpdateGoal = (id) => {
+            const goal = appInstance.state.goals.find(g => g.id == id);
+            if (!goal) return;
+
+            document.getElementById('addFundsGoalId').value = goal.id;
+            const available = appInstance.state.finances.availableCash;
+            document.getElementById('addFundsAvailableDisplay').textContent = appInstance.calculator.formatCurrency(available);
+            document.getElementById('addFundsAmount').max = available; // Html5 validation
+
+            // Add handler for dynamic warning
+            const amountInput = document.getElementById('addFundsAmount');
+            amountInput.oninput = () => {
+                const val = parseInt(amountInput.value) || 0;
+                const warning = document.getElementById('addFundsWarning');
+                if (val > available) {
+                    warning.style.display = 'block';
+                    amountInput.style.borderColor = 'var(--danger)';
+                } else {
+                    warning.style.display = 'none';
+                    amountInput.style.borderColor = '';
                 }
-            }
+            };
+
+            appInstance.uiManager.openModal('addFundsModal');
         };
 
+        // Global handler for Editing Goal
+        window.handleEditGoal = (id) => {
+            const goal = appInstance.state.goals.find(g => g.id == id); // Loose equality match
+            if (!goal) return;
+
+            document.getElementById('editGoalId').value = goal.id;
+            document.getElementById('editGoalName').value = goal.name;
+            document.getElementById('editGoalTarget').value = goal.target;
+            document.getElementById('editGoalCurrent').value = goal.current || 0; // Populate current
+            document.getElementById('editGoalDeadline').value = goal.deadline;
+            document.getElementById('editGoalPriority').value = goal.priority || 2;
+
+            appInstance.uiManager.openModal('editGoalModal');
+        };
+
+        // Global handler for Deleting Transactions
         window.handleDeleteTransaction = (type, id) => {
-            if (appInstance) {
-                appInstance.deleteTransaction(type, id);
-            }
+            appInstance.deleteTransaction(type, id);
         };
 
         console.log('✅ App instance created and exposed globally');

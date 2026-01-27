@@ -425,12 +425,26 @@ class UIManager {
     }
 
     // ====== NOTIFICATIONS ======
-    showNotification(message, type = 'info', duration = 3000) {
-        // Remove existing notification
-        const existing = document.querySelector('.notification');
-        if (existing) existing.remove();
+    showNotification(message, type = 'info', duration = 2000) {
+        // 1. Get or create container
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                pointer-events: none; /* Allow clicks through container */
+            `;
+            document.body.appendChild(container);
+        }
 
-        // Create notification element
+        // 2. Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
 
@@ -439,59 +453,57 @@ class UIManager {
                 type === 'warning' ? '⚠️' : 'ℹ️';
 
         notification.innerHTML = `
-            <div class="notification-content">
+            <div class="notification-content" style="display: flex; align-items: center; gap: 10px;">
                 <span class="notification-icon">${icon}</span>
                 <span>${message}</span>
             </div>
         `;
 
-        // Add styles
+        // 3. Apply styles (Toast look)
         notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
             background: ${COLORS[type] || COLORS.info};
             color: white;
-            padding: var(--space-3) var(--space-4);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-lg);
-            z-index: 1000;
-            animation: slideIn 0.3s ease;
-            max-width: 300px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 300px;
+            max-width: 400px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            pointer-events: auto; /* Re-enable clicks on the toast itself */
+            display: flex;
+            align-items: center;
         `;
 
-        // Add animation styles if not already added
-        if (!document.querySelector('#notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes slideOut {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(100%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        // 4. Add to container
+        // Prepend to show newest at top, or append for bottom. Stacking usually goes Top->Down (Append) or Bottom->Up.
+        // Given 'top: 20px', we should append, so they stack downwards.
+        container.appendChild(notification);
 
-        // Add to DOM
-        document.body.appendChild(notification);
+        // 5. Trigger animation (next frame)
+        requestAnimationFrame(() => {
+            notification.style.transform = 'translateX(0)';
+            notification.style.opacity = '1';
+        });
 
-        // Store reference
-        this.notifications.push(notification);
-
-        // Auto remove after duration
+        // 6. Auto remove with safe fallback
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease';
+            // Trigger exit animation
+            notification.style.transform = 'translateX(120%)';
+            notification.style.opacity = '0';
+
+            // Force remove after animation duration (300ms)
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-                this.notifications = this.notifications.filter(n => n !== notification);
-            }, 300);
+                // Cleanup container if empty
+                if (container.childNodes.length === 0) {
+                    container.remove();
+                }
+            }, 300); // Strict 300ms matching CSS transition
+
         }, duration);
     }
 

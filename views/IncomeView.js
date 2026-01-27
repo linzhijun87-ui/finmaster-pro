@@ -249,7 +249,9 @@ class IncomeView {
     }
 
     refresh() {
-        // 1. UPDATE TOTAL PENDAPATAN
+        console.log('🔄 Refreshing Income View...');
+
+        // 1. UPDATE TOTAL PENDAPATAN (LOCAL CALCULATION FOR DISPLAY ONLY)
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
 
@@ -261,11 +263,9 @@ class IncomeView {
 
         const totalIncome = monthlyIncome.reduce((sum, item) => sum + item.amount, 0);
 
-        // Update state
-        this.app.state.finances.income = totalIncome;
-
         // Update UI: Total pendapatan bulan ini
-        const totalIncomeEl = document.querySelector('.section-title + div div:first-child div:first-child');
+        // Select via specific structure used in render()
+        const totalIncomeEl = document.querySelector('.main-content.income-view .section-title + div div:first-child div:first-child');
         if (totalIncomeEl) {
             totalIncomeEl.textContent = this.app.calculator.formatCurrency(totalIncome);
         }
@@ -273,6 +273,7 @@ class IncomeView {
         // 2. UPDATE INCOME LIST
         const incomeListEl = document.getElementById('incomeList');
         if (incomeListEl) {
+            // Force re-render list
             incomeListEl.innerHTML = this.getIncomeListHTML();
         }
 
@@ -291,11 +292,11 @@ class IncomeView {
         // 5. UPDATE TRANSACTION COUNT
         const transactionCountEl = document.querySelector('.activity-section .text-muted');
         if (transactionCountEl) {
-            transactionCountEl.textContent = `${this.app.state.transactions.income.length} transaksi`;
+            transactionCountEl.innerHTML = `${this.app.state.transactions.income.length} transaksi`;
         }
 
         // 6. UPDATE AVG MONTHLY
-        const avgMonthly = Math.round(totalIncome / 12);
+        const avgMonthly = Math.round(totalIncome / 12); // Logic preserved from render
         const avgMonthlyEl = document.querySelector('.stat-card:nth-child(1) .stat-value');
         if (avgMonthlyEl) {
             avgMonthlyEl.textContent = this.app.calculator.formatCurrency(avgMonthly);
@@ -307,7 +308,7 @@ class IncomeView {
             transactionCountCardEl.textContent = this.app.state.transactions.income.length;
         }
 
-        console.log('Income view refreshed with total:', totalIncome);
+        console.log(`✅ Income View Refreshed. Monthly Total: ${totalIncome}`);
     }
 }
 

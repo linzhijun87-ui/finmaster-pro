@@ -80,7 +80,7 @@ class SettingsView {
                     <div class="profile-stats">
                         <div class="profile-stat">
                             <div class="stat-label">Bergabung</div>
-                            <div class="stat-value">${this.app.uiManager.formatDate(new Date().toISOString())}</div>
+                            <div class="stat-value">${this.app.uiManager.formatDate(this.app.state.user.joinedDate || new Date().toISOString())}</div>
                         </div>
                         <div class="profile-stat">
                             <div class="stat-label">Total Transaksi</div>
