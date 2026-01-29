@@ -160,6 +160,164 @@ class FinanceCalculator {
             return Math.round(monthlyPayment);
         }
     }
+
+    // ====== BUDGET CALCULATIONS (DERIVED FROM TRANSACTIONS) ======
+
+    /**
+     * Calculate current spending for a budget by deriving from expense transactions
+     * This is the ONLY way to get budget spending - never stored/incremented
+     */
+    calculateBudgetSpending(budget) {
+        if (!budget) return 0;
+
+        const periodKey = budget.periodKey; // e.g., "2026-01"
+        const [year, month] = periodKey.split('-').map(Number);
+
+        // Filter expenses by category and period
+        const categoryExpenses = this.app.state.transactions.expenses.filter(expense => {
+            if (expense.category !== budget.category) return false;
+
+            const expenseDate = new Date(expense.date);
+            const expenseYear = expenseDate.getFullYear();
+            const expenseMonth = expenseDate.getMonth() + 1; // 0-indexed to 1-indexed
+
+            // For monthly budgets, match exact period
+            if (budget.duration === 'monthly') {
+                return expenseYear === year && expenseMonth === month;
+            }
+
+            // For weekly/yearly, calculate from lastResetAt
+            if (budget.duration === 'weekly') {
+                const resetDate = new Date(budget.lastResetAt);
+                const weekLater = new Date(resetDate);
+                weekLater.setDate(weekLater.getDate() + 7);
+                return expenseDate >= resetDate && expenseDate < weekLater;
+            }
+
+            if (budget.duration === 'yearly') {
+                return expenseYear === year;
+            }
+
+            return false;
+        });
+
+        // Sum up expenses
+        const totalSpent = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+        return totalSpent;
+    }
+
+    /**
+     * Calculate budget progress percentage
+     */
+    calculateBudgetProgress(budget) {
+        if (!budget || budget.amount === 0) return 0;
+
+        const spent = this.calculateBudgetSpending(budget);
+        const progress = Math.round((spent / budget.amount) * 100);
+
+        return Math.min(progress, 999); // Cap at 999% for display
+    }
+
+    /**
+     * Get budget status based on spending
+     */
+    getBudgetStatus(budget) {
+        if (!budget) return 'safe';
+
+        const spent = this.calculateBudgetSpending(budget);
+        const progress = (spent / budget.amount) * 100;
+
+        if (spent > budget.amount) return 'overspent';
+        if (progress >= 90) return 'danger';
+        if (progress >= 70) return 'warning';
+        return 'safe';
+    }
+
+    /**
+     * Get all budgets with derived spending data
+     * This enriches budget objects with calculated spending for display
+     */
+    getBudgetsWithSpending() {
+        if (!this.app.state.budgets) return [];
+
+        return this.app.state.budgets.map(budget => ({
+            ...budget,
+            spent: this.calculateBudgetSpending(budget),
+            progress: this.calculateBudgetProgress(budget),
+            status: this.getBudgetStatus(budget)
+        }));
+    }
+
+    /**
+     * Check if budget is overspent
+     */
+    isBudgetOverspent(budget) {
+        const spent = this.calculateBudgetSpending(budget);
+        return spent > budget.amount;
+    }
+
+    /**
+     * Get remaining budget amount
+     */
+    getBudgetRemaining(budget) {
+        const spent = this.calculateBudgetSpending(budget);
+        return budget.amount - spent;
+    }
+
+    // ====== ACCOUNT BALANCE CALCULATIONS (DERIVED) ======
+
+    /**
+     * Calculate current balance for a specific account
+     * Balance = initialBalance + income - expenses
+     */
+    calculateAccountBalance(account) {
+        if (!account) return 0;
+
+        let balance = parseInt(account.initialBalance) || 0;
+
+        // Add all income to this account
+        const accountIncome = this.app.state.transactions.income
+            .filter(i => i.accountId == account.id)
+            .reduce((sum, i) => sum + (parseInt(i.amount) || 0), 0);
+
+        // Subtract all expenses from this account
+        const accountExpenses = this.app.state.transactions.expenses
+            .filter(e => e.accountId == account.id)
+            .reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+
+        balance = balance + accountIncome - accountExpenses;
+
+        return balance;
+    }
+
+    /**
+     * Get all accounts with calculated balances
+     * Returns accounts enriched with currentBalance property
+     */
+    getAccountsWithBalances() {
+        return this.app.state.accounts.map(account => ({
+            ...account,
+            currentBalance: this.calculateAccountBalance(account)
+        }));
+    }
+
+    /**
+     * Get total balance across all active accounts
+     */
+    getTotalAccountBalance() {
+        return this.app.state.accounts
+            .filter(a => a.active)
+            .reduce((sum, account) => sum + this.calculateAccountBalance(account), 0);
+    }
+
+    /**
+     * Get account balance by ID
+     */
+    getAccountBalanceById(accountId) {
+        const account = this.app.state.accounts.find(a => a.id == accountId);
+        return this.calculateAccountBalance(account);
+    }
 }
 
 export default FinanceCalculator;

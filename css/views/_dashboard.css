@@ -482,6 +482,39 @@
   box-shadow: var(--shadow-2xl);
 }
 
+/* Clickable Stats Card Details */
+.clickable-card {
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.2);
+  filter: brightness(1.05);
+}
+
+.clickable-card:active {
+  transform: translateY(0);
+}
+
+/* Account Distribution List */
+.account-list-container {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.account-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.account-list-container::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
 /* Responsive Dashboard */
 @media (max-width: 1024px) {
   .dashboard-grid {

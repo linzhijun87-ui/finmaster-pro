@@ -35,6 +35,8 @@ class DataManager {
                 this.app.state = {
                     ...this.app.state,
                     ...parsed,
+                    budgets: parsed.budgets || [], // Budget data with fallback
+                    accounts: parsed.accounts || [], // Account data with fallback
                     user: mergedUser,
                     settings: mergedSettings,
                     activeTab: this.app.state.activeTab,
@@ -178,6 +180,8 @@ class DataManager {
                 transactions: this.app.state.transactions,
                 goals: this.app.state.goals,
                 checklist: this.app.state.checklist,
+                budgets: this.app.state.budgets || [], // Budget data
+                accounts: this.app.state.accounts || [], // Account data
                 settings: this.app.state.settings
             };
 
@@ -253,18 +257,31 @@ class DataManager {
     // ====== TRANSACTION MANAGEMENT ======
     addTransaction(type, data) {
         const id = Date.now();
-
         const transaction = {
             id,
-            ...data,
+            name: data.name,
+            amount: data.amount,
+            category: data.category,
+            account: data.account || '', // Account name (NEW)
+            accountId: data.accountId || null, // Account ID (NEW)
             date: data.date || new Date().toISOString().split('T')[0],
+            note: data.note || '',
             createdAt: new Date().toISOString()
         };
 
-        this.app.state.transactions[type].unshift(transaction);
+        this.app.state.transactions[type].push(transaction);
         this.saveData(true);
 
-        console.log(`✅ ${type} transaction added:`, transaction);
+        // NO balance updates - balances are derived
+
+        // Emit account-changed for balance recalculation in views
+        if (transaction.accountId) {
+            document.dispatchEvent(new CustomEvent('account-changed', {
+                detail: { action: 'transaction-added', accountId: transaction.accountId }
+            }));
+        }
+
+        console.log(`✅ ${type} added:`, transaction);
         return transaction;
     }
 
@@ -354,6 +371,112 @@ class DataManager {
         this.saveData(true);
     }
 
+    // ====== BUDGET MANAGEMENT ======
+    addBudget(data) {
+        const id = Date.now();
+        const now = new Date();
+        const periodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        const budget = {
+            id,
+            name: data.name,
+            amount: data.amount,
+            category: data.category,
+            duration: data.duration || 'monthly', // 'monthly', 'weekly', 'yearly'
+            lastResetAt: now.toISOString(),
+            periodKey: periodKey, // For sync-safe reset detection
+            created: now.toISOString()
+            // NOTE: NO 'spent' field - derived from transactions via FinanceCalculator
+        };
+
+        this.app.state.budgets.push(budget);
+        this.saveData(true);
+
+        // Emit event for views to update
+        document.dispatchEvent(new CustomEvent('budget-changed', {
+            detail: { action: 'add', budget }
+        }));
+
+        console.log('✅ Budget added:', budget);
+        return budget;
+    }
+
+    updateBudget(id, updates) {
+        const budgetIndex = this.app.state.budgets.findIndex(b => b.id == id);
+
+        if (budgetIndex !== -1) {
+            const budget = { ...this.app.state.budgets[budgetIndex], ...updates };
+            this.app.state.budgets[budgetIndex] = budget;
+            this.saveData(true);
+
+            // Emit event
+            document.dispatchEvent(new CustomEvent('budget-changed', {
+                detail: { action: 'update', budget }
+            }));
+
+            console.log('✅ Budget updated:', budget);
+            return budget;
+        }
+
+        return null;
+    }
+
+    deleteBudget(id) {
+        const budget = this.app.state.budgets.find(b => b.id == id);
+        this.app.state.budgets = this.app.state.budgets.filter(b => b.id != id);
+        this.saveData(true);
+
+        // Emit event
+        document.dispatchEvent(new CustomEvent('budget-changed', {
+            detail: { action: 'delete', budgetId: id }
+        }));
+
+        console.log('🗑️ Budget deleted:', id);
+    }
+
+    // ====== SYNC-SAFE BUDGET RESET LOGIC ======
+    checkBudgetResets() {
+        if (!this.app.state.budgets || this.app.state.budgets.length === 0) {
+            return 0;
+        }
+
+        const now = new Date();
+        const currentPeriodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        let resetsPerformed = 0;
+
+        this.app.state.budgets.forEach(budget => {
+            // Only auto-reset monthly budgets
+            if (budget.duration !== 'monthly') return;
+
+            // Check if period key changed (new month)
+            if (budget.periodKey !== currentPeriodKey) {
+                console.log(`🔄 Resetting monthly budget: ${budget.name}`);
+                // Update period tracking (NO spent field to reset)
+                budget.lastResetAt = now.toISOString();
+                budget.periodKey = currentPeriodKey;
+                resetsPerformed++;
+            }
+        });
+
+        if (resetsPerformed > 0) {
+            this.saveData(true);
+
+            if (this.app.uiManager) {
+                this.app.uiManager.showNotification(
+                    `🔄 ${resetsPerformed} budget bulanan telah direset`,
+                    'info'
+                );
+            }
+
+            // Emit event
+            document.dispatchEvent(new CustomEvent('budget-changed', {
+                detail: { action: 'reset', count: resetsPerformed }
+            }));
+        }
+
+        return resetsPerformed;
+    }
+
     // ====== IMPORT/EXPORT ======
     importData() {
         const input = document.createElement('input');
@@ -428,6 +551,93 @@ class DataManager {
             totalGoals: this.app.state.goals.length,
             totalChecklist: this.app.state.checklist.length
         };
+    }
+
+    // ====== ACCOUNT MANAGEMENT (NO BALANCE PERSISTENCE) ======
+
+    addAccount(data) {
+        const id = Date.now();
+        const now = new Date();
+
+        const account = {
+            id,
+            name: data.name,
+            type: data.type || 'bank',
+            initialBalance: parseInt(data.initialBalance) || 0,
+            note: data.note || '',
+            active: true,
+            created: now.toISOString()
+            // STRICT: NO currentBalance. Balances are fully derived.
+        };
+
+        this.app.state.accounts.push(account);
+        this.saveData(true);
+
+        document.dispatchEvent(new CustomEvent('account-changed', {
+            detail: { action: 'add', account }
+        }));
+
+        console.log('✅ Account added:', account);
+        return account;
+    }
+
+    updateAccount(id, updates) {
+        const accountIndex = this.app.state.accounts.findIndex(a => a.id == id);
+
+        if (accountIndex !== -1) {
+            // STRICT: prevent updating restricted fields or adding unknowns
+            const currentAccount = this.app.state.accounts[accountIndex];
+
+            const updatedAccount = {
+                ...currentAccount,
+                name: updates.name !== undefined ? updates.name : currentAccount.name,
+                type: updates.type !== undefined ? updates.type : currentAccount.type,
+                initialBalance: updates.initialBalance !== undefined ? parseInt(updates.initialBalance) : currentAccount.initialBalance,
+                note: updates.note !== undefined ? updates.note : currentAccount.note,
+                active: updates.active !== undefined ? updates.active : currentAccount.active
+            };
+
+            // Remove any potential 'currentBalance' if it snuck in
+            delete updatedAccount.currentBalance;
+
+            this.app.state.accounts[accountIndex] = updatedAccount;
+            this.saveData(true);
+
+            document.dispatchEvent(new CustomEvent('account-changed', {
+                detail: { action: 'update', account: updatedAccount }
+            }));
+
+            console.log('✅ Account updated:', updatedAccount);
+            return updatedAccount;
+        }
+
+        return null;
+    }
+
+    deleteAccount(id) {
+        // Check if account is referenced by transactions
+        const hasTransactions = this.isAccountReferenced(id);
+
+        if (hasTransactions) {
+            // Soft delete - mark as inactive
+            return this.updateAccount(id, { active: false });
+        } else {
+            // Hard delete
+            this.app.state.accounts = this.app.state.accounts.filter(a => a.id != id);
+            this.saveData(true);
+
+            document.dispatchEvent(new CustomEvent('account-changed', {
+                detail: { action: 'delete', accountId: id }
+            }));
+
+            console.log('🗑️ Account deleted:', id);
+        }
+    }
+
+    isAccountReferenced(accountId) {
+        const inExpenses = this.app.state.transactions.expenses.some(e => e.accountId == accountId);
+        const inIncome = this.app.state.transactions.income.some(i => i.accountId == accountId);
+        return inExpenses || inIncome;
     }
 }
 

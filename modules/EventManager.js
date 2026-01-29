@@ -485,6 +485,22 @@ class EventManager {
             }
         });
 
+        // Budget events - refresh budget view when budgets change
+        this.addEventHandler(document, 'budget-changed', (e) => {
+            console.log('📊 Budget changed:', e.detail);
+            if (this.app.state.activeTab === 'budget' && this.app.views.budget) {
+                this.app.views.budget.refresh();
+            }
+        });
+
+        // Expense events - refresh budget view when expenses change
+        this.addEventHandler(document, 'expense-changed', (e) => {
+            console.log('💸 Expense changed:', e.detail);
+            if (this.app.state.activeTab === 'budget' && this.app.views.budget) {
+                this.app.views.budget.refresh();
+            }
+        });
+
         // Before unload (save data)
         this.addEventHandler(window, 'beforeunload', () => {
             if (this.app.state.settings.autoSave) {

@@ -36,6 +36,9 @@ class SettingsView {
                 
                 <!-- APP SETTINGS -->
                 ${this.getAppSettingsHTML()}
+
+                <!-- ACCOUNT SETTINGS (NEW) -->
+                ${this.getAccountSettingsHTML()}
                 
                 <!-- DATA MANAGEMENT -->
                 ${this.getDataManagementHTML()}
@@ -193,6 +196,63 @@ class SettingsView {
                 </div>
             </div>
         `;
+    }
+
+    getAccountSettingsHTML() {
+        // Get accounts with derived balances
+        const accounts = this.app.calculator.getAccountsWithBalances();
+
+        return `
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-title">
+                        <div class="settings-icon">💳</div>
+                        <div>
+                            <div style="font-weight: 600;">Manajemen Akun</div>
+                            <div class="text-muted" style="font-size: 0.875rem; margin-top: 2px;">
+                                Kelola sumber dana (Bank, E-Wallet, Cash)
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-outline" onclick="app.uiManager.openModal('addAccountModal')">
+                        ➕ Tambah
+                    </button>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="account-list">
+                        ${accounts.length > 0 ? accounts.map(acc => `
+                            <div class="account-item ${!acc.active ? 'inactive' : ''}" style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        ${this.getAccountIcon(acc.type)}
+                                        ${acc.name}
+                                        ${!acc.active ? '<span style="font-size: 0.7rem; background: var(--gray-200); padding: 2px 6px; border-radius: 4px;">Nonaktif</span>' : ''}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.8rem;">
+                                        ${acc.active
+                ? `Saldo: ${this.app.calculator.formatCurrency(acc.currentBalance)}`
+                : `(Nonaktif)`}
+                                    </div>
+                                </div>
+                                <button class="btn-outline btn-sm" onclick="handleEditAccount(${acc.id})">
+                                    ✏️
+                                </button>
+                            </div>
+                        `).join('') : '<div class="text-muted text-center p-3">Belum ada akun. Tambahkan sekarang!</div>'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getAccountIcon(type) {
+        switch (type) {
+            case 'bank': return '🏦';
+            case 'ewallet': return '📱';
+            case 'cash': return '💵';
+            default: return '💳';
+        }
     }
 
     getDataManagementHTML() {
@@ -440,6 +500,32 @@ class SettingsView {
 
         // Refresh settings controls
         this.refreshSettingsControls();
+
+        // Refresh Account List
+        const accountList = document.querySelector('.account-list');
+        if (accountList) {
+            // We need to re-generate the account list HTML
+            const accounts = this.app.calculator.getAccountsWithBalances();
+            accountList.innerHTML = accounts.length > 0 ? accounts.map(acc => `
+                <div class="account-item ${!acc.active ? 'inactive' : ''}" style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            ${this.getAccountIcon(acc.type)}
+                            ${acc.name}
+                            ${!acc.active ? '<span style="font-size: 0.7rem; background: var(--gray-200); padding: 2px 6px; border-radius: 4px;">Nonaktif</span>' : ''}
+                        </div>
+                        <div class="text-muted" style="font-size: 0.8rem;">
+                            ${acc.active
+                    ? `Saldo: ${this.app.calculator.formatCurrency(acc.currentBalance)}`
+                    : `(Nonaktif)`}
+                        </div>
+                    </div>
+                    <button class="btn-outline btn-sm" onclick="handleEditAccount(${acc.id})">
+                        ✏️
+                    </button>
+                </div>
+            `).join('') : '<div class="text-muted text-center p-3">Belum ada akun. Tambahkan sekarang!</div>';
+        }
     }
 
     refreshSettingsControls() {
@@ -468,5 +554,27 @@ class SettingsView {
         }
     }
 }
+
+// ====== GLOBAL HELPER FUNCTIONS ======
+window.handleEditAccount = function (accountId) {
+    const account = window.app.state.accounts.find(a => a.id == accountId);
+    if (!account) return;
+
+    // Populate edit modal
+    document.getElementById('editAccountId').value = account.id;
+    document.getElementById('editAccountName').value = account.name;
+    document.getElementById('editAccountType').value = account.type;
+    document.getElementById('editAccountInitialBalance').value = account.initialBalance;
+    document.getElementById('editAccountNote').value = account.note || '';
+
+    // Active status logic
+    const activeSelect = document.getElementById('editAccountActive');
+    if (activeSelect) {
+        activeSelect.value = account.active ? 'true' : 'false';
+    }
+
+    // Open modal
+    window.app.uiManager.openModal('editAccountModal');
+};
 
 export default SettingsView;

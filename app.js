@@ -18,6 +18,7 @@ import IncomeView from './views/IncomeView.js';
 import ChecklistView from './views/ChecklistView.js';
 import SimulationView from './views/SimulationView.js';
 import SettingsView from './views/SettingsView.js';
+import BudgetView from './views/BudgetView.js';
 
 // Import constants
 import { APP_CONFIG } from './utils/Constants.js';
@@ -48,6 +49,8 @@ class FinancialApp {
             },
             goals: [],
             checklist: [],
+            budgets: [], // Budget data
+            accounts: [], // Account data (bank, cash, ewallet)
             settings: {
                 currency: 'IDR',
                 theme: 'auto',
@@ -90,7 +93,8 @@ class FinancialApp {
             income: new IncomeView(this),
             checklist: new ChecklistView(this),
             simulation: new SimulationView(this),
-            settings: new SettingsView(this)
+            settings: new SettingsView(this),
+            budget: new BudgetView(this) // Budget view
         };
 
         console.log('✅ All modules initialized');
@@ -732,6 +736,32 @@ class FinancialApp {
 
     closeModal() {
         this.uiManager.closeModal();
+    }
+
+    // ====== BUDGET DELEGATION (NO LOGIC) ======
+    addBudget(data) {
+        return this.dataManager.addBudget(data);
+    }
+
+    updateBudget(id, updates) {
+        return this.dataManager.updateBudget(id, updates);
+    }
+
+    deleteBudget(id) {
+        this.dataManager.deleteBudget(id);
+    }
+
+    // ====== ACCOUNT DELEGATION (NO LOGIC) ======
+    addAccount(data) {
+        return this.dataManager.addAccount(data);
+    }
+
+    updateAccount(id, updates) {
+        return this.dataManager.updateAccount(id, updates);
+    }
+
+    deleteAccount(id) {
+        this.dataManager.deleteAccount(id);
     }
 }
 

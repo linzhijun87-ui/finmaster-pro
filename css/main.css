@@ -32,6 +32,7 @@
 @import 'views/_checklist.css';
 @import 'views/_simulation.css';
 @import 'views/_settings.css';
+@import 'views/_budget.css';
 
 /* Import Theme Styles */
 @import 'themes/_dark.css';
@@ -50,7 +51,7 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
   transition: background-color var(--transition-normal),
-              color var(--transition-normal);
+    color var(--transition-normal);
   min-height: 100vh;
 }
 
@@ -74,147 +75,483 @@ body {
 }
 
 /* Utility Classes */
-.text-center { text-align: center; }
-.text-left { text-align: left; }
-.text-right { text-align: right; }
+.text-center {
+  text-align: center;
+}
 
-.m-0 { margin: 0; }
-.m-1 { margin: var(--space-1); }
-.m-2 { margin: var(--space-2); }
-.m-3 { margin: var(--space-3); }
-.m-4 { margin: var(--space-4); }
-.m-6 { margin: var(--space-6); }
-.m-8 { margin: var(--space-8); }
+.text-left {
+  text-align: left;
+}
 
-.mt-0 { margin-top: 0; }
-.mt-1 { margin-top: var(--space-1); }
-.mt-2 { margin-top: var(--space-2); }
-.mt-3 { margin-top: var(--space-3); }
-.mt-4 { margin-top: var(--space-4); }
-.mt-6 { margin-top: var(--space-6); }
-.mt-8 { margin-top: var(--space-8); }
+.text-right {
+  text-align: right;
+}
 
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: var(--space-1); }
-.mb-2 { margin-bottom: var(--space-2); }
-.mb-3 { margin-bottom: var(--space-3); }
-.mb-4 { margin-bottom: var(--space-4); }
-.mb-6 { margin-bottom: var(--space-6); }
-.mb-8 { margin-bottom: var(--space-8); }
+.m-0 {
+  margin: 0;
+}
 
-.p-0 { padding: 0; }
-.p-1 { padding: var(--space-1); }
-.p-2 { padding: var(--space-2); }
-.p-3 { padding: var(--space-3); }
-.p-4 { padding: var(--space-4); }
-.p-6 { padding: var(--space-6); }
-.p-8 { padding: var(--space-8); }
+.m-1 {
+  margin: var(--space-1);
+}
 
-.pt-0 { padding-top: 0; }
-.pt-1 { padding-top: var(--space-1); }
-.pt-2 { padding-top: var(--space-2); }
-.pt-3 { padding-top: var(--space-3); }
-.pt-4 { padding-top: var(--space-4); }
-.pt-6 { padding-top: var(--space-6); }
-.pt-8 { padding-top: var(--space-8); }
+.m-2 {
+  margin: var(--space-2);
+}
 
-.pb-0 { padding-bottom: 0; }
-.pb-1 { padding-bottom: var(--space-1); }
-.pb-2 { padding-bottom: var(--space-2); }
-.pb-3 { padding-bottom: var(--space-3); }
-.pb-4 { padding-bottom: var(--space-4); }
-.pb-6 { padding-bottom: var(--space-6); }
-.pb-8 { padding-bottom: var(--space-8); }
+.m-3 {
+  margin: var(--space-3);
+}
 
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.flex-row { flex-direction: row; }
-.items-center { align-items: center; }
-.items-start { align-items: flex-start; }
-.items-end { align-items: flex-end; }
-.justify-center { justify-content: center; }
-.justify-between { justify-content: space-between; }
-.justify-start { justify-content: flex-start; }
-.justify-end { justify-content: flex-end; }
-.flex-1 { flex: 1; }
-.flex-auto { flex: auto; }
-.flex-none { flex: none; }
+.m-4 {
+  margin: var(--space-4);
+}
 
-.grid { display: grid; }
-.gap-1 { gap: var(--space-1); }
-.gap-2 { gap: var(--space-2); }
-.gap-3 { gap: var(--space-3); }
-.gap-4 { gap: var(--space-4); }
-.gap-6 { gap: var(--space-6); }
-.gap-8 { gap: var(--space-8); }
+.m-6 {
+  margin: var(--space-6);
+}
 
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.min-h-screen { min-height: 100vh; }
-.max-w-full { max-width: 100%; }
+.m-8 {
+  margin: var(--space-8);
+}
 
-.relative { position: relative; }
-.absolute { position: absolute; }
-.fixed { position: fixed; }
-.sticky { position: sticky; }
+.mt-0 {
+  margin-top: 0;
+}
 
-.overflow-hidden { overflow: hidden; }
-.overflow-auto { overflow: auto; }
-.overflow-x-auto { overflow-x: auto; }
-.overflow-y-auto { overflow-y: auto; }
+.mt-1 {
+  margin-top: var(--space-1);
+}
 
-.rounded-none { border-radius: 0; }
-.rounded-sm { border-radius: var(--radius-sm); }
-.rounded-md { border-radius: var(--radius-md); }
-.rounded-lg { border-radius: var(--radius-lg); }
-.rounded-xl { border-radius: var(--radius-xl); }
-.rounded-full { border-radius: var(--radius-full); }
+.mt-2 {
+  margin-top: var(--space-2);
+}
 
-.border-0 { border: 0; }
-.border { border: 1px solid var(--border-color); }
-.border-t { border-top: 1px solid var(--border-color); }
-.border-b { border-bottom: 1px solid var(--border-color); }
-.border-l { border-left: 1px solid var(--border-color); }
-.border-r { border-right: 1px solid var(--border-color); }
+.mt-3 {
+  margin-top: var(--space-3);
+}
 
-.shadow-none { box-shadow: none; }
-.shadow-sm { box-shadow: var(--shadow-sm); }
-.shadow-md { box-shadow: var(--shadow-md); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-.shadow-xl { box-shadow: var(--shadow-xl); }
+.mt-4 {
+  margin-top: var(--space-4);
+}
 
-.opacity-0 { opacity: 0; }
-.opacity-25 { opacity: 0.25; }
-.opacity-50 { opacity: 0.5; }
-.opacity-75 { opacity: 0.75; }
-.opacity-100 { opacity: 1; }
+.mt-6 {
+  margin-top: var(--space-6);
+}
 
-.pointer-events-none { pointer-events: none; }
-.pointer-events-auto { pointer-events: auto; }
+.mt-8 {
+  margin-top: var(--space-8);
+}
 
-.select-none { user-select: none; }
-.select-text { user-select: text; }
-.select-all { user-select: all; }
+.mb-0 {
+  margin-bottom: 0;
+}
 
-.cursor-pointer { cursor: pointer; }
-.cursor-default { cursor: default; }
-.cursor-not-allowed { cursor: not-allowed; }
+.mb-1 {
+  margin-bottom: var(--space-1);
+}
 
-.z-0 { z-index: 0; }
-.z-10 { z-index: 10; }
-.z-20 { z-index: 20; }
-.z-30 { z-index: 30; }
-.z-40 { z-index: 40; }
-.z-50 { z-index: 50; }
-.z-auto { z-index: auto; }
+.mb-2 {
+  margin-bottom: var(--space-2);
+}
+
+.mb-3 {
+  margin-bottom: var(--space-3);
+}
+
+.mb-4 {
+  margin-bottom: var(--space-4);
+}
+
+.mb-6 {
+  margin-bottom: var(--space-6);
+}
+
+.mb-8 {
+  margin-bottom: var(--space-8);
+}
+
+.p-0 {
+  padding: 0;
+}
+
+.p-1 {
+  padding: var(--space-1);
+}
+
+.p-2 {
+  padding: var(--space-2);
+}
+
+.p-3 {
+  padding: var(--space-3);
+}
+
+.p-4 {
+  padding: var(--space-4);
+}
+
+.p-6 {
+  padding: var(--space-6);
+}
+
+.p-8 {
+  padding: var(--space-8);
+}
+
+.pt-0 {
+  padding-top: 0;
+}
+
+.pt-1 {
+  padding-top: var(--space-1);
+}
+
+.pt-2 {
+  padding-top: var(--space-2);
+}
+
+.pt-3 {
+  padding-top: var(--space-3);
+}
+
+.pt-4 {
+  padding-top: var(--space-4);
+}
+
+.pt-6 {
+  padding-top: var(--space-6);
+}
+
+.pt-8 {
+  padding-top: var(--space-8);
+}
+
+.pb-0 {
+  padding-bottom: 0;
+}
+
+.pb-1 {
+  padding-bottom: var(--space-1);
+}
+
+.pb-2 {
+  padding-bottom: var(--space-2);
+}
+
+.pb-3 {
+  padding-bottom: var(--space-3);
+}
+
+.pb-4 {
+  padding-bottom: var(--space-4);
+}
+
+.pb-6 {
+  padding-bottom: var(--space-6);
+}
+
+.pb-8 {
+  padding-bottom: var(--space-8);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-auto {
+  flex: auto;
+}
+
+.flex-none {
+  flex: none;
+}
+
+.grid {
+  display: grid;
+}
+
+.gap-1 {
+  gap: var(--space-1);
+}
+
+.gap-2 {
+  gap: var(--space-2);
+}
+
+.gap-3 {
+  gap: var(--space-3);
+}
+
+.gap-4 {
+  gap: var(--space-4);
+}
+
+.gap-6 {
+  gap: var(--space-6);
+}
+
+.gap-8 {
+  gap: var(--space-8);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.min-h-screen {
+  min-height: 100vh;
+}
+
+.max-w-full {
+  max-width: 100%;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.sticky {
+  position: sticky;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.rounded-none {
+  border-radius: 0;
+}
+
+.rounded-sm {
+  border-radius: var(--radius-sm);
+}
+
+.rounded-md {
+  border-radius: var(--radius-md);
+}
+
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
+
+.rounded-xl {
+  border-radius: var(--radius-xl);
+}
+
+.rounded-full {
+  border-radius: var(--radius-full);
+}
+
+.border-0 {
+  border: 0;
+}
+
+.border {
+  border: 1px solid var(--border-color);
+}
+
+.border-t {
+  border-top: 1px solid var(--border-color);
+}
+
+.border-b {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.border-l {
+  border-left: 1px solid var(--border-color);
+}
+
+.border-r {
+  border-right: 1px solid var(--border-color);
+}
+
+.shadow-none {
+  box-shadow: none;
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
+
+.opacity-0 {
+  opacity: 0;
+}
+
+.opacity-25 {
+  opacity: 0.25;
+}
+
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+.opacity-100 {
+  opacity: 1;
+}
+
+.pointer-events-none {
+  pointer-events: none;
+}
+
+.pointer-events-auto {
+  pointer-events: auto;
+}
+
+.select-none {
+  user-select: none;
+}
+
+.select-text {
+  user-select: text;
+}
+
+.select-all {
+  user-select: all;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-default {
+  cursor: default;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+.z-0 {
+  z-index: 0;
+}
+
+.z-10 {
+  z-index: 10;
+}
+
+.z-20 {
+  z-index: 20;
+}
+
+.z-30 {
+  z-index: 30;
+}
+
+.z-40 {
+  z-index: 40;
+}
+
+.z-50 {
+  z-index: 50;
+}
+
+.z-auto {
+  z-index: auto;
+}
 
 /* Print Utility */
 @media print {
-  .no-print { display: none !important; }
-  .print-only { display: block !important; }
-  .break-before { page-break-before: always; }
-  .break-after { page-break-after: always; }
-  .break-inside-avoid { page-break-inside: avoid; }
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .break-before {
+    page-break-before: always;
+  }
+
+  .break-after {
+    page-break-after: always;
+  }
+
+  .break-inside-avoid {
+    page-break-inside: avoid;
+  }
 }
 
 /* Loading Overlay */
@@ -271,6 +608,7 @@ body {
 
 /* Performance Optimizations */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -318,12 +656,12 @@ body {
     --text-primary: #000000;
     --bg-primary: #ffffff;
   }
-  
+
   [data-theme="dark"] {
     --text-primary: #ffffff;
     --bg-primary: #000000;
   }
-  
+
   .card,
   .btn,
   input,
@@ -373,20 +711,20 @@ body {
     --header-height: 56px;
     --nav-height: 48px;
   }
-  
+
   .section-title {
     font-size: var(--font-size-lg);
   }
-  
+
   .btn {
     padding: var(--space-2) var(--space-3);
     font-size: var(--font-size-sm);
   }
-  
+
   .card {
     border-radius: var(--radius-lg);
   }
-  
+
   .modal-content {
     border-radius: var(--radius-lg);
   }
@@ -400,27 +738,27 @@ body {
     --font-size-4xl: var(--font-size-3xl);
     --font-size-3xl: var(--font-size-2xl);
   }
-  
+
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .actions-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .content-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .nav-container {
     display: none;
   }
-  
+
   .nav-mobile {
     display: block;
   }
@@ -431,15 +769,15 @@ body {
   :root {
     --max-content-width: 100%;
   }
-  
+
   .content-container {
     padding: 0 var(--container-padding);
   }
-  
+
   .settings-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .calculator-grid {
     grid-template-columns: 1fr;
   }
@@ -468,6 +806,7 @@ body {
     transform: translateY(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -479,6 +818,7 @@ body {
     transform: translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -490,6 +830,7 @@ body {
     transform: rotate(-90deg);
     opacity: 0;
   }
+
   to {
     transform: rotate(0);
     opacity: 1;
@@ -501,12 +842,15 @@ body {
     transform: scale(0.3);
     opacity: 0;
   }
+
   50% {
     transform: scale(1.05);
   }
+
   70% {
     transform: scale(0.9);
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -521,7 +865,7 @@ body {
   --anim-normal: 250ms;
   --anim-slow: 350ms;
   --anim-bounce: 500ms;
-  
+
   /* Z-index Layers */
   --layer-base: 0;
   --layer-dropdown: 1000;
@@ -560,9 +904,12 @@ body {
 }
 
 @keyframes premiumGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
   }
@@ -607,7 +954,7 @@ body {
   .app-container {
     display: block;
   }
-  
+
   .header,
   .nav-container,
   .footer,
@@ -615,18 +962,18 @@ body {
   .version-badge {
     display: none !important;
   }
-  
+
   .main-content {
     margin-top: 0;
     padding: 0;
   }
-  
+
   .card {
     break-inside: avoid;
     box-shadow: none !important;
     border: 1px solid #ddd !important;
   }
-  
+
   .chart-container {
     page-break-inside: avoid;
   }
@@ -728,9 +1075,9 @@ body {
 
 /* Smooth Theme Transition */
 .theme-transition * {
-  transition: background-color var(--transition-slow), 
-              border-color var(--transition-slow), 
-              color var(--transition-slow);
+  transition: background-color var(--transition-slow),
+    border-color var(--transition-slow),
+    color var(--transition-slow);
 }
 
 /* ====== CUSTOM SCROLL SNAP ====== */
@@ -740,7 +1087,7 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-.scroll-snap-x > * {
+.scroll-snap-x>* {
   scroll-snap-align: start;
   flex: 0 0 auto;
 }
@@ -767,6 +1114,7 @@ body {
     opacity: 0;
     transform: scale(0.95);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -779,190 +1127,191 @@ body {
 
 /* FIX untuk chart visibility */
 canvas#financeChart {
-    max-width: 100%;
-    height: auto;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Pastikan text di chart terlihat di semua mode */
 .chartjs-render-monitor {
-    filter: none !important;
+  filter: none !important;
 }
 
 /* Override untuk legenda chart di light mode */
 [data-theme="light"] .chartjs-render-monitor {
-    --chart-text-color: #374151;
-    --chart-grid-color: rgba(0, 0, 0, 0.1);
+  --chart-text-color: #374151;
+  --chart-grid-color: rgba(0, 0, 0, 0.1);
 }
 
 /* Override untuk legenda chart di dark mode */
 [data-theme="dark"] .chartjs-render-monitor {
-    --chart-text-color: #e5e7eb;
-    --chart-grid-color: rgba(255, 255, 255, 0.1);
+  --chart-text-color: #e5e7eb;
+  --chart-grid-color: rgba(255, 255, 255, 0.1);
 }
 
 /* FIX untuk Financial Goals visibility */
 .goal-card {
-    background: linear-gradient(135deg, var(--primary-800), var(--primary-600));
-    color: white !important;
-    position: relative;
-    z-index: 1;
+  background: linear-gradient(135deg, var(--primary-800), var(--primary-600));
+  color: white !important;
+  position: relative;
+  z-index: 1;
 }
 
 .goal-card .text-muted {
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-weight: 500;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
 }
 
 .goal-card .btn-outline {
-    color: white !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    background: rgba(255, 255, 255, 0.1);
-    transition: all 0.2s ease;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
 }
 
 .goal-card .btn-outline:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-1px);
 }
 
 /* Pastikan goal-card text putih di semua tema */
 [data-theme="light"] .goal-card .text-muted,
 [data-theme="dark"] .goal-card .text-muted {
-    color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
 /* ====== URGENT FIXES ====== */
 
 /* 1. Fix chart visibility in light mode */
 [data-theme="light"] .chart-container canvas {
-    filter: none;
+  filter: none;
 }
 
 [data-theme="light"] .chartjs-tooltip {
-    color: #000 !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #000 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 [data-theme="light"] .chartjs-legend {
-    color: #374151 !important;
+  color: #374151 !important;
 }
 
 /* 2. Fix Financial Goals text visibility */
 .goal-card {
-    color: white !important;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  color: white !important;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
 }
 
 .goal-card .text-muted {
-    color: rgba(255, 255, 255, 0.9) !important;
-    opacity: 1 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  opacity: 1 !important;
 }
 
 .goal-card .btn-outline {
-    color: white !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-    background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .goal-card .btn-outline:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    border-color: rgba(255, 255, 255, 0.6) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* 3. Fix dashboard layout for 50:50 split */
 @media (min-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr 1fr !important; /* 50:50 split */
-        gap: var(--space-6);
-    }
-    
-    .chart-container {
-        height: 300px;
-    }
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr !important;
+    /* 50:50 split */
+    gap: var(--space-6);
+  }
+
+  .chart-container {
+    height: 300px;
+  }
 }
 
 /* 4. Fix navigation space on desktop */
 @media (min-width: 768px) {
-    .nav-container {
-        display: flex !important;
-        justify-content: center;
-    }
-    
-    .nav-tabs {
-        justify-content: center;
-        gap: var(--space-2);
-        padding: 0 var(--space-4);
-    }
-    
-    .nav-tab {
-        padding: 0 var(--space-4);
-        min-width: auto;
-    }
+  .nav-container {
+    display: flex !important;
+    justify-content: center;
+  }
+
+  .nav-tabs {
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-4);
+  }
+
+  .nav-tab {
+    padding: 0 var(--space-4);
+    min-width: auto;
+  }
 }
 
 /* 5. Fix footer horizontal layout */
 @media (min-width: 768px) {
-    .footer-main {
-        display: grid !important;
-        grid-template-columns: 2fr repeat(3, 1fr) !important;
-        gap: var(--space-8);
-    }
+  .footer-main {
+    display: grid !important;
+    grid-template-columns: 2fr repeat(3, 1fr) !important;
+    gap: var(--space-8);
+  }
 }
 
 /* EMERGENCY FIXES FOR CHART */
 
 /* Pastikan chart container selalu ada dan terlihat */
 #chartContainer {
-    position: relative !important;
-    width: 100% !important;
-    height: 300px !important;
-    min-height: 300px !important;
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 300px !important;
+  min-height: 300px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Force chart container dalam chart-container */
 .chart-container #chartContainer {
-    display: block !important;
-    height: 300px !important;
+  display: block !important;
+  height: 300px !important;
 }
 
 /* Pastikan canvas ada dan terlihat */
 #financeChart {
-    width: 100% !important;
-    height: 100% !important;
-    display: block !important;
-    background: transparent !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  background: transparent !important;
 }
 
 /* Loading state */
 .chart-loading {
-    height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-surface);
-    border-radius: 8px;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border-radius: 8px;
 }
 
 /* Fix untuk dashboard grid */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: var(--space-6);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-6);
 }
 
 /* Fix untuk responsif */
 @media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    #chartContainer {
-        height: 250px !important;
-        min-height: 250px !important;
-    }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #chartContainer {
+    height: 250px !important;
+    min-height: 250px !important;
+  }
 }

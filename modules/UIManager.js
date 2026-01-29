@@ -115,6 +115,9 @@ class UIManager {
                 }
             });
 
+            // Populate account selects
+            this.populateAccountSelect(`#${modalId} .account-select`);
+
             // Focus management for accessibility
             setTimeout(() => {
                 // Try to focus first input
@@ -552,6 +555,32 @@ class UIManager {
     }
 
     // ====== FORM HELPERS ======
+    populateAccountSelect(selector, selectedId = null) {
+        const selectEls = document.querySelectorAll(selector);
+
+        selectEls.forEach(selectEl => {
+            if (!selectEl) return;
+
+            // Get active accounts
+            const accounts = this.app.state.accounts.filter(a => a.active);
+
+            if (accounts.length === 0) {
+                selectEl.innerHTML = '<option value="" disabled selected>Belum ada akun aktif</option>';
+                return;
+            }
+
+            let html = '<option value="" disabled selected>Pilih Akun</option>';
+
+            accounts.forEach(acc => {
+                const balance = this.app.calculator.formatCurrency(this.app.calculator.calculateAccountBalance(acc));
+                const isSelected = selectedId && (acc.id == selectedId) ? 'selected' : '';
+                html += `<option value="${acc.id}" ${isSelected}>${acc.name} (${balance})</option>`;
+            });
+
+            selectEl.innerHTML = html;
+        });
+    }
+
     setupFormValidation() {
         // Real-time validation for amount inputs
         document.addEventListener('input', (e) => {

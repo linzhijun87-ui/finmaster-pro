@@ -45,10 +45,24 @@ class DashboardView {
                 this.updateFinancialCards();
             } else {
                 statsGrid.innerHTML = `
-                    ${this.getStatCardHTML('netBalance', 'Kekayaan Bersih', this.app.state.finances.netBalance, 'primary', '💰')}
-                    ${this.getStatCardHTML('availableCash', 'Dana Tersedia', this.app.state.finances.availableCash, 'success', '�')}
+                    <div class="stat-card primary clickable-card" id="netWorthCard">
+                        <div class="stat-header">
+                            <div>
+                                <div class="text-muted mb-2">Kekayaan Bersih</div>
+                                <div class="stat-value" id="totalNetBalance" data-value="${this.app.state.finances.netBalance}">
+                                    ${this.app.calculator.formatCurrency(this.app.state.finances.netBalance)}
+                                </div>
+                            </div>
+                            <div class="stat-icon">💰</div>
+                        </div>
+                        <div class="stat-trend">
+                            <span style="font-size: 0.8rem; opacity: 0.8;">Ketuk untuk rincian akun 👁️</span>
+                        </div>
+                    </div>
+                    ${this.getStatCardHTML('availableCash', 'Dana Tersedia', this.app.state.finances.availableCash, 'success', '💵')}
                     ${this.getStatCardHTML('allocated', 'Dana Dialokasikan', this.app.state.finances.totalAllocated, 'warning', '🔒')}
                  `;
+                this.setupNetWorthAction();
             }
         }
 
@@ -101,6 +115,8 @@ class DashboardView {
         animateIfFound('totalNetBalance', finances.netBalance);
         animateIfFound('totalAvailableCash', finances.availableCash);
         animateIfFound('totalAllocated', finances.totalAllocated);
+
+        animateIfFound('totalAllocated', finances.totalAllocated);
     }
 
 
@@ -118,7 +134,21 @@ class DashboardView {
         return `
             <!-- STATS GRID -->
             <div class="stats-grid stagger-children">
-                ${this.getStatCardHTML('netBalance', 'Kekayaan Bersih', this.app.state.finances.netBalance, 'primary', '💰')}
+                <div class="stat-card primary clickable-card" id="netWorthCard">
+                    <div class="stat-header">
+                        <div>
+                            <div class="text-muted mb-2">Kekayaan Bersih</div>
+                            <div class="stat-value" id="totalNetBalance" data-value="${this.app.state.finances.netBalance}">
+                                ${this.app.calculator.formatCurrency(this.app.state.finances.netBalance)}
+                            </div>
+                        </div>
+                        <div class="stat-icon">💰</div>
+                    </div>
+                    <div class="stat-trend">
+                        <span style="font-size: 0.8rem; opacity: 0.8;">Ketuk untuk rincian akun 👁️</span>
+                    </div>
+                </div>
+
                 ${this.getStatCardHTML('availableCash', 'Dana Tersedia', this.app.state.finances.availableCash, 'success', '💵')}
                 ${this.getStatCardHTML('allocated', 'Dana Dialokasikan', this.app.state.finances.totalAllocated, 'warning', '🔒')}
             </div>
@@ -183,11 +213,93 @@ class DashboardView {
     }
 
     // TAMBAHKAN method setupChartControls yang sederhana:
+    setupNetWorthAction() {
+        const netWorthCard = document.getElementById('netWorthCard');
+        if (netWorthCard) {
+            netWorthCard.style.cursor = 'pointer';
+            netWorthCard.addEventListener('click', () => {
+                this.showAccountDistribution();
+            });
+        }
+    }
+
+    showAccountDistribution() {
+        const listContainer = document.getElementById('accountDistributionList');
+        if (listContainer) {
+            listContainer.innerHTML = this.getAccountDistributionHTML();
+        }
+        this.app.uiManager.openModal('accountDistributionModal');
+    }
+
+    getAccountDistributionHTML() {
+        const accounts = this.app.calculator.getAccountsWithBalances();
+
+        if (accounts.length === 0) {
+            return `
+                <div class="empty-state-container" style="text-align: center; padding: 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;">🏦</div>
+                    <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+                        Belum ada sumber dana. Tambahkan di Pengaturan.
+                    </p>
+                    <button class="btn btn-primary btn-sm" onclick="app.uiManager.closeModal('accountDistributionModal'); app.showView('settings');">
+                        Ke Pengaturan
+                    </button>
+                </div>
+            `;
+        }
+
+        const activeAccounts = accounts.filter(a => a.active);
+        const totalBalance = activeAccounts.reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
+
+        const listHtml = activeAccounts.map(acc => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-divider);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="background: var(--bg-surface); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 1.2rem;">
+                        ${this.getAccountIcon(acc.type)}
+                    </div>
+                    <div>
+                        <div style="font-weight: 500;">${acc.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize;">${acc.type}</div>
+                    </div>
+                </div>
+                <div style="font-weight: 600; color: var(--text-primary);">
+                    ${this.app.calculator.formatCurrency(acc.currentBalance)}
+                </div>
+            </div>
+        `).join('');
+
+        return `
+            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                <span class="text-muted" style="font-weight: 500;">Total Dana Akun</span>
+                <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary);">${this.app.calculator.formatCurrency(totalBalance)}</span>
+            </div>
+            <div class="account-list-scroll" style="max-height: 50vh; overflow-y: auto;">
+                ${listHtml}
+            </div>
+        `;
+    }
+
+    getAccountIcon(type) {
+        const icons = {
+            bank: '🏦',
+            ewallet: '📱',
+            cash: '💵',
+            other: '💳'
+        };
+        return icons[type] || '💳';
+    }
+
     setupChartControls() {
         const chartActions = document.querySelector('.chart-actions');
         if (!chartActions) return;
 
-        chartActions.addEventListener('click', (e) => {
+        // Remove old event listeners
+        const newChartActions = chartActions.cloneNode(true);
+        chartActions.parentNode.replaceChild(newChartActions, chartActions);
+
+        // ... (rest of logic handles via bubbling)
+
+        newChartActions.addEventListener('click', (e) => {
             const btn = e.target.closest('.chart-btn');
             if (!btn) return;
 
@@ -407,6 +519,9 @@ class DashboardView {
 
         // Setup quick actions
         this.setupQuickActions();
+
+        // Setup Net Worth Action (Modal)
+        this.setupNetWorthAction();
 
         // Setup chart controls
         this.setupChartControls();

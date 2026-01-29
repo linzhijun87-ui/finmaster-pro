@@ -74,6 +74,9 @@
                     <span>✅</span> Checklist
                     <span class="tab-badge" id="checklistBadge">0</span>
                 </button>
+                <button class="nav-tab" data-tab="budget">
+                    <span>📊</span> Budget
+                </button>
                 <button class="nav-tab" data-tab="simulation">
                     <span>📈</span> Simulasi
                 </button>
@@ -111,7 +114,8 @@
                         <h4>Fitur Utama</h4>
                         <ul class="footer-links">
                             <li><a href="#" data-tab="dashboard">📊 Dashboard Analytics</a></li>
-                            <li><a href="#" data-tab="expenses">💸 Budget Planning</a></li>
+                            <li><a href="#" data-tab="expenses">💸 Expenses</a></li>
+                            <li><a href="#" data-tab="budget">📊 Budgeting</a></li>
                             <li><a href="#" data-tab="simulation">📈 Investment Simulation</a></li>
                             <li><a href="#" id="exportReport">📄 Report Generation</a></li>
                         </ul>
@@ -195,6 +199,12 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label for="expenseAccount">Sumber Dana</label>
+                        <select id="expenseAccount" required class="account-select">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="expenseDate">Tanggal</label>
                         <input type="date" id="expenseDate" required>
                     </div>
@@ -232,6 +242,12 @@
                             <option value="investasi">Return Investasi</option>
                             <option value="hadiah">Hadiah</option>
                             <option value="lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="incomeAccount">Masuk ke Akun</label>
+                        <select id="incomeAccount" required class="account-select">
+                            <!-- Populated by JS -->
                         </select>
                     </div>
                     <div class="form-group">
@@ -404,6 +420,81 @@
     </div>
     <div id="customDateModalOverlay" class="modal-overlay"></div>
 
+    <!-- Add Budget Modal -->
+    <div class="modal" id="addBudgetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📊 Tambah Budget Baru</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addBudgetForm">
+                    <div class="form-group">
+                        <label for="budgetName">Nama Budget</label>
+                        <input type="text" id="budgetName" required placeholder="Contoh: Belanja Bulanan">
+                    </div>
+                    <div class="form-group">
+                        <label for="budgetAmount">Batas Anggaran (Rp)</label>
+                        <input type="number" id="budgetAmount" required min="0" placeholder="2000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="budgetCategory">Kategori Pengeluaran</label>
+                        <select id="budgetCategory" required>
+                            <option value="kebutuhan">Kebutuhan</option>
+                            <option value="hiburan">Hiburan</option>
+                            <option value="transport">Transportasi</option>
+                            <option value="makanan">Makanan</option>
+                            <option value="kesehatan">Kesehatan</option>
+                            <option value="pendidikan">Pendidikan</option>
+                            <option value="investasi">Investasi</option>
+                            <option value="lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💾 Simpan Budget
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Budget Modal -->
+    <div class="modal" id="editBudgetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Budget</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editBudgetForm">
+                    <input type="hidden" id="editBudgetId">
+                    <div class="form-group">
+                        <label for="editBudgetName">Nama Budget</label>
+                        <input type="text" id="editBudgetName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editBudgetAmount">Batas Anggaran (Rp)</label>
+                        <input type="number" id="editBudgetAmount" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editBudgetCategory">Kategori Pengeluaran</label>
+                        <input type="text" id="editBudgetCategoryDisplay" disabled
+                            style="background: var(--bg-surface);">
+                        <input type="hidden" id="editBudgetCategory">
+                        <small class="text-muted">Kategori tidak dapat diubah setelah budget dibuat.</small>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💾 Simpan Perubahan
+                    </button>
+                    <button type="button" id="deleteBudgetBtn" class="btn btn-danger"
+                        style="width: 100%; margin-top: var(--space-2); background: var(--danger); border: none;">
+                        🗑️ Hapus Budget
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Financial Assistant Modal -->
     <div class="modal" id="assistantModal">
         <div class="modal-content">
@@ -421,6 +512,194 @@
         </div>
     </div>
     <div id="assistantModalOverlay" class="modal-overlay"></div>
+
+    <!-- Add Account Modal -->
+    <div class="modal" id="addAccountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💳 Tambah Akun Baru</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addAccountForm">
+                    <div class="form-group">
+                        <label for="accountName">Nama Akun</label>
+                        <input type="text" id="accountName" required placeholder="Contoh: Bank BCA, Dompet Saya">
+                    </div>
+                    <div class="form-group">
+                        <label for="accountType">Tipe Akun</label>
+                        <select id="accountType" required>
+                            <option value="bank">Bank</option>
+                            <option value="ewallet">E-Wallet</option>
+                            <option value="cash">Cash / Tunai</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="accountInitialBalance">Saldo Awal (Rp)</label>
+                        <input type="number" id="accountInitialBalance" required placeholder="0">
+                        <small class="text-muted">Saldo sebelum memulai pencatatan di aplikasi ini.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="accountNote">Catatan (Opsional)</label>
+                        <input type="text" id="accountNote" placeholder="Keterangan tambahan">
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💾 Simpan Akun
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Account Modal -->
+    <div class="modal" id="editAccountModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Akun</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editAccountForm">
+                    <input type="hidden" id="editAccountId">
+                    <div class="form-group">
+                        <label for="editAccountName">Nama Akun</label>
+                        <input type="text" id="editAccountName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAccountType">Tipe Akun</label>
+                        <select id="editAccountType" required>
+                            <option value="bank">Bank</option>
+                            <option value="ewallet">E-Wallet</option>
+                            <option value="cash">Cash / Tunai</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAccountInitialBalance">Saldo Awal (Rp)</label>
+                        <input type="number" id="editAccountInitialBalance" required>
+                        <small class="text-muted">Mengubah saldo awal akan mempengaruhi perhitungan saldo saat
+                            ini.</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAccountActive">Status</label>
+                        <select id="editAccountActive" required>
+                            <option value="true">Aktif</option>
+                            <option value="false">Nonaktif (Soft Delete)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAccountNote">Catatan</label>
+                        <input type="text" id="editAccountNote">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-danger" id="deleteAccountBtn">🗑️ Hapus Permanen</button>
+                        <div style="margin-left: auto; display: flex; gap: var(--space-2);">
+                            <button type="button" class="btn-outline modal-close">Batal</button>
+                            <button type="submit" class="btn">💾 Simpan Perubahan</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Distribution Modal -->
+    <div class="modal" id="accountDistributionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💳 Distribusi Dana Akun</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="accountDistributionList" class="account-list-container">
+                    <!-- Content will be injected by JavaScript -->
+                </div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button class="btn btn-outline modal-close" style="width: 100%;">Tutup</button>
+                    <button class="btn btn-text"
+                        onclick="app.uiManager.closeModal('accountDistributionModal'); app.showView('settings');"
+                        style="margin-top: 10px;">
+                        ⚙️ Kelola Akun (Pengaturan)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Budget Modal -->
+    <div class="modal" id="addBudgetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Tambah Budget</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addBudgetForm">
+                    <div class="form-group">
+                        <label for="budgetName">Nama Budget</label>
+                        <input type="text" id="budgetName" required placeholder="Contoh: Belanja Bulanan">
+                    </div>
+                    <div class="form-group">
+                        <label for="budgetAmount">Jumlah Budget (Rp)</label>
+                        <input type="number" id="budgetAmount" required min="0" placeholder="2000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="budgetCategory">Kategori</label>
+                        <select id="budgetCategory" required>
+                            <option value="kebutuhan">🛒 Kebutuhan</option>
+                            <option value="hiburan">🎮 Hiburan</option>
+                            <option value="transport">🚗 Transport</option>
+                            <option value="kesehatan">🏥 Kesehatan</option>
+                            <option value="pendidikan">📚 Pendidikan</option>
+                            <option value="lainnya">📦 Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budgetDuration">Periode Reset</label>
+                        <select id="budgetDuration" required>
+                            <option value="monthly">Bulanan (Auto-reset)</option>
+                            <option value="weekly">Mingguan (Manual)</option>
+                            <option value="yearly">Tahunan (Manual)</option>
+                        </select>
+                        <small class="text-muted">Hanya budget bulanan yang auto-reset</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-outline modal-close">Batal</button>
+                        <button type="submit" class="btn">💾 Simpan Budget</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Budget Modal -->
+    <div class="modal" id="editBudgetModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Budget</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editBudgetForm">
+                    <input type="hidden" id="editBudgetId">
+                    <div class="form-group">
+                        <label for="editBudgetName">Nama Budget</label>
+                        <input type="text" id="editBudgetName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editBudgetAmount">Jumlah Budget (Rp)</label>
+                        <input type="number" id="editBudgetAmount" required min="0">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-danger" id="deleteBudgetBtn">🗑️ Hapus</button>
+                        <div style="margin-left: auto; display: flex; gap: var(--space-2);">
+                            <button type="button" class="btn-outline modal-close">Batal</button>
+                            <button type="submit" class="btn">💾 Simpan Perubahan</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts - TYPE MODULE untuk ES6 modules -->
     <script type="module" src="app.js"></script>

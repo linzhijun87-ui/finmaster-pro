@@ -19,9 +19,14 @@ class FormHandlers {
     initialize() {
         console.log('🔧 FormHandlers: Initializing...');
         this.setupIncomeForm();
+        this.setupExpenseForm(); // Expense Handling
+        this.setupAccountForm(); // Account Handling
+        this.setupEditAccountForm(); // Edit Account Handling
         this.setupGoalForm();
         this.setupEditGoalForm();
         this.setupAddFundsForm();
+        this.setupBudgetForm(); // Budget forms
+        this.setupEditBudgetForm(); // Budget edit form
         console.log('✅ FormHandlers: All handlers ready');
     }
 
@@ -61,16 +66,18 @@ class FormHandlers {
         const nameInput = document.getElementById('incomeName');
         const amountInput = document.getElementById('incomeAmount');
         const categoryInput = document.getElementById('incomeCategory');
+        const accountInput = document.getElementById('incomeAccount');
         const dateInput = document.getElementById('incomeDate');
 
         const name = nameInput?.value?.trim();
         const amount = parseInt(amountInput?.value) || 0;
         const category = categoryInput?.value;
+        const accountId = parseInt(accountInput?.value);
         const date = dateInput?.value;
 
         // 3. Validate inputs
-        if (!name || !category || !date) {
-            this.showError('Harap isi semua field yang diperlukan');
+        if (!name || !category || !date || !accountId) {
+            this.showError('Harap isi semua field termasuk Akun Tujuan');
             this.resetButton(submitBtn, '💰 Simpan Pendapatan');
             return;
         }
@@ -81,12 +88,21 @@ class FormHandlers {
             return;
         }
 
+        const account = this.app.state.accounts.find(a => a.id == accountId);
+        if (!account) {
+            this.showError('Akun tidak valid');
+            this.resetButton(submitBtn, '💰 Simpan Pendapatan');
+            return;
+        }
+
         // 4. Create transaction object
         const transaction = {
             id: Date.now(),
             name: name,
             amount: amount,
             category: category,
+            account: account.name,
+            accountId: accountId,
             date: date,
             createdAt: new Date().toISOString()
         };
@@ -131,6 +147,225 @@ class FormHandlers {
 
         // 15. Trigger assistant suggestions
         this.app.handleAssistantSuggestions('income', amount);
+    }
+
+    // ============================
+    // EXPENSE FORM HANDLING
+    // ============================
+
+    setupExpenseForm() {
+        const form = document.getElementById('expenseForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleExpenseSubmit();
+        });
+
+        console.log('✅ Expense form handler attached');
+    }
+
+    handleExpenseSubmit() {
+        const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
+        if (submitBtn) {
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Menyimpan...';
+        }
+
+        const name = document.getElementById('expenseName')?.value?.trim();
+        const amount = parseInt(document.getElementById('expenseAmount')?.value) || 0;
+        const category = document.getElementById('expenseCategory')?.value;
+        const accountId = parseInt(document.getElementById('expenseAccount')?.value);
+        const date = document.getElementById('expenseDate')?.value;
+
+        if (!name || !category || !date || !accountId) {
+            this.showError('Harap isi semua field termasuk Akun Sumber Dana');
+            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+            return;
+        }
+
+        if (amount <= 0) {
+            this.showError('Jumlah harus lebih dari 0');
+            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+            return;
+        }
+
+        const account = this.app.state.accounts.find(a => a.id == accountId);
+        if (!account) {
+            this.showError('Akun tidak valid');
+            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+            return;
+        }
+
+        // Check balance (optional strictly, but good for UX)
+        const currentBalance = this.app.calculator.calculateAccountBalance(account);
+        if (amount > currentBalance) {
+            if (!confirm(`Saldo akun ${account.name} mungkin tidak cukup (${this.app.calculator.formatCurrency(currentBalance)}). Tetap lanjutkan?`)) {
+                this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+                return;
+            }
+        }
+
+        const transaction = {
+            name,
+            amount,
+            category,
+            account: account.name,
+            accountId, // Store ID
+            date
+        };
+
+        this.app.dataManager.addTransaction('expenses', transaction);
+        this.app.calculator.calculateFinances();
+
+        // Update budget spending
+        // (Handled by FinanceCalculator via derived transactions)
+
+        this.updateDashboardStats();
+        // Update Expense List if visible
+        // (Requires specific View update or refresh)
+        if (this.app.state.activeTab === 'expenses') {
+            this.app.refreshCurrentView();
+        }
+
+        this.showSuccess('Pengeluaran berhasil disimpan!');
+        document.getElementById('expenseForm').reset();
+        this.app.uiManager.closeModal('addExpenseModal');
+
+        setTimeout(() => {
+            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+        }, 300);
+    }
+
+    // ============================
+    // ACCOUNT FORM HANDLING
+    // ============================
+
+    setupAccountForm() {
+        const form = document.getElementById('addAccountForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleAccountSubmit();
+        });
+        console.log('✅ Account form handler attached');
+    }
+
+    handleAccountSubmit() {
+        const submitBtn = document.querySelector('#addAccountForm button[type="submit"]');
+        if (submitBtn) {
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Menyimpan...';
+        }
+
+        const name = document.getElementById('accountName')?.value?.trim();
+        const type = document.getElementById('accountType')?.value;
+        const initialBalance = document.getElementById('accountInitialBalance')?.value; // keep as string for parsing in manager
+        const note = document.getElementById('accountNote')?.value;
+
+        if (!name) {
+            this.showError('Nama akun wajib diisi');
+            this.resetButton(submitBtn, '💾 Simpan Akun');
+            return;
+        }
+
+        this.app.dataManager.addAccount({ name, type, initialBalance, note });
+
+        // Finances updated via event listener in app potentially, or verify need to recalc
+        this.app.calculator.calculateFinances();
+
+        this.showSuccess('Akun berhasil ditambahkan!');
+        document.getElementById('addAccountForm').reset();
+        this.app.uiManager.closeModal('addAccountModal');
+
+        // Explicitly update account selectors everywhere
+        this.app.uiManager.populateAccountSelect('.account-select');
+
+        // Refresh Settings View if active
+        if (this.app.state.activeTab === 'settings') {
+            this.app.refreshCurrentView();
+        }
+
+        setTimeout(() => {
+            this.resetButton(submitBtn, '💾 Simpan Akun');
+        }, 300);
+    }
+
+    setupEditAccountForm() {
+        const form = document.getElementById('editAccountForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditAccountSubmit();
+        });
+
+        // Delete button
+        const deleteBtn = document.getElementById('deleteAccountBtn');
+        if (deleteBtn) {
+            const newDeleteBtn = deleteBtn.cloneNode(true);
+            deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+            newDeleteBtn.addEventListener('click', () => {
+                this.handleDeleteAccount();
+            });
+        }
+    }
+
+    handleEditAccountSubmit() {
+        const id = document.getElementById('editAccountId')?.value;
+        const name = document.getElementById('editAccountName')?.value?.trim();
+        const type = document.getElementById('editAccountType')?.value;
+        const initialBalance = document.getElementById('editAccountInitialBalance')?.value;
+        const active = document.getElementById('editAccountActive')?.value === 'true';
+        const note = document.getElementById('editAccountNote')?.value;
+
+        if (!name) {
+            this.showError('Nama akun wajib diisi');
+            return;
+        }
+
+        this.app.dataManager.updateAccount(id, { name, type, initialBalance, note, active });
+        this.app.calculator.calculateFinances();
+
+        this.showSuccess('Akun diperbarui!');
+        this.app.uiManager.closeModal('editAccountModal');
+
+        // Refresh selectors
+        this.app.uiManager.populateAccountSelect('.account-select');
+
+        if (this.app.state.activeTab === 'settings') {
+            this.app.refreshCurrentView();
+        }
+    }
+
+    handleDeleteAccount() {
+        const id = document.getElementById('editAccountId')?.value;
+        if (confirm('Yakin ingin menghapus akun ini? Akun yang memiliki transaksi hanya akan dinonaktifkan (Soft Delete).')) {
+            this.app.dataManager.deleteAccount(id);
+            this.app.calculator.calculateFinances();
+
+            this.showSuccess('Akun dihapus/dinonaktifkan');
+            this.app.uiManager.closeModal('editAccountModal');
+
+            // Refresh selectors
+            this.app.uiManager.populateAccountSelect('.account-select');
+
+            if (this.app.state.activeTab === 'settings') {
+                this.app.refreshCurrentView();
+            }
+        }
     }
 
     // ============================
@@ -578,6 +813,135 @@ class FormHandlers {
             btn.disabled = false;
             btn.textContent = text;
         }
+    }
+
+    // ============================
+    // BUDGET FORM HANDLING
+    // ============================
+
+    setupBudgetForm() {
+        const form = document.getElementById('addBudgetForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleBudgetSubmit();
+        });
+
+        console.log('✅ Budget form handler attached');
+    }
+
+    handleBudgetSubmit() {
+        const submitBtn = document.querySelector('#addBudgetForm button[type="submit"]');
+        if (submitBtn) {
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Menyimpan...';
+        }
+
+        const name = document.getElementById('budgetName')?.value?.trim();
+        const amount = parseInt(document.getElementById('budgetAmount')?.value) || 0;
+        const category = document.getElementById('budgetCategory')?.value;
+        const duration = document.getElementById('budgetDuration')?.value || 'monthly';
+
+        // Validation
+        if (!name || !category) {
+            this.showError('Harap isi semua field yang diperlukan');
+            this.resetButton(submitBtn, '💾 Simpan Budget');
+            return;
+        }
+
+        if (amount <= 0) {
+            this.showError('Jumlah budget harus lebih dari 0');
+            this.resetButton(submitBtn, '💾 Simpan Budget');
+            return;
+        }
+
+        // Create budget via DataManager (NO spent field)
+        this.app.dataManager.addBudget({ name, amount, category, duration });
+
+        this.showSuccess('Budget berhasil dibuat!');
+
+        // Reset form
+        const form = document.getElementById('addBudgetForm');
+        if (form) form.reset();
+
+        this.app.uiManager.closeModal('addBudgetModal');
+
+        setTimeout(() => {
+            this.resetButton(submitBtn, '💾 Simpan Budget');
+        }, 300);
+    }
+
+    setupEditBudgetForm() {
+        const form = document.getElementById('editBudgetForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditBudgetSubmit();
+        });
+
+        // Delete button
+        const deleteBtn = document.getElementById('deleteBudgetBtn');
+        if (deleteBtn) {
+            const newDeleteBtn = deleteBtn.cloneNode(true);
+            deleteBtn.parentNode.replaceChild(newDeleteBtn, deleteBtn);
+
+            newDeleteBtn.addEventListener('click', () => {
+                this.handleDeleteBudget();
+            });
+        }
+
+        console.log('✅ Edit Budget form handler attached');
+    }
+
+    handleEditBudgetSubmit() {
+        const submitBtn = document.querySelector('#editBudgetForm button[type="submit"]');
+        if (submitBtn) {
+            if (submitBtn.disabled) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Menyimpan...';
+        }
+
+        const id = parseInt(document.getElementById('editBudgetId')?.value);
+        const name = document.getElementById('editBudgetName')?.value?.trim();
+        const amount = parseInt(document.getElementById('editBudgetAmount')?.value) || 0;
+
+        // Validation
+        if (!name || amount <= 0) {
+            this.showError('Harap isi semua field dengan benar');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
+
+        // Update via DataManager (spending will be re-derived automatically)
+        this.app.dataManager.updateBudget(id, { name, amount });
+
+        this.showSuccess('Budget diperbarui!');
+        this.app.uiManager.closeModal('editBudgetModal');
+
+        setTimeout(() => {
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+        }, 300);
+    }
+
+    handleDeleteBudget() {
+        const id = parseInt(document.getElementById('editBudgetId')?.value);
+
+        if (!confirm('Apakah Anda yakin ingin menghapus budget ini?')) {
+            return;
+        }
+
+        this.app.dataManager.deleteBudget(id);
+        this.showSuccess('Budget dihapus');
+        this.app.uiManager.closeModal('editBudgetModal');
     }
 }
 

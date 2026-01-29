@@ -50,7 +50,7 @@ class FinancialAssistant {
             // 1. Initial split based on priority weights
             activeGoals.forEach(goal => {
                 const weight = priorityWeights[goal.priority] || 10;
-                const share = Math.floor((amount * weight) / 100);
+                const share = Math.floor((allocationBudget * weight) / 100);
                 const remainingTarget = goal.target - (goal.current || 0);
 
                 // Cap by remaining target
