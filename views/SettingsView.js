@@ -40,6 +40,9 @@ class SettingsView {
                 <!-- ACCOUNT SETTINGS (NEW) -->
                 ${this.getAccountSettingsHTML()}
                 
+                <!-- BACKUP & SYNC (NEW) -->
+                ${this.getBackupSettingsHTML()}
+                
                 <!-- DATA MANAGEMENT -->
                 ${this.getDataManagementHTML()}
                 
@@ -241,6 +244,108 @@ class SettingsView {
                             </div>
                         `).join('') : '<div class="text-muted text-center p-3">Belum ada akun. Tambahkan sekarang!</div>'}
                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getBackupSettingsHTML() {
+        const clientId = localStorage.getItem('fm_gdrive_client_id');
+        const isConfigured = !!clientId;
+        const isLoggedIn = this.app.backupManager && this.app.backupManager.isLoggedIn;
+
+        // Initialize BackupManager if configured but not initialized
+        if (isConfigured && this.app.backupManager && !this.app.backupManager.isConfigured) {
+            this.app.backupManager.initialize(clientId);
+        }
+
+        let content = '';
+
+        if (!isConfigured) {
+            // STATE 0: Not Configured
+            content = `
+                <div class="setting-item">
+                    <div class="setting-info" style="width: 100%;">
+                        <div class="setting-title">Google Client ID</div>
+                        <div class="setting-description">Diperlukan untuk koneksi Google Drive</div>
+                        <div style="margin-top: 8px; display: flex; gap: 8px;">
+                            <input type="text" id="gdriveClientId" class="form-input" placeholder="Paste Client ID here" style="flex: 1;">
+                            <button class="btn btn-primary" onclick="window.saveClientId()">Simpan</button>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.75rem; margin-top: 4px;">
+                            ID ini disimpan lokal di browser Anda.
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (!isLoggedIn) {
+            // STATE 1: Configured but Logged Out
+            content = `
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">Status: Terputus</div>
+                        <div class="setting-description">Hubungkan ke Google Drive untuk backup</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn btn-primary" onclick="window.handleGoogleLogin()">
+                            Login Google Drive
+                        </button>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <div class="setting-title">Konfigurasi</div>
+                        <div class="setting-description">Client ID tersimpan</div>
+                    </div>
+                    <div class="setting-control">
+                        <button class="btn-outline btn-sm" onclick="window.resetClientId()">Reset ID</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // STATE 2: Logged In
+            content = `
+                <div class="settings-content-grid" style="display: grid; gap: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--success-50); padding: 12px; border-radius: 8px; border: 1px solid var(--success-200);">
+                        <div style="color: var(--success-700); font-weight: 500;">✅ Terhubung ke Google Drive</div>
+                        <button class="btn-outline btn-sm danger" onclick="window.handleGoogleLogout()">Logout</button>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-primary" onclick="window.handleBackupNow()" style="flex: 1;">
+                            ☁️ Backup Sekarang
+                        </button>
+                        <button class="btn-outline" onclick="window.handleListBackups()" style="flex: 1;">
+                            🔄 Refresh List
+                        </button>
+                    </div>
+
+                    <div id="backupListContainer" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-divider); border-radius: 8px; margin-top: 8px;">
+                        <div class="text-center p-3 text-muted">Muat daftar backup...</div>
+                    </div>
+                </div>
+            `;
+
+            // Trigger list load after render
+            setTimeout(() => window.handleListBackups(), 500);
+        }
+
+        return `
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-title">
+                        <div class="settings-icon">☁️</div>
+                        <div>
+                            <div style="font-weight: 600;">Backup & Sync (Secure)</div>
+                            <div class="text-muted" style="font-size: 0.875rem; margin-top: 2px;">
+                                Enkripsi client-side via Google Drive
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-content" id="backupSettingsContent">
+                    ${content}
                 </div>
             </div>
         `;
@@ -575,6 +680,129 @@ window.handleEditAccount = function (accountId) {
 
     // Open modal
     window.app.uiManager.openModal('editAccountModal');
+};
+
+// ====== BACKUP HELPERS ======
+
+window.saveClientId = function () {
+    const input = document.getElementById('gdriveClientId');
+    const clientId = input.value.trim();
+
+    if (clientId) {
+        localStorage.setItem('fm_gdrive_client_id', clientId);
+        window.app.backupManager.initialize(clientId);
+        window.app.views.settings.refresh(); // Re-render section
+        window.app.uiManager.showNotification('Client ID disimpan', 'success');
+    }
+};
+
+window.resetClientId = function () {
+    if (confirm('Reset Client ID? Koneksi akan terputus.')) {
+        localStorage.removeItem('fm_gdrive_client_id');
+        window.app.backupManager.logout();
+        window.app.views.settings.refresh();
+    }
+};
+
+window.handleGoogleLogin = async function () {
+    try {
+        await window.app.backupManager.login();
+        window.app.views.settings.refresh();
+        window.app.uiManager.showNotification('Login Berhasil', 'success');
+    } catch (error) {
+        window.app.uiManager.showNotification('Login Gagal: ' + error.message, 'error');
+    }
+};
+
+window.handleGoogleLogout = function () {
+    window.app.backupManager.logout();
+    window.app.views.settings.refresh();
+    window.app.uiManager.showNotification('Logout Berhasil', 'info');
+};
+
+window.handleBackupNow = async function () {
+    const password = prompt('🔒 Masukkan Password Enkripsi (PENTING: Jangan lupakan ini!)');
+    if (!password) return;
+
+    try {
+        window.app.uiManager.showNotification('⏳ Memproses Backup...', 'info');
+        await window.app.backupManager.backupNow(password);
+        window.app.uiManager.showNotification('✅ Backup Berhasil Diupload!', 'success');
+        window.handleListBackups(); // Refresh list
+    } catch (error) {
+        console.error(error);
+        window.app.uiManager.showNotification('❌ Backup Gagal: ' + error.message, 'error');
+    }
+};
+
+window.handleListBackups = async function () {
+    const container = document.getElementById('backupListContainer');
+    if (!container) return;
+
+    container.innerHTML = '<div class="text-center p-3 text-muted">🔄 Mengambil data...</div>';
+
+    try {
+        const files = await window.app.backupManager.getBackups();
+
+        if (files.length === 0) {
+            container.innerHTML = '<div class="text-center p-3 text-muted">Belum ada backup tersimpan.</div>';
+            return;
+        }
+
+        container.innerHTML = files.map(file => {
+            const date = new Date(file.createdTime).toLocaleString();
+            const size = (parseInt(file.size) / 1024).toFixed(1) + ' KB';
+            return `
+                <div style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 500;">📅 ${date}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">${size} • ID: ...${file.id.slice(-6)}</div>
+                    </div>
+                    <div>
+                        <button class="btn-outline btn-sm" onclick="window.handleRestore('${file.id}')" title="Restore">
+                            📥
+                        </button>
+                        <button class="btn-outline btn-sm danger" onclick="window.handleDeleteBackup('${file.id}')" title="Hapus" style="margin-left: 4px;">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        container.innerHTML = `<div class="text-center p-3 text-danger">Gagal memuat: ${error.message}</div>`;
+    }
+};
+
+window.handleRestore = async function (fileId) {
+    const password = prompt('🔓 Masukkan Password untuk Decrypt Restore:');
+    if (!password) return;
+
+    if (confirm('⚠️ PERINGATAN: Data saat ini akan DITIMPA dengan data backup. Lanjutkan?')) {
+        try {
+            window.app.uiManager.showNotification('⏳ Downloading & Decrypting...', 'info');
+            const success = await window.app.backupManager.restoreBackup(fileId, password);
+            if (success) {
+                // Reload handled by manager usually, but let's confirm
+                // Manager reload is timeout based
+            }
+        } catch (error) {
+            window.app.uiManager.showNotification('❌ Restore Gagal: ' + error.message, 'error');
+        }
+    }
+};
+
+window.handleDeleteBackup = async function (fileId) {
+    if (confirm('Hapus file backup ini dari Google Drive?')) {
+        try {
+            await window.app.backupManager.deleteBackup(fileId);
+            window.handleListBackups();
+            window.app.uiManager.showNotification('File dihapus', 'success');
+        } catch (error) {
+            window.app.uiManager.showNotification('Gagal hapus: ' + error.message, 'error');
+        }
+    }
 };
 
 export default SettingsView;

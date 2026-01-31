@@ -10,6 +10,7 @@ import EventManager from './modules/EventManager.js';
 import PWAInstaller from './modules/PWAInstaller.js';
 import FinancialAssistant from './modules/FinancialAssistant.js';
 import FormHandlers from './modules/FormHandlers.js';
+import { BackupManager } from './modules/BackupManager.js';
 
 // Import views
 import DashboardView from './views/DashboardView.js';
@@ -85,6 +86,7 @@ class FinancialApp {
         this.eventManager = new EventManager(this);
         this.pwaInstaller = new PWAInstaller(this);
         this.formHandlers = new FormHandlers(this); // Form handling module
+        this.backupManager = new BackupManager(this); // Backup module
 
         // View modules
         this.views = {

@@ -639,6 +639,68 @@ class DataManager {
         const inIncome = this.app.state.transactions.income.some(i => i.accountId == accountId);
         return inExpenses || inIncome;
     }
+
+    // ====== BACKUP & RESTORE ======
+
+    /**
+     * Exports all application data for backup
+     * @returns {Object} Complete application state
+     */
+    exportData() {
+        const data = {
+            version: '1.0',
+            timestamp: new Date().toISOString(),
+            settings: this.app.state.settings,
+            user: this.app.state.user,
+            accounts: this.app.state.accounts,
+            budgets: this.app.state.budgets,
+            transactions: this.app.state.transactions,
+            goals: this.app.state.goals,
+            // Add any other state slices here
+        };
+        return data;
+    }
+
+    /**
+     * Imports data from a backup file
+     * @param {Object} data - The parsed JSON data from backup
+     * @returns {boolean} Success status
+     */
+    importData(data) {
+        try {
+            // 1. Basic Schema Validation
+            if (!data || !data.user || !data.accounts || !data.transactions) {
+                throw new Error('Invalid backup file: Missing core data.');
+            }
+
+            // 2. Create New State (Merge Strategy: Replace)
+            // We want to restore exactly what was in the backup
+            const newState = {
+                ...this.app.state,
+                settings: data.settings || this.app.state.settings,
+                user: data.user, // User profile
+                accounts: data.accounts || [],
+                budgets: data.budgets || [],
+                transactions: data.transactions || { expenses: [], income: [] },
+                goals: data.goals || [],
+                isLoading: false
+            };
+
+            // 3. Save to Storage
+            this.app.state = newState;
+            this.saveData(); // Persist immediately
+
+            // 4. Update Runtime (Notify App)
+            console.log('✅ Data imported successfully');
+
+            // Note: Caller (BackupManager) handles reload
+            return true;
+
+        } catch (error) {
+            console.error('Import failed:', error);
+            throw new Error(`Import failed: ${error.message}`);
+        }
+    }
 }
 
 export default DataManager;

@@ -1,0 +1,37 @@
+# ===============================
+# FinMaster Pro - .gitignore
+# ===============================
+
+# Dependencies (if ever used)
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE settings
+.vscode/
+.idea/
+
+# Local environment / temp files
+.env
+.env.local
+
+# Local test or dummy data (if any)
+test-data/
+tmp/
+temp/
+
+# Build / cache (future-proof)
+dist/
+build/
+.cache/
+
+# Service worker / tooling cache
+.workbox/
