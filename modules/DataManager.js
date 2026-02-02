@@ -37,6 +37,7 @@ class DataManager {
                     ...parsed,
                     budgets: parsed.budgets || [], // Budget data with fallback
                     accounts: parsed.accounts || [], // Account data with fallback
+                    categories: parsed.categories || [], // Category data with fallback
                     user: mergedUser,
                     settings: mergedSettings,
                     activeTab: this.app.state.activeTab,
@@ -182,6 +183,7 @@ class DataManager {
                 checklist: this.app.state.checklist,
                 budgets: this.app.state.budgets || [], // Budget data
                 accounts: this.app.state.accounts || [], // Account data
+                categories: this.app.state.categories || [], // Category data
                 settings: this.app.state.settings
             };
 
@@ -529,6 +531,11 @@ class DataManager {
     }
 
     getCategoryName(category) {
+        // Use CategoryManager if available
+        if (this.app.categoryManager) {
+            return this.app.categoryManager.getCategoryName(category);
+        }
+        // Fallback to Constants for backward compatibility
         if (CATEGORIES.income[category]) return CATEGORIES.income[category];
         if (CATEGORIES.expenses[category]) return CATEGORIES.expenses[category];
         return category;
@@ -654,6 +661,7 @@ class DataManager {
             user: this.app.state.user,
             accounts: this.app.state.accounts,
             budgets: this.app.state.budgets,
+            categories: this.app.state.categories || [],
             transactions: this.app.state.transactions,
             goals: this.app.state.goals,
             // Add any other state slices here
@@ -681,6 +689,7 @@ class DataManager {
                 user: data.user, // User profile
                 accounts: data.accounts || [],
                 budgets: data.budgets || [],
+                categories: data.categories || [],
                 transactions: data.transactions || { expenses: [], income: [] },
                 goals: data.goals || [],
                 isLoading: false

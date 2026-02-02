@@ -39,6 +39,9 @@ class SettingsView {
 
                 <!-- ACCOUNT SETTINGS (NEW) -->
                 ${this.getAccountSettingsHTML()}
+
+                <!-- CATEGORY SETTINGS (NEW) -->
+                ${this.getCategorySettingsHTML()}
                 
                 <!-- BACKUP & SYNC (NEW) -->
                 ${this.getBackupSettingsHTML()}
@@ -358,6 +361,97 @@ class SettingsView {
             case 'cash': return '💵';
             default: return '💳';
         }
+    }
+
+    getCategorySettingsHTML() {
+        const expenseCategories = this.app.categoryManager.getCategoriesByType('expense');
+        const incomeCategories = this.app.categoryManager.getCategoriesByType('income');
+
+        return `
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-title">
+                        <div class="settings-icon">🏷️</div>
+                        <div>
+                            <div style="font-weight: 600;">Kategori Transaksi</div>
+                            <div class="text-muted" style="font-size: 0.875rem; margin-top: 2px;">
+                                Kelola kategori untuk pendapatan dan pengeluaran
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-content">
+                    <!-- Category Tabs -->
+                    <div class="category-tabs" style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid var(--border-divider);">
+                        <button class="category-tab active" data-type="expense" onclick="window.switchCategoryTab('expense')" style="flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px;">
+                            💸 Pengeluaran (${expenseCategories.length})
+                        </button>
+                        <button class="category-tab" data-type="income" onclick="window.switchCategoryTab('income')" style="flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: 600; color: var(--text-muted);">
+                            💰 Pendapatan (${incomeCategories.length})
+                        </button>
+                    </div>
+
+                    <!-- Expense Categories -->
+                    <div id="expenseCategoriesTab" class="category-tab-content">
+                        <div style="margin-bottom: 12px;">
+                            <button class="btn btn-primary" onclick="window.handleAddCategory('expense')" style="width: 100%;">
+                                ➕ Tambah Kategori Pengeluaran
+                            </button>
+                        </div>
+                        <div class="category-list">
+                            ${expenseCategories.map(cat => `
+                                <div class="category-item" style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="font-size: 1.5rem;">${cat.icon}</div>
+                                        <div>
+                                            <div style="font-weight: 600;">${cat.name}</div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">
+                                                ${cat.system ? '🔒 Kategori Sistem' : '✏️ Kategori Custom'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${!cat.system ? `
+                                        <button class="btn-outline btn-sm danger" onclick="window.handleDeleteCategory(${cat.id})" style="font-size: 0.75rem;">
+                                            🗑️ Hapus
+                                        </button>
+                                    ` : '<div class="text-muted" style="font-size: 0.75rem;">Tidak dapat dihapus</div>'}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Income Categories -->
+                    <div id="incomeCategoriesTab" class="category-tab-content" style="display: none;">
+                        <div style="margin-bottom: 12px;">
+                            <button class="btn btn-primary" onclick="window.handleAddCategory('income')" style="width: 100%;">
+                                ➕ Tambah Kategori Pendapatan
+                            </button>
+                        </div>
+                        <div class="category-list">
+                            ${incomeCategories.map(cat => `
+                                <div class="category-item" style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="font-size: 1.5rem;">${cat.icon}</div>
+                                        <div>
+                                            <div style="font-weight: 600;">${cat.name}</div>
+                                            <div class="text-muted" style="font-size: 0.75rem;">
+                                                ${cat.system ? '🔒 Kategori Sistem' : '✏️ Kategori Custom'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${!cat.system ? `
+                                        <button class="btn-outline btn-sm danger" onclick="window.handleDeleteCategory(${cat.id})" style="font-size: 0.75rem;">
+                                            🗑️ Hapus
+                                        </button>
+                                    ` : '<div class="text-muted" style="font-size: 0.75rem;">Tidak dapat dihapus</div>'}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     getDataManagementHTML() {
@@ -798,10 +892,96 @@ window.handleDeleteBackup = async function (fileId) {
         try {
             await window.app.backupManager.deleteBackup(fileId);
             window.handleListBackups();
-            window.app.uiManager.showNotification('File dihapus', 'success');
+            window.app.uiManager.showNotification('Backup dihapus', 'success');
         } catch (error) {
             window.app.uiManager.showNotification('Gagal hapus: ' + error.message, 'error');
         }
+    }
+};
+
+// ====== CATEGORY MANAGEMENT HELPERS ======
+
+window.switchCategoryTab = function (type) {
+    // Update tab buttons
+    const tabs = document.querySelectorAll('.category-tab');
+    tabs.forEach(tab => {
+        if (tab.dataset.type === type) {
+            tab.classList.add('active');
+            tab.style.color = 'var(--primary)';
+            tab.style.borderBottom = '2px solid var(--primary)';
+        } else {
+            tab.classList.remove('active');
+            tab.style.color = 'var(--text-muted)';
+            tab.style.borderBottom = 'none';
+        }
+    });
+
+    // Update tab content visibility
+    document.getElementById('expenseCategoriesTab').style.display = type === 'expense' ? 'block' : 'none';
+    document.getElementById('incomeCategoriesTab').style.display = type === 'income' ? 'block' : 'none';
+};
+
+window.handleAddCategory = function (type) {
+    const name = prompt(`Masukkan nama kategori ${type === 'income' ? 'pendapatan' : 'pengeluaran'} baru:`);
+    if (!name || !name.trim()) return;
+
+    const icon = prompt('Masukkan emoji icon (opsional):', type === 'income' ? '💵' : '📦');
+
+    try {
+        window.app.categoryManager.addCategory({
+            name: name.trim(),
+            type: type,
+            icon: icon || (type === 'income' ? '💵' : '📦')
+        });
+
+        window.app.uiManager.showNotification('Kategori berhasil ditambahkan!', 'success');
+
+        // Refresh category dropdowns in forms
+        if (window.app.formHandlers) {
+            window.app.formHandlers.populateCategoryDropdowns();
+        }
+
+        // Refresh settings view
+        window.app.views.settings.refresh();
+    } catch (error) {
+        window.app.uiManager.showNotification(`Error: ${error.message}`, 'error');
+    }
+};
+
+window.handleDeleteCategory = function (id) {
+    const category = window.app.state.categories.find(c => c.id === id);
+    if (!category) {
+        window.app.uiManager.showNotification('Kategori tidak ditemukan', 'error');
+        return;
+    }
+
+    const isReferenced = window.app.categoryManager.isCategoryReferenced(category.key);
+
+    let confirmMessage = `Hapus kategori "${category.name}"?`;
+    if (isReferenced) {
+        confirmMessage += '\n\n⚠️ PERHATIAN: Kategori ini digunakan dalam transaksi. Transaksi lama akan menampilkan "Deleted Category".';
+    }
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+        window.app.categoryManager.deleteCategory(id);
+        window.app.uiManager.showNotification('Kategori berhasil dihapus', 'info');
+
+        // Refresh category dropdowns in forms
+        if (window.app.formHandlers) {
+            window.app.formHandlers.populateCategoryDropdowns();
+        }
+
+        // Refresh settings view
+        window.app.views.settings.refresh();
+
+        // Refresh other views that might display categories
+        if (window.app.state.activeTab === 'expenses' || window.app.state.activeTab === 'income') {
+            window.app.refreshCurrentView();
+        }
+    } catch (error) {
+        window.app.uiManager.showNotification(`Error: ${error.message}`, 'error');
     }
 };
 

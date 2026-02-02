@@ -106,3 +106,15 @@ export const KEYBOARD_SHORTCUTS = {
     SIMULATION: { key: '5', description: 'Pergi ke Simulasi' },
     SETTINGS: { key: '6', description: 'Pergi ke Pengaturan' }
 };
+
+// Default Category Icons (for category management UI)
+export const DEFAULT_CATEGORY_ICONS = {
+    income: ['💰', '💵', '💴', '💶', '💷', '💳', '💼', '📈', '🏢', '🎁', '🏆', '💎'],
+    expense: ['🛒', '🍽️', '🚗', '🏥', '📚', '🎮', '🎬', '✈️', '🏠', '👕', '⚡', '📦']
+};
+
+// Default Category Colors (for category management UI)
+export const DEFAULT_CATEGORY_COLORS = {
+    income: ['#4cc9f0', '#06d6a0', '#7209b7', '#4361ee', '#3a0ca3'],
+    expense: ['#ef233c', '#ff006e', '#fb5607', '#ffbe0b', '#8338ec']
+};

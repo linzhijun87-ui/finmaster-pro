@@ -535,6 +535,11 @@ class UIManager {
     }
 
     getCategoryName(category) {
+        // Use CategoryManager if available for better handling
+        if (this.app.categoryManager) {
+            return this.app.categoryManager.getCategoryName(category);
+        }
+        // Fallback to Constants
         if (CATEGORIES.income[category]) return CATEGORIES.income[category];
         if (CATEGORIES.expenses[category]) return CATEGORIES.expenses[category];
         return category;

@@ -11,6 +11,7 @@ import PWAInstaller from './modules/PWAInstaller.js';
 import FinancialAssistant from './modules/FinancialAssistant.js';
 import FormHandlers from './modules/FormHandlers.js';
 import { BackupManager } from './modules/BackupManager.js';
+import CategoryManager from './modules/CategoryManager.js';
 
 // Import views
 import DashboardView from './views/DashboardView.js';
@@ -52,6 +53,7 @@ class FinancialApp {
             checklist: [],
             budgets: [], // Budget data
             accounts: [], // Account data (bank, cash, ewallet)
+            categories: [], // User-defined categories
             settings: {
                 currency: 'IDR',
                 theme: 'auto',
@@ -87,6 +89,7 @@ class FinancialApp {
         this.pwaInstaller = new PWAInstaller(this);
         this.formHandlers = new FormHandlers(this); // Form handling module
         this.backupManager = new BackupManager(this); // Backup module
+        this.categoryManager = new CategoryManager(this); // Category manager
 
         // View modules
         this.views = {
@@ -110,6 +113,9 @@ class FinancialApp {
 
         // Load data
         this.dataManager.loadData();
+
+        // Initialize categories (after data load)
+        this.categoryManager.initializeCategories();
 
         // Sync Goals
         this.assistant.syncGoals();

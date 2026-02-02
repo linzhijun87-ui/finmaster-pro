@@ -27,7 +27,44 @@ class FormHandlers {
         this.setupAddFundsForm();
         this.setupBudgetForm(); // Budget forms
         this.setupEditBudgetForm(); // Budget edit form
+        this.populateCategoryDropdowns(); // Populate categories on load
         console.log('✅ FormHandlers: All handlers ready');
+    }
+
+    /**
+     * Populate category dropdowns dynamically from CategoryManager
+     */
+    populateCategoryDropdowns() {
+        // Expense categories
+        const expenseCategorySelect = document.getElementById('expenseCategory');
+        if (expenseCategorySelect && this.app.categoryManager) {
+            const expenseCategories = this.app.categoryManager.getCategoriesByType('expense');
+            expenseCategorySelect.innerHTML = expenseCategories.map(cat =>
+                `<option value="${cat.key}">${cat.icon} ${cat.name}</option>`
+            ).join('');
+        }
+
+        // Income categories
+        const incomeCategorySelect = document.getElementById('incomeCategory');
+        if (incomeCategorySelect && this.app.categoryManager) {
+            const incomeCategories = this.app.categoryManager.getCategoriesByType('income');
+            incomeCategorySelect.innerHTML = incomeCategories.map(cat =>
+                `<option value="${cat.key}">${cat.icon} ${cat.name}</option>`
+            ).join('');
+        }
+
+        // Budget categories (expense only)
+        const budgetCategorySelects = document.querySelectorAll('#budgetCategory');
+        budgetCategorySelects.forEach(select => {
+            if (this.app.categoryManager) {
+                const expenseCategories = this.app.categoryManager.getCategoriesByType('expense');
+                select.innerHTML = expenseCategories.map(cat =>
+                    `<option value="${cat.key}">${cat.icon} ${cat.name}</option>`
+                ).join('');
+            }
+        });
+
+        console.log('✅ Category dropdowns populated');
     }
 
     // ============================
