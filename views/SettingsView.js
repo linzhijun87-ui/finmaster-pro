@@ -42,6 +42,9 @@ class SettingsView {
 
                 <!-- CATEGORY SETTINGS (NEW) -->
                 ${this.getCategorySettingsHTML()}
+
+                <!-- TRANSFER HISTORY (NEW) -->
+                ${this.getTransferHistoryHTML()}
                 
                 <!-- BACKUP & SYNC (NEW) -->
                 ${this.getBackupSettingsHTML()}
@@ -449,6 +452,50 @@ class SettingsView {
                             `).join('')}
                         </div>
                     </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getTransferHistoryHTML() {
+        const transfers = this.app.state.transfers || [];
+
+        return `
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-title">
+                        <div class="settings-icon">🔄</div>
+                        <div>
+                            <div style="font-weight: 600;">Riwayat Transfer</div>
+                            <div class="text-muted" style="font-size: 0.875rem; margin-top: 2px;">
+                                Transfer antar akun internal
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-content">
+                    ${transfers.length > 0 ? transfers.map(t => {
+            const fromAccount = this.app.state.accounts.find(a => a.id == t.fromAccountId);
+            const toAccount = this.app.state.accounts.find(a => a.id == t.toAccountId);
+
+            return `
+                            <div style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600;">
+                                        ${fromAccount?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        ${this.app.uiManager.formatDate(t.date)} • ${this.app.calculator.formatCurrency(t.amount)}
+                                    </div>
+                                    ${t.note ? `<div style="font-size: 0.75rem; margin-top: 4px;">${t.note}</div>` : ''}
+                                </div>
+                                <button class="btn-outline btn-sm danger" onclick="window.handleDeleteTransfer(${t.id})" style="font-size: 0.75rem;">
+                                    🗑️ Hapus
+                                </button>
+                            </div>
+                        `;
+        }).join('') : '<div class="text-center text-muted p-3">Belum ada transfer</div>'}
                 </div>
             </div>
         `;

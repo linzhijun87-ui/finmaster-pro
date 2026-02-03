@@ -54,6 +54,7 @@ class FinancialApp {
             budgets: [], // Budget data
             accounts: [], // Account data (bank, cash, ewallet)
             categories: [], // User-defined categories
+            transfers: [], // Internal account transfers
             settings: {
                 currency: 'IDR',
                 theme: 'auto',

@@ -27,6 +27,8 @@ class FormHandlers {
         this.setupAddFundsForm();
         this.setupBudgetForm(); // Budget forms
         this.setupEditBudgetForm(); // Budget edit form
+        this.setupTransferForm(); // Transfer form (CRITICAL FIX)
+        this.setupEditExpenseForm(); // Edit expense form
         this.populateCategoryDropdowns(); // Populate categories on load
         console.log('✅ FormHandlers: All handlers ready');
     }
@@ -980,6 +982,234 @@ class FormHandlers {
         this.showSuccess('Budget dihapus');
         this.app.uiManager.closeModal('editBudgetModal');
     }
+
+    // ============================
+    // TRANSFER FORM
+    // ============================
+
+    setupTransferForm() {
+        const form = document.getElementById('transferForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleTransferSubmit();
+        });
+
+        // Set default date
+        const dateInput = document.getElementById('transferDate');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        console.log('✅ Transfer form handler attached');
+    }
+
+    handleTransferSubmit() {
+        const submitBtn = document.querySelector('#transferForm button[type="submit"]');
+        if (submitBtn?.disabled) return;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Memproses...';
+        }
+
+        const fromAccountId = document.getElementById('transferFromAccount')?.value;
+        const toAccountId = document.getElementById('transferToAccount')?.value;
+        const amount = parseInt(document.getElementById('transferAmount')?.value) || 0;
+        const date = document.getElementById('transferDate')?.value;
+        const note = document.getElementById('transferNote')?.value?.trim();
+
+        // Validation
+        if (!fromAccountId || !toAccountId || !date) {
+            this.showError('Harap isi semua field yang diperlukan');
+            this.resetButton(submitBtn, '🔄 Transfer Sekarang');
+            return;
+        }
+
+        if (fromAccountId === toAccountId) {
+            this.showError('Akun sumber dan tujuan harus berbeda');
+            this.resetButton(submitBtn, '🔄 Transfer Sekarang');
+            return;
+        }
+
+        if (amount <= 0) {
+            this.showError('Jumlah harus lebih dari 0');
+            this.resetButton(submitBtn, '🔄 Transfer Sekarang');
+            return;
+        }
+
+        // Check source account balance
+        const fromAccount = this.app.state.accounts.find(a => a.id == fromAccountId);
+        if (fromAccount) {
+            const balance = this.app.calculator.calculateAccountBalance(fromAccount);
+            if (amount > balance) {
+                if (!confirm(`Saldo ${fromAccount.name} tidak mencukupi (${this.app.calculator.formatCurrency(balance)}). Tetap lanjutkan?`)) {
+                    this.resetButton(submitBtn, '🔄 Transfer Sekarang');
+                    return;
+                }
+            }
+        }
+
+        // Create transfer
+        const transfer = {
+            fromAccountId: parseInt(fromAccountId),
+            toAccountId: parseInt(toAccountId),
+            amount,
+            date,
+            note
+        };
+
+        console.log('💸 Adding transfer:', transfer);
+        this.app.dataManager.addTransfer(transfer);
+
+        console.log('🧮 Recalculating finances...');
+        this.app.calculator.calculateFinances();
+
+        // Log balances after transfer
+        const fromAcc = this.app.state.accounts.find(a => a.id == fromAccountId);
+        const toAcc = this.app.state.accounts.find(a => a.id == toAccountId);
+        if (fromAcc && toAcc) {
+            const fromBalance = this.app.calculator.calculateAccountBalance(fromAcc);
+            const toBalance = this.app.calculator.calculateAccountBalance(toAcc);
+            console.log(`📊 Updated Balances:`);
+            console.log(`   ${fromAcc.name}: ${this.app.calculator.formatCurrency(fromBalance)}`);
+            console.log(`   ${toAcc.name}: ${this.app.calculator.formatCurrency(toBalance)}`);
+        }
+
+        this.showSuccess('Transfer berhasil!');
+        document.getElementById('transferForm').reset();
+        this.app.uiManager.closeModal('transferModal');
+
+        // Refresh current view (works for both Dashboard and Settings)
+        console.log(`🔄 Refreshing view: ${this.app.state.activeTab}`);
+        this.app.refreshCurrentView();
+        console.log('✅ Transfer complete and view refreshed');
+
+        setTimeout(() => {
+            this.resetButton(submitBtn, '🔄 Transfer Sekarang');
+        }, 300);
+    }
+
+    // ====== EDIT EXPENSE FORM ======
+
+    setupEditExpenseForm() {
+        const form = document.getElementById('editExpenseForm');
+        if (!form) return;
+
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleEditExpenseSubmit();
+        });
+
+        console.log('✅ Edit expense form handler attached');
+    }
+
+    handleEditExpenseSubmit() {
+        const submitBtn = document.querySelector('#editExpenseForm button[type="submit"]');
+        if (submitBtn?.disabled) return;
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Menyimpan...';
+        }
+
+        const id = parseInt(document.getElementById('editExpenseId')?.value);
+        const name = document.getElementById('editExpenseName')?.value?.trim();
+        const amount = parseInt(document.getElementById('editExpenseAmount')?.value) || 0;
+        const category = document.getElementById('editExpenseCategory')?.value;
+        const accountId = parseInt(document.getElementById('editExpenseAccount')?.value);
+        const date = document.getElementById('editExpenseDate')?.value;
+        const note = document.getElementById('editExpenseNote')?.value?.trim();
+
+        // Validation
+        if (!name || !amount || !category || !accountId || !date) {
+            this.showError('Harap isi semua field yang diperlukan');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
+
+        if (amount <= 0) {
+            this.showError('Jumlah harus lebih dari 0');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
+
+        // Find expense
+        const expense = this.app.state.transactions.expenses.find(e => e.id == id);
+        if (!expense) {
+            this.showError('Pengeluaran tidak ditemukan');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
+
+        console.log('📝 Editing expense:', {
+            id,
+            oldAmount: expense.amount,
+            newAmount: amount,
+            oldAccount: expense.accountId,
+            newAccount: accountId
+        });
+
+        // Update expense (SAME ID - in-place modification)
+        expense.name = name;
+        expense.amount = amount;
+        expense.category = category;
+        expense.accountId = accountId;
+        expense.date = date;
+        expense.note = note;
+
+        // CRITICAL: Recalculate everything
+        this.app.calculator.calculateFinances();
+
+        // Save data
+        this.app.dataManager.saveData(true);
+
+        // Close modal and refresh
+        this.app.uiManager.closeModal('editExpenseModal');
+        this.app.refreshCurrentView();
+
+        this.showSuccess('Pengeluaran berhasil diubah!');
+
+        setTimeout(() => {
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+        }, 300);
+
+        console.log('✅ Expense edited successfully');
+    }
+
+    // ====== HELPER METHODS ======
+
+    populateAccountSelect(selector) {
+        const select = document.querySelector(selector);
+        if (!select) return;
+
+        const activeAccounts = this.app.state.accounts.filter(acc => acc.active);
+
+        select.innerHTML = '<option value="">Pilih Akun</option>' +
+            activeAccounts.map(acc =>
+                `<option value="${acc.id}">${acc.name}</option>`
+            ).join('');
+    }
+
+    populateCategorySelect(selector, type) {
+        const select = document.querySelector(selector);
+        if (!select) return;
+
+        const categories = this.app.categoryManager.getCategoriesByType(type);
+
+        select.innerHTML = '<option value="">Pilih Kategori</option>' +
+            categories.map(cat =>
+                `<option value="${cat.id}">${cat.icon} ${cat.name}</option>`
+            ).join('');
+    }
 }
+
 
 export default FormHandlers;

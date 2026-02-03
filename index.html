@@ -678,39 +678,130 @@
             </div>
         </div>
     </div>
+    <!-- ===== TRANSFER MODAL ===== -->
+    <div class="modal" id="transferModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔄 Transfer Dana</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="transferForm">
+                    <div class="form-group">
+                        <label for="transferFromAccount">Dari Akun</label>
+                        <select id="transferFromAccount" class="account-select" required>
+                            <option value="">Pilih akun sumber</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transferToAccount">Ke Akun</label>
+                        <select id="transferToAccount" class="account-select" required>
+                            <option value="">Pilih akun tujuan</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transferAmount">Jumlah</label>
+                        <input type="number" id="transferAmount" min="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transferDate">Tanggal</label>
+                        <input type="date" id="transferDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transferNote">Catatan (Opsional)</label>
+                        <textarea id="transferNote" rows="2" placeholder="Catatan transfer..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" style="width: 100%;">
+                        🔄 Transfer Sekarang
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT EXPENSE MODAL -->
+    <div class="modal" id="editExpenseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Edit Pengeluaran</h3>
+                <button class="modal-close" onclick="app.uiManager.closeModal('editExpenseModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editExpenseForm">
+                    <input type="hidden" id="editExpenseId">
+
+                    <div class="form-group">
+                        <label for="editExpenseName">Nama Pengeluaran</label>
+                        <input type="text" id="editExpenseName" required placeholder="Contoh: Makan siang">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editExpenseAmount">Jumlah</label>
+                        <input type="number" id="editExpenseAmount" min="1" required placeholder="50000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editExpenseCategory">Kategori</label>
+                        <select id="editExpenseCategory" class="category-select" required>
+                            <option value="">Pilih Kategori</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editExpenseAccount">Sumber Dana</label>
+                        <select id="editExpenseAccount" class="account-select" required>
+                            <option value="">Pilih Akun</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editExpenseDate">Tanggal</label>
+                        <input type="date" id="editExpenseDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editExpenseNote">Catatan (Opsional)</label>
+                        <textarea id="editExpenseNote" rows="2" placeholder="Catatan tambahan..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
+                        💾 Simpan Perubahan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Scripts - TYPE MODULE untuk ES6 modules -->
     <script type="module" src="app.js"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('✅ ServiceWorker registered:', registration.scope);
+        // Register service w                  if ('serviceWorker' in navigator) {
+                      .addEventListener('load', () => {
+                          rviceWorker.register('sw                              .then(registration => {
+                        console.log('✅                             :', registration.scope);
 
-                        // Update app mode in footer
-                        const appModeElement = document.getElementById('appMode');
-                        if (appModeElement) {
-                            appModeElement.textContent = 'PWA Ready';
-                        }
-                    })
-                    .catch(error => {
-                        console.log('❌ ServiceWorker registration failed:', error);
-                    });
-            });
-        }
-
+                               Update app mode in footer
+                          const app                            etElementById('appMode                                if (appModeElement) {
+                                                ex                        y';                             }
+                              .catch(error => {
+                                  console.lo                        egis                ed: '            ;
+                              });
+                      });
         // Check if app is running as PWA
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('📱 Running as PWA');
-            // Hide install button
-            const installBtn = document.getElementById('installBtn');
-            if (installBtn) {
-                installBtn.style.display = 'none';
-            }
+        if (window.ma                isplay - mode: standalone) ').matches                    console.log('📱 Run                );
+        // Hide install button
+        const in ocument.getElement                    ');
+        if (installBtn) {
+            Btyle.display = 'none';
         }
     </script>
 

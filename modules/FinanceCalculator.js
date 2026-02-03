@@ -288,6 +288,20 @@ class FinanceCalculator {
 
         balance = balance + accountIncome - accountExpenses;
 
+        // CRITICAL: Handle transfers (affects account balance but NOT net worth)
+        if (this.app.state.transfers) {
+            this.app.state.transfers.forEach(transfer => {
+                // Money going OUT of this account
+                if (transfer.fromAccountId == account.id) {
+                    balance -= transfer.amount;
+                }
+                // Money coming IN to this account
+                if (transfer.toAccountId == account.id) {
+                    balance += transfer.amount;
+                }
+            });
+        }
+
         return balance;
     }
 

@@ -38,6 +38,7 @@ class DataManager {
                     budgets: parsed.budgets || [], // Budget data with fallback
                     accounts: parsed.accounts || [], // Account data with fallback
                     categories: parsed.categories || [], // Category data with fallback
+                    transfers: parsed.transfers || [], // Transfer data with fallback
                     user: mergedUser,
                     settings: mergedSettings,
                     activeTab: this.app.state.activeTab,
@@ -184,6 +185,7 @@ class DataManager {
                 budgets: this.app.state.budgets || [], // Budget data
                 accounts: this.app.state.accounts || [], // Account data
                 categories: this.app.state.categories || [], // Category data
+                transfers: this.app.state.transfers || [], // Transfer data
                 settings: this.app.state.settings
             };
 
@@ -647,6 +649,35 @@ class DataManager {
         return inExpenses || inIncome;
     }
 
+    // ============================
+    // TRANSFER MANAGEMENT
+    // ============================
+
+    addTransfer(data) {
+        const transfer = {
+            id: Date.now(),
+            type: 'transfer',
+            fromAccountId: parseInt(data.fromAccountId),
+            toAccountId: parseInt(data.toAccountId),
+            amount: parseInt(data.amount),
+            date: data.date,
+            note: data.note || '',
+            createdAt: new Date().toISOString()
+        };
+
+        this.app.state.transfers.unshift(transfer);
+        this.saveData(true);
+
+        console.log('✅ Transfer added:', transfer);
+        return transfer;
+    }
+
+    deleteTransfer(id) {
+        this.app.state.transfers = this.app.state.transfers.filter(t => t.id != id);
+        this.saveData(true);
+        console.log('🗑️ Transfer deleted:', id);
+    }
+
     // ====== BACKUP & RESTORE ======
 
     /**
@@ -662,6 +693,7 @@ class DataManager {
             accounts: this.app.state.accounts,
             budgets: this.app.state.budgets,
             categories: this.app.state.categories || [],
+            transfers: this.app.state.transfers || [],
             transactions: this.app.state.transactions,
             goals: this.app.state.goals,
             // Add any other state slices here
@@ -690,6 +722,7 @@ class DataManager {
                 accounts: data.accounts || [],
                 budgets: data.budgets || [],
                 categories: data.categories || [],
+                transfers: data.transfers || [],
                 transactions: data.transactions || { expenses: [], income: [] },
                 goals: data.goals || [],
                 isLoading: false
