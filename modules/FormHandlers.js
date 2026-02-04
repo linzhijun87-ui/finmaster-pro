@@ -10,6 +10,10 @@
 class FormHandlers {
     constructor(app) {
         this.app = app;
+
+        // Smart defaults - remember last used values
+        this.lastUsedAccount = { income: null, expense: null };
+        this.lastUsedCategory = { income: null, expense: null };
     }
 
     /**
@@ -86,7 +90,9 @@ class FormHandlers {
 
         newForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.handleIncomeSubmit();
+            // Detect which button was clicked
+            const continueAdding = e.submitter?.dataset.action === 'continue';
+            this.handleIncomeSubmit(continueAdding);
         });
 
         // Recurring toggle listener
@@ -98,19 +104,10 @@ class FormHandlers {
             });
         }
 
-        // Save & Repeat Button
-        const saveRepeatBtn = newForm.querySelector('#saveIncomeAndRepeatBtn');
-        if (saveRepeatBtn) {
-            saveRepeatBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleIncomeSubmit(true); // true = keepOpen
-            });
-        }
-
         console.log('✅ Income form handler attached');
     }
 
-    handleIncomeSubmit() {
+    handleIncomeSubmit(keepOpen = false) {
         // 1. Get submit button and disable immediately
         const submitBtn = document.querySelector('#incomeForm button[type="submit"]');
         if (submitBtn) {
@@ -139,20 +136,20 @@ class FormHandlers {
         // 3. Validate inputs
         if (!name || !category || !date || !accountId) {
             this.showError('Harap isi semua field termasuk Akun Tujuan');
-            this.resetButton(submitBtn, '💰 Simpan Pendapatan');
+            this.resetButton(submitBtn, '💰 Simpan');
             return;
         }
 
         if (amount <= 0) {
             this.showError('Jumlah pendapatan harus lebih dari 0');
-            this.resetButton(submitBtn, '💰 Simpan Pendapatan');
+            this.resetButton(submitBtn, '💰 Simpan');
             return;
         }
 
         const account = this.app.state.accounts.find(a => a.id == accountId);
         if (!account) {
             this.showError('Akun tidak valid');
-            this.resetButton(submitBtn, '💰 Simpan Pendapatan');
+            this.resetButton(submitBtn, '💰 Simpan');
             return;
         }
 
@@ -193,35 +190,65 @@ class FormHandlers {
 
         // 8. Update UI immediately
         this.updateDashboardStats();
-        this.updateIncomeList();
 
-        // 9. Show success
-        this.showSuccess('Pendapatan berhasil ditambahkan!');
-
-        // 10. Reset form
-        const form = document.getElementById('incomeForm');
-        if (form) form.reset();
-
-        // 11. Set default date to today
-        if (dateInput) {
-            dateInput.value = new Date().toISOString().split('T')[0];
-        }
-
-        // 12. Close modal
-        this.app.uiManager.closeModal('addIncomeModal');
-
-        // 13. Re-enable button after delay
-        setTimeout(() => {
-            this.resetButton(submitBtn, '💰 Simpan Pendapatan');
-        }, 300);
-
-        // 14. Refresh current view if on income tab
+        // 9. Refresh current view if on income tab
         if (this.app.state.activeTab === 'income') {
             this.app.refreshCurrentView();
         }
 
-        // 15. Trigger assistant suggestions
+        // 10. Trigger assistant suggestions
         this.app.handleAssistantSuggestions('income', amount);
+
+        // SMART DEFAULTS: Save last used values
+        this.lastUsedAccount.income = accountId;
+        this.lastUsedCategory.income = category;
+
+        // SUCCESS HANDLING
+        if (keepOpen) {
+            this.showSuccess('✅ Tersimpan! Silakan input data berikutnya.');
+
+            // SMART RESET: Clear name & amount, keep account & category
+            const keepAccount = accountInput.value;
+            const keepCategory = categoryInput.value;
+
+            // Clear inputs
+            if (nameInput) nameInput.value = '';
+            if (amountInput) amountInput.value = '';
+
+            // Reset recurring checkbox
+            if (recurringCb) recurringCb.checked = false;
+            const freqGroup = document.getElementById('incomeFrequencyGroup');
+            if (freqGroup) freqGroup.style.display = 'none';
+
+            // Restore kept values
+            if (accountInput) accountInput.value = keepAccount;
+            if (categoryInput) categoryInput.value = keepCategory;
+
+            // Set date to today
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+            // Focus name input
+            if (nameInput) {
+                setTimeout(() => nameInput.focus(), 100);
+            }
+
+            // Re-enable button
+            this.resetButton(submitBtn, '💰 Simpan');
+        } else {
+            this.showSuccess('Pendapatan berhasil ditambahkan!');
+
+            // Reset form
+            const form = document.getElementById('incomeForm');
+            if (form) form.reset();
+
+            // Close modal
+            this.app.uiManager.closeModal('addIncomeModal');
+
+            // Re-enable button after delay
+            setTimeout(() => {
+                this.resetButton(submitBtn, '💰 Simpan');
+            }, 300);
+        }
     }
 
     // ============================
@@ -237,7 +264,9 @@ class FormHandlers {
 
         newForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.handleExpenseSubmit();
+            // Detect which button was clicked
+            const continueAdding = e.submitter?.dataset.action === 'continue';
+            this.handleExpenseSubmit(continueAdding);
         });
 
         // Recurring toggle listener
@@ -249,28 +278,17 @@ class FormHandlers {
             });
         }
 
-        // Save & Repeat Button
-        const saveRepeatBtn = newForm.querySelector('#saveExpenseAndRepeatBtn');
-        if (saveRepeatBtn) {
-            saveRepeatBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.handleExpenseSubmit(true); // true = keepOpen
-            });
-        }
-
         console.log('✅ Expense form handler attached');
     }
 
     handleExpenseSubmit(keepOpen = false) {
         const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
-        const repeatBtn = document.getElementById('saveExpenseAndRepeatBtn');
 
         if (submitBtn) {
             if (submitBtn.disabled) return;
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ Menyimpan...';
         }
-        if (repeatBtn) repeatBtn.disabled = true;
 
         const nameInput = document.getElementById('expenseName');
         const amountInput = document.getElementById('expenseAmount');
@@ -291,9 +309,8 @@ class FormHandlers {
         const resetUI = () => {
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.textContent = '💸 Simpan Pengeluaran';
+                submitBtn.textContent = '💾 Simpan';
             }
-            if (repeatBtn) repeatBtn.disabled = false;
         };
 
         if (!name || !category || !date || !accountId) {
@@ -350,26 +367,44 @@ class FormHandlers {
         }
         this.app.calculator.calculateFinances();
 
-        // Update budget spending
-        // (Handled by FinanceCalculator via derived transactions)
-
-        this.updateDashboardStats();
         // Update Expense List if visible
-        // (Requires specific View update or refresh)
         if (this.app.state.activeTab === 'expenses') {
             this.app.refreshCurrentView();
         }
+
+        // SMART DEFAULTS: Save last used values
+        this.lastUsedAccount.expense = accountId;
+        this.lastUsedCategory.expense = category;
 
         // SUCCESS HANDLING
         if (keepOpen) {
             this.showSuccess('✅ Tersimpan! Silakan input data berikutnya.');
 
-            // Partial Reset
-            if (nameInput) {
-                nameInput.value = '';
-                nameInput.focus();
-            }
+            // SMART RESET: Clear name & amount, keep account & category
+            const form = document.getElementById('expenseForm');
+            const keepAccount = accountInput.value;
+            const keepCategory = categoryInput.value;
+
+            // Clear inputs
+            if (nameInput) nameInput.value = '';
             if (amountInput) amountInput.value = '';
+
+            // Reset recurring checkbox
+            if (recurringCb) recurringCb.checked = false;
+            const freqGroup = document.getElementById('expenseFrequencyGroup');
+            if (freqGroup) freqGroup.style.display = 'none';
+
+            // Restore kept values
+            if (accountInput) accountInput.value = keepAccount;
+            if (categoryInput) categoryInput.value = keepCategory;
+
+            // Set date to today
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+            // Focus name input
+            if (nameInput) {
+                setTimeout(() => nameInput.focus(), 100);
+            }
 
             resetUI();
         } else {

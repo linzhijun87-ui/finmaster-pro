@@ -161,7 +161,7 @@ class DashboardView {
     getInsightHTML() {
         if (!this.app.insightEngine) return '';
 
-        const insight = this.app.insightEngine.getInsight();
+        const insight = this.app.insightEngine.getInsight('dashboard');
         if (!insight) return ''; // Silence is OK
 
         // Map insight types to visual styles

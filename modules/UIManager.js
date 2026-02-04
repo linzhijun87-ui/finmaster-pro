@@ -118,6 +118,39 @@ class UIManager {
             // Populate account selects
             this.populateAccountSelect(`#${modalId} .account-select`);
 
+            // SMART DEFAULTS: Apply last-used account and category
+            if (modalId === 'addExpenseModal' && this.app.formHandlers) {
+                const accountSelect = document.getElementById('expenseAccount');
+                const categorySelect = document.getElementById('expenseCategory');
+
+                if (accountSelect && this.app.formHandlers.lastUsedAccount.expense) {
+                    setTimeout(() => {
+                        accountSelect.value = this.app.formHandlers.lastUsedAccount.expense;
+                    }, 50);
+                }
+                if (categorySelect && this.app.formHandlers.lastUsedCategory.expense) {
+                    setTimeout(() => {
+                        categorySelect.value = this.app.formHandlers.lastUsedCategory.expense;
+                    }, 50);
+                }
+            }
+
+            if (modalId === 'addIncomeModal' && this.app.formHandlers) {
+                const accountSelect = document.getElementById('incomeAccount');
+                const categorySelect = document.getElementById('incomeCategory');
+
+                if (accountSelect && this.app.formHandlers.lastUsedAccount.income) {
+                    setTimeout(() => {
+                        accountSelect.value = this.app.formHandlers.lastUsedAccount.income;
+                    }, 50);
+                }
+                if (categorySelect && this.app.formHandlers.lastUsedCategory.income) {
+                    setTimeout(() => {
+                        categorySelect.value = this.app.formHandlers.lastUsedCategory.income;
+                    }, 50);
+                }
+            }
+
             // Focus management for accessibility
             setTimeout(() => {
                 // Try to focus first input
