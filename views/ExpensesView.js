@@ -8,17 +8,16 @@ class ExpensesView {
         this.selectedYear = null;
     }
 
-    render() {
-        console.log('💸 Rendering Expenses View...');
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('💸 Getting Expenses View HTML...');
+        return this.getExpensesHTML();
+    }
 
-        const html = this.getExpensesHTML();
-        this.app.elements.mainContent.innerHTML = html;
-        this.app.elements.mainContent.className = 'main-content expenses-view';
-
-        // Initialize after DOM is ready
-        setTimeout(() => {
-            this.initialize();
-        }, 50);
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Expenses View rendered, initializing...');
+        this.initialize();
     }
 
     getExpensesHTML() {
@@ -127,6 +126,11 @@ class ExpensesView {
                 
                 <!-- Inline buttons for desktop -->
                 <div class="expense-actions-desktop" style="display: flex; gap: 8px;">
+                     <button class="btn-outline btn-sm" 
+                            onclick="handleDuplicateTransaction('expenses', ${expense.id})"
+                            style="padding: 6px 12px; font-size: 0.875rem;">
+                        📄 Copy
+                    </button>
                     <button class="btn-outline btn-sm" 
                             onclick="handleEditExpense(${expense.id})"
                             style="padding: 6px 12px; font-size: 0.875rem;">
@@ -144,6 +148,9 @@ class ExpensesView {
                         ⋮
                     </button>
                     <div class="expense-overflow-menu" id="expense-menu-${expense.id}">
+                        <button class="expense-menu-item" onclick="handleDuplicateTransaction('expenses', ${expense.id}); closeExpenseMenu(${expense.id})">
+                            <span>📄</span> Duplicate
+                        </button>
                         <button class="expense-menu-item" onclick="handleEditExpense(${expense.id}); closeExpenseMenu(${expense.id})">
                             <span>✏️</span> Edit
                         </button>
@@ -461,6 +468,12 @@ class ExpensesView {
     }
 
     updateChart() {
+        // USER CRITICAL FIX: Prevent chart updates if view is not active
+        if (this.app.state.activeTab !== 'expenses') {
+            console.log('⚠️ ExpensesView.updateChart() called but view is not active, skipping');
+            return;
+        }
+
         // USER BUG FIX: Read values as strings to properly handle 'all' option
         const monthSelect = document.getElementById('expenseChartMonth');
         const yearSelect = document.getElementById('expenseChartYear');
@@ -524,11 +537,40 @@ class ExpensesView {
         this.initializeExpenseChart();
     }
 
+    destroy() {
+        // USER BUG FIX: Proper cleanup when switching away from Expenses view
+        console.log('🧹 Cleaning up ExpensesView...');
+
+        // Destroy Chart.js instance
+        if (this.expenseChart) {
+            this.expenseChart.destroy();
+            this.expenseChart = null;
+            console.log('✅ Chart.js instance destroyed');
+        }
+
+        // Clear selected filter state
+        this.selectedMonth = null;
+        this.selectedYear = null;
+
+        // Note: Global event listeners (toggleExpenseMenu, closeExpenseMenu, click-outside)
+        // are attached to window/document and will be reused on next render
+        // They don't need to be removed as they won't cause issues
+
+        console.log('✅ ExpensesView cleanup complete');
+    }
+
     setupDeleteHandlers() {
         // Handlers are attached via onclick in the HTML
     }
 
     refresh() {
+        // USER CRITICAL FIX: Prevent refresh if this view is not currently active
+        // This prevents ExpensesView from manipulating Dashboard's DOM
+        if (this.app.state.activeTab !== 'expenses') {
+            console.log('⚠️ ExpensesView.refresh() called but view is not active, skipping');
+            return;
+        }
+
         // 1. HITUNG ULANG TOTAL PENGELUARAN BULAN INI
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();

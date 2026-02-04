@@ -5,17 +5,25 @@ class ChecklistView {
         this.app = app;
     }
 
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('✅ Getting Checklist View HTML...');
+        return this.getChecklistHTML();
+    }
+
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Checklist View rendered, initializing...');
+        this.initialize();
+    }
+
+    // Legacy render support (deprecated)
     render() {
-        console.log('✅ Rendering Checklist View...');
-        
-        const html = this.getChecklistHTML();
+        console.warn('⚠️ using legacy render on ChecklistView');
+        const html = this.getHtml();
         this.app.elements.mainContent.innerHTML = html;
-        
         this.app.elements.mainContent.className = 'main-content checklist-view';
-        // Initialize after DOM is ready
-        setTimeout(() => {
-            this.initialize();
-        }, 50);
+        setTimeout(() => this.afterRender(), 50);
     }
 
     getChecklistHTML() {
@@ -23,7 +31,7 @@ class ChecklistView {
         const completedTasks = this.app.state.checklist.filter(t => t.completed).length;
         const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         const remainingTasks = totalTasks - completedTasks;
-        
+
         return `
             <div class="section-title">✅ Checklist Keuangan</div>
             
@@ -92,11 +100,11 @@ class ChecklistView {
 
     getChecklistItemsHTML() {
         const incompleteTasks = this.app.state.checklist.filter(task => !task.completed);
-        
+
         if (incompleteTasks.length === 0) {
             return '<div class="text-center text-muted mt-6">Semua tugas selesai! 🎉</div>';
         }
-        
+
         return incompleteTasks.map(task => `
             <div class="activity-item" data-task-id="${task.id}">
                 <div class="activity-icon" style="cursor: pointer;" onclick="app.toggleChecklistTask(${task.id})">
@@ -120,7 +128,7 @@ class ChecklistView {
 
     getCompletedSectionHTML() {
         const completedTasks = this.app.state.checklist.filter(task => task.completed);
-        
+
         const completedItemsHTML = completedTasks.map(task => `
             <div class="activity-item" style="opacity: 0.7;" data-task-id="${task.id}">
                 <div class="activity-icon" style="cursor: pointer; background: var(--success);" onclick="app.toggleChecklistTask(${task.id})">
@@ -140,7 +148,7 @@ class ChecklistView {
                 </button>
             </div>
         `).join('');
-        
+
         return `
             <div style="margin-top: var(--space-6);">
                 <h4 style="margin-bottom: var(--space-4); color: var(--text-muted);">Tugas Selesai</h4>
@@ -178,23 +186,23 @@ class ChecklistView {
         document.getElementById('addChecklistBtn')?.addEventListener('click', () => {
             this.addChecklistTask();
         });
-        
+
         // Enter key support
         document.getElementById('newChecklistTask')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 this.addChecklistTask();
             }
         });
-        
+
         // Template buttons
         document.querySelectorAll('[onclick*="addTemplateChecklist"]').forEach(btn => {
             btn.onclick = (e) => {
                 const type = e.target.textContent.includes('Bulanan') ? 'Bulanan' :
-                            e.target.textContent.includes('Mingguan') ? 'Mingguan' : 'Investasi';
+                    e.target.textContent.includes('Mingguan') ? 'Mingguan' : 'Investasi';
                 this.addTemplateChecklist(type);
             };
         });
-        
+
         // Clear completed tasks button
         document.querySelector('[onclick*="clearCompletedTasks"]')?.addEventListener('click', () => {
             this.clearCompletedTasks();
@@ -204,12 +212,12 @@ class ChecklistView {
     addChecklistTask() {
         const input = document.getElementById('newChecklistTask');
         const task = input?.value.trim();
-        
+
         if (!task) {
             this.app.uiManager.showNotification('Masukkan tugas terlebih dahulu', 'error');
             return;
         }
-        
+
         this.app.addChecklistTask(task);
         input.value = '';
     }
@@ -236,10 +244,10 @@ class ChecklistView {
                 'Diversifikasi portofolio'
             ]
         };
-        
+
         const tasks = templates[type] || [];
         let addedCount = 0;
-        
+
         tasks.forEach(taskText => {
             // Check if task already exists
             if (!this.app.state.checklist.some(t => t.task === taskText)) {
@@ -247,23 +255,23 @@ class ChecklistView {
                 addedCount++;
             }
         });
-        
+
         this.app.uiManager.showNotification(`✅ ${addedCount} tugas ${type} ditambahkan!`, 'success');
     }
 
     clearCompletedTasks() {
         const completedCount = this.app.state.checklist.filter(t => t.completed).length;
-        
+
         if (completedCount === 0) {
             this.app.uiManager.showNotification('Tidak ada tugas selesai', 'info');
             return;
         }
-        
+
         if (confirm(`Hapus ${completedCount} tugas yang sudah selesai?`)) {
             this.app.state.checklist = this.app.state.checklist.filter(t => !t.completed);
             this.app.dataManager.saveData(true);
             this.refresh();
-            
+
             this.app.uiManager.showNotification(`${completedCount} tugas dihapus!`, 'success');
         }
     }
@@ -274,11 +282,11 @@ class ChecklistView {
         if (checklistItemsEl) {
             checklistItemsEl.innerHTML = this.getChecklistItemsHTML();
         }
-        
+
         // Update completed section
         const completedSection = document.getElementById('completedChecklistItems');
         const completedTasks = this.app.state.checklist.filter(t => t.completed);
-        
+
         if (completedTasks.length > 0) {
             if (!completedSection) {
                 // Add completed section
@@ -312,7 +320,7 @@ class ChecklistView {
                 completedSectionParent.remove();
             }
         }
-        
+
         // Update stats
         this.updateStats();
     }
@@ -322,13 +330,13 @@ class ChecklistView {
         const completed = this.app.state.checklist.filter(t => t.completed).length;
         const remaining = total - completed;
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        
+
         // Update stat values
         const totalTasksEl = document.getElementById('totalTasksCount');
         const completedTasksEl = document.getElementById('completedTasksCount');
         const progressEl = document.getElementById('tasksProgress');
         const remainingTasksEl = document.getElementById('remainingTasksCount');
-        
+
         if (totalTasksEl) totalTasksEl.textContent = total;
         if (completedTasksEl) completedTasksEl.textContent = completed;
         if (progressEl) progressEl.textContent = `${percentage}%`;

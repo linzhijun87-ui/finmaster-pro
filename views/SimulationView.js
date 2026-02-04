@@ -5,17 +5,25 @@ class SimulationView {
         this.app = app;
     }
 
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('📈 Getting Simulation View HTML...');
+        return this.getSimulationHTML();
+    }
+
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Simulation View rendered, initializing...');
+        this.initialize();
+    }
+
+    // Legacy render support (deprecated)
     render() {
-        console.log('📈 Rendering Simulation View...');
-
-        const html = this.getSimulationHTML();
+        console.warn('⚠️ using legacy render on SimulationView');
+        const html = this.getHtml();
         this.app.elements.mainContent.innerHTML = html;
-
         this.app.elements.mainContent.className = 'main-content simulation-view';
-        // Initialize after DOM is ready
-        setTimeout(() => {
-            this.initialize();
-        }, 50);
+        setTimeout(() => this.afterRender(), 50);
     }
 
     getSimulationHTML() {

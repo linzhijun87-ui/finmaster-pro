@@ -8,27 +8,55 @@ class DashboardView {
         this.hasRenderedChart = false; // Flag untuk track apakah chart sudah dirender
     }
 
-    render() {
-        console.log('📊 Rendering Dashboard...');
+    // NEW ARCHITECTURE: Clean up resources
+    destroy() {
+        console.log('🧹 Destroying Dashboard View...');
 
-        // Jika sudah ada chart, kita hanya update content di sekitarnya
-        if (this.hasRenderedChart && document.getElementById('chartContainer')) {
-            console.log('🔄 Dashboard already has chart, updating content only...');
-            this.updateDashboardContent();
-            return;
+        // Clean up Chart.js instance via ChartManager
+        if (this.chartManager && this.chartManager.chartInstance) {
+            console.log('📉 Destroying Dashboard Chart...');
+            try {
+                // Save config before destroying if needed (ChartManager handles state)
+                if (typeof this.chartManager.saveChartConfig === 'function') {
+                    this.chartManager.saveChartConfig();
+                }
+
+                this.chartManager.chartInstance.destroy();
+                this.chartManager.chartInstance = null;
+                this.chartManager.chartInitialized = false;
+                this.hasRenderedChart = false;
+            } catch (error) {
+                console.error('❌ Error destroying chart:', error);
+            }
         }
+    }
 
-        const html = this.getDashboardHTML();
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('📊 Getting Dashboard View HTML...');
+        return this.getDashboardHTML();
+    }
+
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Dashboard View rendered, initializing...');
+
+        // Check if we need to update content around chart (if already rendered) behavior is now handled by Controller clearing DOM,
+        // so we always initialize fresh. The previous logic of "updateDashboardContent" might need adjustment 
+        // if we want to support partial updates, but for now we enforce full re-render on tab switch.
+
+        this.initializeComponents();
+        this.hasRenderedChart = true;
+        this.app.uiManager.setupScrollReveal();
+    }
+
+    // Legacy render support (deprecated)
+    render() {
+        console.warn('⚠️ using legacy render on Dashboard');
+        const html = this.getHtml();
         this.app.elements.mainContent.innerHTML = html;
-
         this.app.elements.mainContent.className = 'main-content dashboard-view';
-
-        // Initialize components
-        setTimeout(() => {
-            this.initializeComponents();
-            this.hasRenderedChart = true;
-            this.app.uiManager.setupScrollReveal(); // Trigger reveal for new content
-        }, 100);
+        setTimeout(() => this.afterRender(), 50);
     }
 
     // TAMBAHKAN method baru untuk update content tanpa merusak chart:
@@ -130,8 +158,61 @@ class DashboardView {
         }
     }
 
+    getInsightHTML() {
+        if (!this.app.insightEngine) return '';
+
+        const insight = this.app.insightEngine.getInsight();
+        if (!insight) return ''; // Silence is OK
+
+        // Map insight types to visual styles
+        let bgColor, borderColor;
+        switch (insight.type) {
+            case 'positive':
+                bgColor = 'rgba(52, 199, 89, 0.1)';
+                borderColor = 'rgba(52, 199, 89, 0.3)';
+                break;
+            case 'awareness':
+                bgColor = 'rgba(255, 159, 10, 0.1)';
+                borderColor = 'rgba(255, 159, 10, 0.3)';
+                break;
+            case 'supportive':
+                bgColor = 'rgba(88, 86, 214, 0.1)';
+                borderColor = 'rgba(88, 86, 214, 0.3)';
+                break;
+            case 'info':
+                bgColor = 'rgba(0, 122, 255, 0.1)';
+                borderColor = 'rgba(0, 122, 255, 0.3)';
+                break;
+            default: // neutral
+                bgColor = 'rgba(142, 142, 147, 0.1)';
+                borderColor = 'rgba(142, 142, 147, 0.3)';
+        }
+
+        return `
+            <div class="insight-card animate-fadeInDown" style="
+                margin-bottom: 20px;
+                padding: 16px 18px;
+                border-radius: 12px;
+                background: ${bgColor};
+                border-left: 4px solid ${borderColor};
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            ">
+                <div style="font-size: 1.75rem; line-height: 1;">${insight.icon}</div>
+                <div style="flex: 1; font-size: 0.95rem; line-height: 1.5; color: var(--text);">
+                    ${insight.message}
+                </div>
+            </div>
+        `;
+    }
+
     getDashboardHTML() {
         return `
+            <!-- INSIGHT SECTION (NEW) -->
+            ${this.getInsightHTML()}
+
             <!-- STATS GRID -->
             <div class="stats-grid stagger-children">
                 <div class="stat-card primary clickable-card" id="netWorthCard">
@@ -947,6 +1028,12 @@ class DashboardView {
                         <div class="activity-amount" style="color: ${transaction.type === 'income' ? 'var(--success)' : 'var(--danger)'};">
                             ${transaction.type === 'income' ? '+' : '-'} ${this.app.calculator.formatCurrency(transaction.amount)}
                         </div>
+                        <button class="btn-icon-only" 
+                                title="Duplicate"
+                                onclick="handleDuplicateTransaction('${transaction.type === 'income' ? 'income' : 'expenses'}', ${transaction.id})"
+                                style="margin-left: 10px; background: none; border: none; cursor: pointer; font-size: 1.2rem;">
+                            📄
+                        </button>
                     </div>
                 `).join('')}
             </div>

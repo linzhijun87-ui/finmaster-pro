@@ -5,17 +5,25 @@ class SettingsView {
         this.app = app;
     }
 
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('⚙️ Getting Settings View HTML...');
+        return this.getSettingsHTML();
+    }
+
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Settings View rendered, initializing...');
+        this.initialize();
+    }
+
+    // Legacy render support (deprecated)
     render() {
-        console.log('⚙️ Rendering Settings View...');
-
-        const html = this.getSettingsHTML();
+        console.warn('⚠️ using legacy render on SettingsView');
+        const html = this.getHtml();
         this.app.elements.mainContent.innerHTML = html;
-
         this.app.elements.mainContent.className = 'main-content settings-view';
-        // Initialize after DOM is ready
-        setTimeout(() => {
-            this.initialize();
-        }, 50);
+        setTimeout(() => this.afterRender(), 50);
     }
 
     getSettingsHTML() {
@@ -40,6 +48,27 @@ class SettingsView {
                 <!-- ACCOUNT SETTINGS (NEW) -->
                 ${this.getAccountSettingsHTML()}
 
+                <!-- RECURRING TRANSACTIONS (NEW) -->
+                <!-- RECURRING TRANSACTIONS (NEW) -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <div class="settings-section-title">
+                            <div class="settings-icon">📅</div>
+                            <div>
+                                <div style="font-weight: 600;">Transaksi Berulang</div>
+                                <div class="text-muted" style="font-size: 0.875rem; margin-top: 2px;">
+                                    Kelola transaksi otomatis (Income & Expense)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-content">
+                        <div id="recurringList">
+                            ${this.getRecurringListHTML()}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- CATEGORY SETTINGS (NEW) -->
                 ${this.getCategorySettingsHTML()}
 
@@ -56,6 +85,55 @@ class SettingsView {
                 ${this.getDangerZoneHTML()}
             </div>
         `;
+    }
+
+    getRecurringListHTML() {
+        // Source of truth: app.state.recurring (defaulting to [])
+        // We don't check for module existence, just the data availability
+        const recurring = this.app.state.recurring || [];
+
+        const recurringItems = recurring
+            .map(item => ({ ...item })) // Clone to avoid mutation issues during sort
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (recurringItems.length === 0) {
+            return '<div class="text-center text-muted p-3">Belum ada transaksi berulang.</div>';
+        }
+
+        return recurringItems.map(item => `
+            <div class="recurring-item" style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        ${item.type === 'income' ? '💰' : '💸'}
+                        ${item.name}
+                        <span class="badge" style="background: var(--bg-surface); border: 1px solid var(--border-divider); font-size: 0.7rem;">
+                            ${this.getFrequencyLabel(item.frequency)}
+                        </span>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.8rem; margin-top: 4px;">
+                        ${this.app.calculator.formatCurrency(item.amount)} • ${item.accountName}
+                    </div>
+                    <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 2px;">
+                        Next: ${this.app.uiManager.formatDate(item.nextDueDate)}
+                    </div>
+                </div>
+                <button class="btn-outline btn-sm danger" 
+                        onclick="handleDeleteRecurring('${item.id}')"
+                        title="Hentikan">
+                    ⏹️ Stop
+                </button>
+            </div>
+        `).join('');
+    }
+
+    getFrequencyLabel(freq) {
+        const labels = {
+            'daily': 'Harian',
+            'weekly': 'Mingguan',
+            'monthly': 'Bulanan',
+            'yearly': 'Tahunan'
+        };
+        return labels[freq] || freq;
     }
 
     getProfileSettingsHTML() {
@@ -601,6 +679,9 @@ class SettingsView {
 
         // Update app status
         this.updateAppStatus();
+
+        // Initial refresh of recurring list if we are just initializing but DOM exists
+        // (Handled by render usually, but good for safety)
     }
 
     setupEventListeners() {

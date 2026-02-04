@@ -8,18 +8,26 @@ class BudgetView {
         this.isFlipped = false;
     }
 
-    render() {
-        console.log('📊 Rendering Budget View...');
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('📊 Getting Budget View HTML...');
+        return this.getBudgetHTML();
+    }
 
-        const html = this.getBudgetHTML();
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Budget View rendered, initializing...');
+        this.initializeComponents();
+        this.app.uiManager.setupScrollReveal();
+    }
+
+    // Legacy render support (deprecated)
+    render() {
+        console.warn('⚠️ using legacy render on BudgetView');
+        const html = this.getHtml();
         this.app.elements.mainContent.innerHTML = html;
         this.app.elements.mainContent.className = 'main-content budget-view';
-
-        // Initialize components
-        setTimeout(() => {
-            this.initializeComponents();
-            this.app.uiManager.setupScrollReveal();
-        }, 100);
+        setTimeout(() => this.afterRender(), 50);
     }
 
     getBudgetHTML() {
@@ -119,14 +127,14 @@ class BudgetView {
 
     getBudgetCardHTML(budget) {
         const remaining = this.app.calculator.getBudgetRemaining(budget);
-        const durationLabel = this.getDurationLabel(budget.duration);
+        const periodLabel = this.getPeriodLabel(budget.period || 'monthly');
 
         return `
             <div class="budget-card ${budget.status}" data-budget-id="${budget.id}">
                 <div class="budget-card-header">
                     <div class="budget-card-title">
                         <h3>${budget.name}</h3>
-                        <span class="budget-duration">${durationLabel}</span>
+                        <span class="budget-duration">${periodLabel}</span>
                     </div>
                     <button class="budget-card-menu" onclick="handleEditBudget('${budget.id}')">
                         ⋮
@@ -255,13 +263,13 @@ class BudgetView {
         return icons[category] || '📦';
     }
 
-    getDurationLabel(duration) {
+    getPeriodLabel(period) {
         const labels = {
             monthly: '📅 Bulanan',
             weekly: '📆 Mingguan',
-            yearly: '🗓️ Tahunan'
+            'one-time': '🎯 Sekali Pakai'
         };
-        return labels[duration] || '📅 Bulanan';
+        return labels[period] || '📅 Bulanan';
     }
 }
 
@@ -274,6 +282,7 @@ window.handleEditBudget = function (budgetId) {
     document.getElementById('editBudgetId').value = budget.id;
     document.getElementById('editBudgetName').value = budget.name;
     document.getElementById('editBudgetAmount').value = budget.amount;
+    document.getElementById('editBudgetPeriod').value = budget.period || 'monthly';
 
     // Open modal
     window.app.uiManager.openModal('editBudgetModal');

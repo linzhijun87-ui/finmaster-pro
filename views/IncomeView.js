@@ -5,17 +5,25 @@ class IncomeView {
         this.app = app;
     }
 
+    // NEW ARCHITECTURE: Return HTML string only
+    getHtml() {
+        console.log('💰 Getting Income View HTML...');
+        return this.getIncomeHTML();
+    }
+
+    // NEW ARCHITECTURE: Initialize after DOM injection
+    afterRender() {
+        console.log('✅ Income View rendered, initializing...');
+        this.initialize();
+    }
+
+    // Legacy render support (deprecated)
     render() {
-        console.log('💰 Rendering Income View...');
-
-        const html = this.getIncomeHTML();
+        console.warn('⚠️ using legacy render on IncomeView');
+        const html = this.getHtml();
         this.app.elements.mainContent.innerHTML = html;
-
         this.app.elements.mainContent.className = 'main-content income-view';
-        // Initialize after DOM is ready
-        setTimeout(() => {
-            this.initialize();
-        }, 50);
+        setTimeout(() => this.afterRender(), 50);
     }
 
     getIncomeHTML() {
@@ -122,10 +130,18 @@ class IncomeView {
                 <div class="activity-amount" style="color: var(--success);">
                     + ${this.app.calculator.formatCurrency(income.amount)}
                 </div>
-                <button class="btn-outline btn-delete btn-delete-sm" 
-                        onclick="handleDeleteTransaction('income', ${income.id})">
-                    Hapus
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-outline btn-sm" 
+                            title="Duplicate"
+                            onclick="handleDuplicateTransaction('income', ${income.id})">
+                        📄
+                    </button>
+                    <button class="btn-outline btn-delete btn-delete-sm" 
+                            title="Delete"
+                            onclick="handleDeleteTransaction('income', ${income.id})">
+                        Hapus
+                    </button>
+                </div>
             </div>
         `).join('');
     }

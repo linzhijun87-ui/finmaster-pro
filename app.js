@@ -12,6 +12,8 @@ import FinancialAssistant from './modules/FinancialAssistant.js';
 import FormHandlers from './modules/FormHandlers.js';
 import { BackupManager } from './modules/BackupManager.js';
 import CategoryManager from './modules/CategoryManager.js';
+import { RecurringManager } from './modules/RecurringManager.js'; // Recurring Manager
+import InsightEngine from './modules/InsightEngine.js'; // Insight Engine
 
 // Import views
 import DashboardView from './views/DashboardView.js';
@@ -55,6 +57,9 @@ class FinancialApp {
             accounts: [], // Account data (bank, cash, ewallet)
             categories: [], // User-defined categories
             transfers: [], // Internal account transfers
+            categories: [], // User-defined categories
+            transfers: [], // Internal account transfers
+            recurring: [], // Recurring transactions
             settings: {
                 currency: 'IDR',
                 theme: 'auto',
@@ -68,6 +73,9 @@ class FinancialApp {
 
         // DOM Elements cache
         this.elements = {};
+
+        // Undo state management
+        this.pendingDeletions = new Map(); // deleteId -> {type, transaction, timeout, index}
 
         // Initialize modules
         this.initModules();
@@ -91,6 +99,8 @@ class FinancialApp {
         this.formHandlers = new FormHandlers(this); // Form handling module
         this.backupManager = new BackupManager(this); // Backup module
         this.categoryManager = new CategoryManager(this); // Category manager
+        this.recurringManager = new RecurringManager(this); // Recurring manager
+        this.insightEngine = new InsightEngine(this); // Insight engine
 
         // View modules
         this.views = {
@@ -121,8 +131,7 @@ class FinancialApp {
         // Sync Goals
         this.assistant.syncGoals();
 
-        // Ensure user goals are synced
-        this.assistant.syncGoals();
+
 
         // Setup event listeners
         this.eventManager.setupEventListeners();
@@ -145,6 +154,11 @@ class FinancialApp {
         // Initialize Form Handlers (NEW)
         if (this.formHandlers) {
             this.formHandlers.initialize();
+        }
+
+        // Initialize Recurring Manager
+        if (this.recurringManager) {
+            this.recurringManager.initialize();
         }
 
         // Show dashboard dengan sedikit delay untuk memastikan DOM siap
@@ -254,6 +268,15 @@ class FinancialApp {
         }
 
         const switchContent = () => {
+            // 1. CLEANUP: Destroy previous view
+            const previousView = this.state.activeTab;
+            if (previousView && this.views[previousView]) {
+                if (typeof this.views[previousView].destroy === 'function') {
+                    console.log(`🧹 Cleaning up previous view: ${previousView}`);
+                    this.views[previousView].destroy();
+                }
+            }
+
             // Update state
             this.state.activeTab = viewName;
             this.state.isLoading = true;
@@ -261,15 +284,42 @@ class FinancialApp {
             // Update navigation
             this.uiManager.updateNavigation(viewName);
 
-            // Render view
+            // 2. CLEAR DOM
+            // This ensures we start with a clean slate
             if (this.elements.mainContent) {
-                // Add entrance animation class for the new view container
-                this.elements.mainContent.className = 'main-content page-entrance';
+                this.elements.mainContent.innerHTML = '';
+                // Add entrance animation class
+                this.elements.mainContent.className = `main-content ${viewName}-view page-entrance`;
             }
 
             try {
                 if (this.views[viewName]) {
-                    this.views[viewName].render();
+                    const view = this.views[viewName];
+
+                    // 3. RENDER: Get HTML string
+                    // Support new getHtml() pattern (Architecture Fix)
+                    if (typeof view.getHtml === 'function') {
+                        const html = view.getHtml();
+
+                        // 4. INJECT: Update DOM via Controller
+                        if (this.elements.mainContent) {
+                            this.elements.mainContent.innerHTML = html;
+                        }
+
+                        // 5. INITIALIZE: Call afterRender
+                        if (typeof view.afterRender === 'function') {
+                            // Small delay to ensure DOM is ready/painted
+                            setTimeout(() => {
+                                view.afterRender();
+                            }, 50);
+                        }
+                    } else if (typeof view.render === 'function') {
+                        // Fallback for legacy views (Temporary)
+                        console.warn(`⚠️ View ${viewName} uses legacy render(). Please refactor to getHtml() + afterRender()`);
+                        view.render();
+                    } else {
+                        throw new Error(`View ${viewName} implements neither getHtml() nor render()`);
+                    }
                 } else {
                     console.error(`❌ View not found: ${viewName}`);
                     if (viewName !== 'dashboard') this.showView('dashboard');
@@ -590,22 +640,111 @@ class FinancialApp {
     }
 
     deleteTransaction(type, id) {
-        console.log(`🗑️ Deleting ${type} transaction: ${id}`);
+        console.log(`🗑️ Soft-deleting ${type} transaction: ${id}`);
 
-        const transactions = this.state.transactions;
-        const transactionList = type === 'income' ? transactions.income : transactions.expenses;
-        const transaction = transactionList.find(t => t.id == id);
-        const amount = transaction ? transaction.amount : 0;
+        const deleteId = `del_${Date.now()}_${id}`;
 
-        this.dataManager.deleteTransaction(type, id);
+        // 1. Find transaction
+        const list = type === 'income'
+            ? this.state.transactions.income
+            : this.state.transactions.expenses;
+        const index = list.findIndex(t => t.id == id);
+
+        if (index === -1) {
+            console.warn('Transaction not found:', id);
+            return;
+        }
+
+        const transaction = list[index];
+
+        // 2. Remove from state (soft delete)
+        list.splice(index, 1);
+
+        // 3. Store for undo
+        const timeout = setTimeout(() => {
+            this.confirmDelete(deleteId);
+        }, 4000); // 4 second undo window
+
+        this.pendingDeletions.set(deleteId, {
+            type,
+            transaction,
+            timeout,
+            index
+        });
+
+        // 4. Update UI immediately (show deletion effect)
         this.calculator.calculateFinances();
         this.uiManager.updateUI();
         this.refreshCurrentView();
 
-        this.uiManager.showNotification('Transaksi dihapus', 'info');
+        // 5. Show undo notification
+        this.uiManager.showNotification(
+            'Transaksi dihapus',
+            'info',
+            4000,
+            {
+                label: 'Undo',
+                onClick: () => this.undoDelete(deleteId)
+            }
+        );
+    }
 
-        // Assistant advice on deletion
-        const advice = this.assistant.getDeletionAdvice(type === 'income' ? 'income' : 'expenses', amount);
+    undoDelete(deleteId) {
+        console.log('🔄 Undoing deletion:', deleteId);
+
+        const deletion = this.pendingDeletions.get(deleteId);
+        if (!deletion) {
+            console.warn('Deletion not found in pending:', deleteId);
+            return;
+        }
+
+        const { type, transaction, timeout, index } = deletion;
+
+        // 1. Clear timeout
+        clearTimeout(timeout);
+
+        // 2. Restore transaction to original position
+        const list = type === 'income'
+            ? this.state.transactions.income
+            : this.state.transactions.expenses;
+
+        // Insert at original index, or at start if index is invalid
+        if (index >= 0 && index <= list.length) {
+            list.splice(index, 0, transaction);
+        } else {
+            list.unshift(transaction);
+        }
+
+        // 3. Remove from pending deletions
+        this.pendingDeletions.delete(deleteId);
+
+        // 4. Recalculate and refresh
+        this.calculator.calculateFinances();
+        this.uiManager.updateUI();
+        this.refreshCurrentView();
+
+        // 5. Show restored notification
+        this.uiManager.showNotification('Transaksi dikembalikan', 'success', 2000);
+    }
+
+    confirmDelete(deleteId) {
+        console.log('✅ Confirming deletion:', deleteId);
+
+        const deletion = this.pendingDeletions.get(deleteId);
+        if (!deletion) return;
+
+        // 1. Remove from pending (already removed from state)
+        this.pendingDeletions.delete(deleteId);
+
+        // 2. Save data permanently
+        this.dataManager.saveData(true);
+
+        // 3. Optional: Show assistant advice
+        const { type, transaction } = deletion;
+        const advice = this.assistant.getDeletionAdvice(
+            type === 'income' ? 'income' : 'expenses',
+            transaction.amount
+        );
         if (advice) {
             setTimeout(() => {
                 this.showAssistantModal('advice', advice);
@@ -829,13 +968,32 @@ document.addEventListener('DOMContentLoaded', () => {
             appInstance.uiManager.openModal('editGoalModal');
         };
 
-        // Global handler for Deleting Transactions
+        // Global handler for Deleting Transactions (Undo Pattern)
         window.handleDeleteTransaction = (type, id) => {
-            appInstance.deleteTransaction(type, id);
+            if (appInstance) {
+                appInstance.deleteTransaction(type, id);
+            }
+        };
+
+        window.handleDuplicateTransaction = (type, id) => {
+            if (appInstance && appInstance.formHandlers) {
+                appInstance.formHandlers.handleDuplicateTransaction(type, id);
+            }
+        };
+
+        window.handleDeleteRecurring = (id) => {
+            if (confirm('Hentikan transaksi berulang ini?')) {
+                if (appInstance && appInstance.recurringManager) {
+                    appInstance.recurringManager.deleteRecurring(id);
+                    // Refresh Settings UI
+                    if (appInstance.state.activeTab === 'settings') {
+                        appInstance.refreshCurrentView();
+                    }
+                }
+            }
         };
 
         console.log('✅ App instance created and exposed globally');
-
     } catch (error) {
         console.error('❌ Failed to initialize app:', error);
 

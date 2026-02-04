@@ -89,6 +89,24 @@ class FormHandlers {
             this.handleIncomeSubmit();
         });
 
+        // Recurring toggle listener
+        const recurringCb = document.getElementById('incomeRecurring');
+        const freqGroup = document.getElementById('incomeFrequencyGroup');
+        if (recurringCb && freqGroup) {
+            recurringCb.addEventListener('change', (e) => {
+                freqGroup.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // Save & Repeat Button
+        const saveRepeatBtn = newForm.querySelector('#saveIncomeAndRepeatBtn');
+        if (saveRepeatBtn) {
+            saveRepeatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleIncomeSubmit(true); // true = keepOpen
+            });
+        }
+
         console.log('✅ Income form handler attached');
     }
 
@@ -107,6 +125,10 @@ class FormHandlers {
         const categoryInput = document.getElementById('incomeCategory');
         const accountInput = document.getElementById('incomeAccount');
         const dateInput = document.getElementById('incomeDate');
+
+        // Recurring inputs
+        const recurringCb = document.getElementById('incomeRecurring');
+        const frequencyInput = document.getElementById('incomeFrequency');
 
         const name = nameInput?.value?.trim();
         const amount = parseInt(amountInput?.value) || 0;
@@ -148,6 +170,20 @@ class FormHandlers {
 
         // 5. Add to state
         this.app.state.transactions.income.unshift(transaction);
+
+        // HANDLE RECURRING
+        if (recurringCb && recurringCb.checked && this.app.recurringManager) {
+            this.app.recurringManager.addRecurring({
+                type: 'income',
+                name: name,
+                amount: amount,
+                category: category,
+                accountId: accountId,
+                accountName: account.name,
+                frequency: frequencyInput.value || 'monthly'
+            });
+            console.log('🔄 Scheduled recurring income');
+        }
 
         // 6. Recalculate finances
         this.app.calculator.calculateFinances();
@@ -204,39 +240,78 @@ class FormHandlers {
             this.handleExpenseSubmit();
         });
 
+        // Recurring toggle listener
+        const recurringCb = document.getElementById('expenseRecurring');
+        const freqGroup = document.getElementById('expenseFrequencyGroup');
+        if (recurringCb && freqGroup) {
+            recurringCb.addEventListener('change', (e) => {
+                freqGroup.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // Save & Repeat Button
+        const saveRepeatBtn = newForm.querySelector('#saveExpenseAndRepeatBtn');
+        if (saveRepeatBtn) {
+            saveRepeatBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleExpenseSubmit(true); // true = keepOpen
+            });
+        }
+
         console.log('✅ Expense form handler attached');
     }
 
-    handleExpenseSubmit() {
+    handleExpenseSubmit(keepOpen = false) {
         const submitBtn = document.querySelector('#expenseForm button[type="submit"]');
+        const repeatBtn = document.getElementById('saveExpenseAndRepeatBtn');
+
         if (submitBtn) {
             if (submitBtn.disabled) return;
             submitBtn.disabled = true;
             submitBtn.textContent = '⏳ Menyimpan...';
         }
+        if (repeatBtn) repeatBtn.disabled = true;
 
-        const name = document.getElementById('expenseName')?.value?.trim();
-        const amount = parseInt(document.getElementById('expenseAmount')?.value) || 0;
-        const category = document.getElementById('expenseCategory')?.value;
-        const accountId = parseInt(document.getElementById('expenseAccount')?.value);
-        const date = document.getElementById('expenseDate')?.value;
+        const nameInput = document.getElementById('expenseName');
+        const amountInput = document.getElementById('expenseAmount');
+        const categoryInput = document.getElementById('expenseCategory');
+        const accountInput = document.getElementById('expenseAccount');
+        const dateInput = document.getElementById('expenseDate');
+
+        const name = nameInput?.value?.trim();
+        const amount = parseInt(amountInput?.value) || 0;
+        const category = categoryInput?.value;
+        const accountId = parseInt(accountInput?.value);
+        const date = dateInput?.value;
+
+        // Recurring inputs
+        const recurringCb = document.getElementById('expenseRecurring');
+        const frequencyInput = document.getElementById('expenseFrequency');
+
+        const resetUI = () => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '💸 Simpan Pengeluaran';
+            }
+            if (repeatBtn) repeatBtn.disabled = false;
+        };
 
         if (!name || !category || !date || !accountId) {
             this.showError('Harap isi semua field termasuk Akun Sumber Dana');
-            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+            resetUI();
             return;
         }
 
         if (amount <= 0) {
             this.showError('Jumlah harus lebih dari 0');
-            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+            resetUI();
             return;
         }
 
         const account = this.app.state.accounts.find(a => a.id == accountId);
         if (!account) {
             this.showError('Akun tidak valid');
-            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+            resetUI();
             return;
         }
 
@@ -244,7 +319,7 @@ class FormHandlers {
         const currentBalance = this.app.calculator.calculateAccountBalance(account);
         if (amount > currentBalance) {
             if (!confirm(`Saldo akun ${account.name} mungkin tidak cukup (${this.app.calculator.formatCurrency(currentBalance)}). Tetap lanjutkan?`)) {
-                this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
+                resetUI();
                 return;
             }
         }
@@ -259,6 +334,20 @@ class FormHandlers {
         };
 
         this.app.dataManager.addTransaction('expenses', transaction);
+
+        // HANDLE RECURRING
+        if (recurringCb && recurringCb.checked && this.app.recurringManager) {
+            this.app.recurringManager.addRecurring({
+                type: 'expense',
+                name: name,
+                amount: amount,
+                category: category,
+                accountId: accountId,
+                accountName: account.name,
+                frequency: frequencyInput.value || 'monthly'
+            });
+            console.log('🔄 Scheduled recurring expense');
+        }
         this.app.calculator.calculateFinances();
 
         // Update budget spending
@@ -271,13 +360,27 @@ class FormHandlers {
             this.app.refreshCurrentView();
         }
 
-        this.showSuccess('Pengeluaran berhasil disimpan!');
-        document.getElementById('expenseForm').reset();
-        this.app.uiManager.closeModal('addExpenseModal');
+        // SUCCESS HANDLING
+        if (keepOpen) {
+            this.showSuccess('✅ Tersimpan! Silakan input data berikutnya.');
 
-        setTimeout(() => {
-            this.resetButton(submitBtn, '💸 Simpan Pengeluaran');
-        }, 300);
+            // Partial Reset
+            if (nameInput) {
+                nameInput.value = '';
+                nameInput.focus();
+            }
+            if (amountInput) amountInput.value = '';
+
+            resetUI();
+        } else {
+            this.showSuccess('Pengeluaran berhasil disimpan!');
+            document.getElementById('expenseForm').reset();
+            this.app.uiManager.closeModal('addExpenseModal');
+
+            setTimeout(() => {
+                resetUI();
+            }, 300);
+        }
     }
 
     // ============================
@@ -827,12 +930,71 @@ class FormHandlers {
                 <div class="activity-amount" style="color: var(--success);">
                     + ${this.app.calculator.formatCurrency(income.amount)}
                 </div>
-                <button class="btn-outline btn-delete btn-delete-sm" 
-                        onclick="handleDeleteTransaction('income', ${income.id})">
-                    Hapus
-                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-outline btn-sm" 
+                            title="Duplicate"
+                            onclick="handleDuplicateTransaction('income', ${income.id})">
+                        📄
+                    </button>
+                    <button class="btn-outline btn-delete btn-delete-sm" 
+                            title="Delete"
+                            onclick="handleDeleteTransaction('income', ${income.id})">
+                        Hapus
+                    </button>
+                </div>
             </div>
         `).join('');
+    }
+
+    handleDuplicateTransaction(type, id) {
+        console.log(`📄 Duplicating ${type} transaction: ${id}`);
+
+        let transaction;
+        if (type === 'income') {
+            transaction = this.app.state.transactions.income.find(t => t.id == id);
+            if (transaction) {
+                // Open modal
+                this.app.uiManager.openModal('addIncomeModal');
+
+                // Pre-fill form
+                setTimeout(() => {
+                    const nameInput = document.getElementById('incomeName');
+                    const amountInput = document.getElementById('incomeAmount');
+                    const categoryInput = document.getElementById('incomeCategory');
+                    const accountInput = document.getElementById('incomeAccount');
+                    const dateInput = document.getElementById('incomeDate');
+
+                    if (nameInput) nameInput.value = transaction.name;
+                    if (amountInput) amountInput.value = transaction.amount;
+                    if (categoryInput) categoryInput.value = transaction.category;
+                    if (accountInput) accountInput.value = transaction.accountId; // Use accountId directly
+                    // Set date to TODAY as per spec
+                    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+                }, 100);
+            }
+        } else if (type === 'expenses') {
+            transaction = this.app.state.transactions.expenses.find(t => t.id == id);
+            if (transaction) {
+                // Open modal
+                this.app.uiManager.openModal('addExpenseModal');
+
+                // Pre-fill form
+                setTimeout(() => {
+                    const nameInput = document.getElementById('expenseName');
+                    const amountInput = document.getElementById('expenseAmount');
+                    const categoryInput = document.getElementById('expenseCategory');
+                    const accountInput = document.getElementById('expenseAccount');
+                    const dateInput = document.getElementById('expenseDate');
+
+                    if (nameInput) nameInput.value = transaction.name;
+                    if (amountInput) amountInput.value = transaction.amount;
+                    if (categoryInput) categoryInput.value = transaction.category;
+                    if (accountInput) accountInput.value = transaction.accountId;
+                    // Set date to TODAY as per spec
+                    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+                }, 100);
+            }
+        }
     }
 
     // ============================
@@ -884,7 +1046,7 @@ class FormHandlers {
         const name = document.getElementById('budgetName')?.value?.trim();
         const amount = parseInt(document.getElementById('budgetAmount')?.value) || 0;
         const category = document.getElementById('budgetCategory')?.value;
-        const duration = document.getElementById('budgetDuration')?.value || 'monthly';
+        const period = document.getElementById('budgetPeriod')?.value || 'monthly';
 
         // Validation
         if (!name || !category) {
@@ -899,8 +1061,8 @@ class FormHandlers {
             return;
         }
 
-        // Create budget via DataManager (NO spent field)
-        this.app.dataManager.addBudget({ name, amount, category, duration });
+        // Create budget via DataManager
+        this.app.dataManager.addBudget({ name, amount, category, period });
 
         this.showSuccess('Budget berhasil dibuat!');
 
@@ -952,6 +1114,7 @@ class FormHandlers {
         const id = parseInt(document.getElementById('editBudgetId')?.value);
         const name = document.getElementById('editBudgetName')?.value?.trim();
         const amount = parseInt(document.getElementById('editBudgetAmount')?.value) || 0;
+        const period = document.getElementById('editBudgetPeriod')?.value || 'monthly';
 
         // Validation
         if (!name || amount <= 0) {
@@ -960,8 +1123,28 @@ class FormHandlers {
             return;
         }
 
-        // Update via DataManager (spending will be re-derived automatically)
-        this.app.dataManager.updateBudget(id, { name, amount });
+        // Find and update budget
+        const budget = this.app.state.budgets.find(b => b.id === id);
+        if (budget) {
+            const periodChanged = budget.period !== period;
+
+            budget.name = name;
+            budget.amount = amount;
+            budget.period = period;
+
+            // If period type changed, reset progress
+            if (periodChanged) {
+                budget.spent = 0;
+                // Import getCurrentPeriod dynamically
+                import('../utils/BudgetPeriodUtils.js').then(({ getCurrentPeriod }) => {
+                    budget.currentPeriod = getCurrentPeriod(period);
+                    console.log(`🔄 Period changed for "${name}", progress reset`);
+                    this.app.dataManager.saveData(true);
+                });
+            } else {
+                this.app.dataManager.saveData(true);
+            }
+        }
 
         this.showSuccess('Budget diperbarui!');
         this.app.uiManager.closeModal('editBudgetModal');

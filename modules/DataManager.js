@@ -1,6 +1,7 @@
 /* ====== DATA MANAGER MODULE ====== */
 
 import { APP_CONFIG, CATEGORIES } from '../utils/Constants.js';
+import { migrateBudgetToPeriods, checkAndResetBudgets, getCurrentPeriod } from '../utils/BudgetPeriodUtils.js';
 
 class DataManager {
     constructor(app) {
@@ -39,11 +40,16 @@ class DataManager {
                     accounts: parsed.accounts || [], // Account data with fallback
                     categories: parsed.categories || [], // Category data with fallback
                     transfers: parsed.transfers || [], // Transfer data with fallback
+                    recurring: parsed.recurring || [], // Recurring data with fallback
                     user: mergedUser,
                     settings: mergedSettings,
                     activeTab: this.app.state.activeTab,
                     isLoading: false
                 };
+
+                // Migrate and reset budgets
+                this.app.state.budgets = migrateBudgetToPeriods(this.app.state.budgets);
+                this.app.state.budgets = checkAndResetBudgets(this.app.state.budgets);
 
                 console.log('✅ Data loaded from localStorage');
                 this.updateStorageStatus('Local Storage');
@@ -186,6 +192,7 @@ class DataManager {
                 accounts: this.app.state.accounts || [], // Account data
                 categories: this.app.state.categories || [], // Category data
                 transfers: this.app.state.transfers || [], // Transfer data
+                recurring: this.app.state.recurring || [], // Recurring data
                 settings: this.app.state.settings
             };
 
@@ -379,18 +386,17 @@ class DataManager {
     addBudget(data) {
         const id = Date.now();
         const now = new Date();
-        const periodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const period = data.period || 'monthly'; // Default to monthly
 
         const budget = {
             id,
             name: data.name,
             amount: data.amount,
             category: data.category,
-            duration: data.duration || 'monthly', // 'monthly', 'weekly', 'yearly'
-            lastResetAt: now.toISOString(),
-            periodKey: periodKey, // For sync-safe reset detection
+            period: period, // 'monthly', 'weekly', or 'one-time'
+            currentPeriod: getCurrentPeriod(period), // Period marker
+            spent: 0, // Initial spent amount
             created: now.toISOString()
-            // NOTE: NO 'spent' field - derived from transactions via FinanceCalculator
         };
 
         this.app.state.budgets.push(budget);

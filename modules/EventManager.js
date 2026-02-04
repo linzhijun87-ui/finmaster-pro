@@ -59,11 +59,7 @@ class EventManager {
 
             const tab = tabButton.dataset.tab;
             if (tab) {
-                // SPECIAL HANDLING: Jika keluar dari dashboard, jangan destroy chart
-                if (this.app.state.activeTab === 'dashboard' && tab !== 'dashboard') {
-                    console.log('🚪 Leaving dashboard, keeping chart alive...');
-                    // Chart tetap dipertahankan di memory
-                }
+
 
                 this.app.showView(tab);
             }

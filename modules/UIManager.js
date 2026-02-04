@@ -428,7 +428,7 @@ class UIManager {
     }
 
     // ====== NOTIFICATIONS ======
-    showNotification(message, type = 'info', duration = 2000) {
+    showNotification(message, type = 'info', duration = 2000, actionButton = null) {
         // 1. Get or create container
         let container = document.getElementById('notification-container');
         if (!container) {
@@ -455,12 +455,35 @@ class UIManager {
             type === 'error' ? '❌' :
                 type === 'warning' ? '⚠️' : 'ℹ️';
 
-        notification.innerHTML = `
-            <div class="notification-content" style="display: flex; align-items: center; gap: 10px;">
+        // Build notification HTML with optional action button
+        let notificationHTML = `
+            <div class="notification-content" style="display: flex; align-items: center; gap: 10px; flex: 1;">
                 <span class="notification-icon">${icon}</span>
                 <span>${message}</span>
             </div>
         `;
+
+        if (actionButton) {
+            notificationHTML += `
+                <button class="notification-action-btn" style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    transition: all 0.2s;
+                    white-space: nowrap;
+                " onmouseover="this.style.background='rgba(255,255,255,0.3)'" 
+                   onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    ${actionButton.label}
+                </button>
+            `;
+        }
+
+        notification.innerHTML = notificationHTML;
 
         // 3. Apply styles (Toast look)
         notification.style.cssText = `
@@ -477,37 +500,63 @@ class UIManager {
             pointer-events: auto; /* Re-enable clicks on the toast itself */
             display: flex;
             align-items: center;
+            gap: 12px;
         `;
 
-        // 4. Add to container
-        // Prepend to show newest at top, or append for bottom. Stacking usually goes Top->Down (Append) or Bottom->Up.
-        // Given 'top: 20px', we should append, so they stack downwards.
+        // 4. Attach action button handler if provided
+        if (actionButton) {
+            const actionBtn = notification.querySelector('.notification-action-btn');
+            if (actionBtn) {
+                actionBtn.addEventListener('click', () => {
+                    actionButton.onClick();
+                    // Immediately dismiss notification after action
+                    this.dismissNotification(notification, container);
+                });
+            }
+        }
+
+        // 5. Add to container
         container.appendChild(notification);
 
-        // 5. Trigger animation (next frame)
+        // 6. Trigger animation (next frame)
         requestAnimationFrame(() => {
             notification.style.transform = 'translateX(0)';
             notification.style.opacity = '1';
         });
 
-        // 6. Auto remove with safe fallback
-        setTimeout(() => {
-            // Trigger exit animation
-            notification.style.transform = 'translateX(120%)';
-            notification.style.opacity = '0';
-
-            // Force remove after animation duration (300ms)
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-                // Cleanup container if empty
-                if (container.childNodes.length === 0) {
-                    container.remove();
-                }
-            }, 300); // Strict 300ms matching CSS transition
-
+        // 7. Auto remove with safe fallback (unless action button keeps it persistent)
+        const autoCloseTimeout = setTimeout(() => {
+            this.dismissNotification(notification, container);
         }, duration);
+
+        // Store timeout reference so it can be cleared if action is taken
+        notification._autoCloseTimeout = autoCloseTimeout;
+
+        return notification; // Return reference for manual dismissal if needed
+    }
+
+    dismissNotification(notification, container) {
+        if (!notification || !notification.parentNode) return;
+
+        // Clear auto-close timeout if it exists
+        if (notification._autoCloseTimeout) {
+            clearTimeout(notification._autoCloseTimeout);
+        }
+
+        // Trigger exit animation
+        notification.style.transform = 'translateX(120%)';
+        notification.style.opacity = '0';
+
+        // Force remove after animation duration (300ms)
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+            // Cleanup container if empty
+            if (container && container.childNodes.length === 0) {
+                container.remove();
+            }
+        }, 300); // Strict 300ms matching CSS transition
     }
 
     // ====== LOADING STATES ======

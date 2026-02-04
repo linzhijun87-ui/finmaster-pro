@@ -170,8 +170,29 @@ class FinanceCalculator {
     calculateBudgetSpending(budget) {
         if (!budget) return 0;
 
-        const periodKey = budget.periodKey; // e.g., "2026-01"
-        const [year, month] = periodKey.split('-').map(Number);
+        // Defensive: ensure period field exists (default to monthly for legacy budgets)
+        const period = budget.period || 'monthly';
+        const currentPeriod = budget.currentPeriod;
+
+        // For one-time budgets, sum all matching expenses ever
+        if (period === 'one-time') {
+            const categoryExpenses = this.app.state.transactions.expenses.filter(
+                expense => expense.category === budget.category
+            );
+            return categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        }
+
+        // For monthly/weekly budgets, filter by current period
+        if (!currentPeriod) {
+            console.warn('Budget missing currentPeriod:', budget);
+            return 0;
+        }
+
+        const [year, monthOrWeek] = currentPeriod.split('-').map((val, idx) => {
+            if (idx === 0) return Number(val); // year
+            // Remove 'W' prefix for weekly (e.g., "W05" -> 5)
+            return val.startsWith('W') ? Number(val.substring(1)) : Number(val);
+        });
 
         // Filter expenses by category and period
         const categoryExpenses = this.app.state.transactions.expenses.filter(expense => {
@@ -179,32 +200,35 @@ class FinanceCalculator {
 
             const expenseDate = new Date(expense.date);
             const expenseYear = expenseDate.getFullYear();
-            const expenseMonth = expenseDate.getMonth() + 1; // 0-indexed to 1-indexed
 
-            // For monthly budgets, match exact period
-            if (budget.duration === 'monthly') {
-                return expenseYear === year && expenseMonth === month;
+            // Monthly budget: match year and month
+            if (period === 'monthly') {
+                const expenseMonth = expenseDate.getMonth() + 1; // 0-indexed to 1-indexed
+                return expenseYear === year && expenseMonth === monthOrWeek;
             }
 
-            // For weekly/yearly, calculate from lastResetAt
-            if (budget.duration === 'weekly') {
-                const resetDate = new Date(budget.lastResetAt);
-                const weekLater = new Date(resetDate);
-                weekLater.setDate(weekLater.getDate() + 7);
-                return expenseDate >= resetDate && expenseDate < weekLater;
-            }
-
-            if (budget.duration === 'yearly') {
-                return expenseYear === year;
+            // Weekly budget: match year and ISO week number
+            if (period === 'weekly') {
+                const expenseWeek = this.getWeekNumber(expenseDate);
+                return expenseYear === year && expenseWeek === monthOrWeek;
             }
 
             return false;
         });
 
         // Sum up expenses
-        const totalSpent = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        return categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    }
 
-        return totalSpent;
+    /**
+     * Get ISO week number for a date
+     */
+    getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
 
     /**

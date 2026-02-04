@@ -199,13 +199,37 @@
                             <!-- Populated by JS -->
                         </select>
                     </div>
+
+                    <!-- Recurring Transaksi -->
+                    <div class="form-group"
+                        style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--border-divider);">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="expenseRecurring" style="width: auto;">
+                            <span>🔁 Ulangi transaksi ini?</span>
+                        </label>
+                    </div>
+                    <div class="form-group" id="expenseFrequencyGroup"
+                        style="display: none; margin-top: 0.5rem; padding-left: 1.5rem; border-left: 2px solid var(--primary);">
+                        <label for="expenseFrequency">Frekuensi</label>
+                        <select id="expenseFrequency">
+                            <option value="monthly" selected>Setiap Bulan</option>
+                            <option value="weekly">Setiap Minggu</option>
+                            <option value="yearly">Setiap Tahun</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label for="expenseDate">Tanggal</label>
                         <input type="date" id="expenseDate" required>
                     </div>
-                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
-                        💾 Simpan Pengeluaran
-                    </button>
+                    <div style="display: flex; gap: 10px; margin-top: var(--space-4);">
+                        <button type="button" class="btn-outline" id="saveExpenseAndRepeatBtn" style="flex: 1;">
+                            ➕ Simpan & Lagi
+                        </button>
+                        <button type="submit" class="btn" style="flex: 1;">
+                            💾 Simpan
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -240,13 +264,37 @@
                             <!-- Populated by JS -->
                         </select>
                     </div>
+
+                    <!-- Recurring Transaksi -->
+                    <div class="form-group"
+                        style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--border-divider);">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="incomeRecurring" style="width: auto;">
+                            <span>🔁 Ulangi transaksi ini?</span>
+                        </label>
+                    </div>
+                    <div class="form-group" id="incomeFrequencyGroup"
+                        style="display: none; margin-top: 0.5rem; padding-left: 1.5rem; border-left: 2px solid var(--primary);">
+                        <label for="incomeFrequency">Frekuensi</label>
+                        <select id="incomeFrequency">
+                            <option value="monthly" selected>Setiap Bulan</option>
+                            <option value="weekly">Setiap Minggu</option>
+                            <option value="yearly">Setiap Tahun</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label for="incomeDate">Tanggal</label>
                         <input type="date" id="incomeDate" required>
                     </div>
-                    <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
-                        💰 Simpan Pendapatan
-                    </button>
+                    <div style="display: flex; gap: 10px; margin-top: var(--space-4);">
+                        <button type="button" class="btn-outline" id="saveIncomeAndRepeatBtn" style="flex: 1;">
+                            ➕ Simpan & Lagi
+                        </button>
+                        <button type="submit" class="btn" style="flex: 1;">
+                            💰 Simpan
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -432,6 +480,17 @@
                         <select id="budgetCategory" required>
                             <option value="">Loading categories...</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budgetPeriod">Periode Budget</label>
+                        <select id="budgetPeriod" required>
+                            <option value="monthly">📅 Bulanan (reset setiap bulan)</option>
+                            <option value="weekly">📅 Mingguan (reset setiap minggu)</option>
+                            <option value="one-time">🎯 Sekali Pakai (tidak reset)</option>
+                        </select>
+                        <small class="text-muted" style="display: block; margin-top: 6px;">
+                            Budget bulanan/mingguan akan reset otomatis setiap periode baru
+                        </small>
                     </div>
                     <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
                         💾 Simpan Budget
@@ -632,13 +691,15 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="budgetDuration">Periode Reset</label>
-                        <select id="budgetDuration" required>
-                            <option value="monthly">Bulanan (Auto-reset)</option>
-                            <option value="weekly">Mingguan (Manual)</option>
-                            <option value="yearly">Tahunan (Manual)</option>
+                        <label for="editBudgetPeriod">Periode Budget</label>
+                        <select id="editBudgetPeriod" required>
+                            <option value="monthly">📅 Bulanan (reset setiap bulan)</option>
+                            <option value="weekly">📅 Mingguan (reset setiap minggu)</option>
+                            <option value="one-time">🎯 Sekali Pakai (tidak reset)</option>
                         </select>
-                        <small class="text-muted">Hanya budget bulanan yang auto-reset</small>
+                        <small class="text-muted" style="display: block; margin-top: 6px;">
+                            Mengubah tipe periode akan mereset progress budget
+                        </small>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-outline modal-close">Batal</button>
@@ -784,24 +845,28 @@
 
     <!-- PWA Service Worker Registration -->
     <script>
-        // Register service w                  if ('serviceWorker' in navigator) {
-                      .addEventListener('load', () => {
-                          rviceWorker.register('sw                              .then(registration => {
-                        console.log('✅                             :', registration.scope);
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('✅ ServiceWorker registration successful with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('❌ ServiceWorker registration failed:', error);
+                    });
+            });
+        }
 
-                               Update app mode in footer
-                          const app                            etElementById('appMode                                if (appModeElement) {
-                                                ex                        y';                             }
-                              .catch(error => {
-                                  console.lo                        egis                ed: '            ;
-                              });
-                      });
         // Check if app is running as PWA
-        if (window.ma                isplay - mode: standalone) ').matches                    console.log('📱 Run                );
-        // Hide install button
-        const in ocument.getElement                    ');
-        if (installBtn) {
-            Btyle.display = 'none';
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            console.log('📱 Running in standalone mode');
+        }
+
+        // Hide install button if installed
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn && window.matchMedia('(display-mode: standalone)').matches) {
+            installBtn.style.display = 'none';
         }
     </script>
 
