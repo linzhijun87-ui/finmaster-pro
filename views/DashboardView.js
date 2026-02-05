@@ -464,23 +464,12 @@ class DashboardView {
             <section class="quick-actions">
                 <h3 class="section-title">Aksi Cepat</h3>
                 <div class="actions-grid">
-                    <button class="action-btn" id="quickAddExpense">
+                    <button class="action-btn" id="quickAddTransaction">
                         <div class="action-icon">➕</div>
-                        <div style="font-weight: 600;">Tambah Pengeluaran</div>
-                        <div class="text-muted" style="font-size: 0.875rem;">Catat pengeluaran baru</div>
+                        <div style="font-weight: 600;">Tambah Transaksi</div>
+                        <div class="text-muted" style="font-size: 0.875rem;">Catat pemasukan, pengeluaran, atau transfer</div>
                     </button>
-                    
-                    <button class="action-btn" id="quickAddIncome">
-                        <div class="action-icon">💳</div>
-                        <div style="font-weight: 600;">Tambah Pendapatan</div>
-                        <div class="text-muted" style="font-size: 0.875rem;">Input pendapatan baru</div>
-                    </button>
-                    
-                    <button class="action-btn" id="quickTransfer">
-                        <div class="action-icon">🔄</div>
-                        <div style="font-weight: 600;">Transfer Dana</div>
-                        <div class="text-muted" style="font-size: 0.875rem;">Pindah antar akun</div>
-                    </button>
+
                     
                     <button class="action-btn" id="quickGenerateReport">
                         <div class="action-icon">📊</div>
@@ -884,33 +873,9 @@ class DashboardView {
     }
 
     setupQuickActions() {
-        // Quick add expense
-        document.getElementById('quickAddExpense')?.addEventListener('click', () => {
-            this.app.uiManager.openModal('addExpenseModal');
-        });
-
-        // Quick add income
-        document.getElementById('quickAddIncome')?.addEventListener('click', () => {
-            this.app.uiManager.openModal('addIncomeModal');
-        });
-
-        // Quick transfer (NEW)
-        document.getElementById('quickTransfer')?.addEventListener('click', () => {
-            // Populate account dropdowns before opening modal
-            const fromSelect = document.getElementById('transferFromAccount');
-            const toSelect = document.getElementById('transferToAccount');
-
-            if (fromSelect && toSelect) {
-                const accountsHTML = this.app.state.accounts
-                    .filter(a => a.active)
-                    .map(a => `<option value="${a.id}">${a.name} (${this.app.calculator.formatCurrency(this.app.calculator.calculateAccountBalance(a))})</option>`)
-                    .join('');
-
-                fromSelect.innerHTML = '<option value="">Pilih akun sumber</option>' + accountsHTML;
-                toSelect.innerHTML = '<option value="">Pilih akun tujuan</option>' + accountsHTML;
-            }
-
-            this.app.uiManager.openModal('transferModal');
+        // PHASE 6.5: Unified Transaction Button
+        document.getElementById('quickAddTransaction')?.addEventListener('click', () => {
+            this.app.uiManager.openModal('addTransactionModal');
         });
 
         // Quick add goal

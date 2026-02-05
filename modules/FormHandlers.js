@@ -22,6 +22,12 @@ class FormHandlers {
      */
     initialize() {
         console.log('🔧 FormHandlers: Initializing...');
+        this.populateCategoryDropdowns(); // Populate categories on load
+
+        // PHASE 3: Unified Transaction Modal (NEW)
+        this.setupUnifiedTransactionForm();
+
+        // OLD MODALS (kept for rollback safety)
         this.setupIncomeForm();
         this.setupExpenseForm(); // Expense Handling
         this.setupAccountForm(); // Account Handling
@@ -33,7 +39,6 @@ class FormHandlers {
         this.setupEditBudgetForm(); // Budget edit form
         this.setupTransferForm(); // Transfer form (CRITICAL FIX)
         this.setupEditExpenseForm(); // Edit expense form
-        this.populateCategoryDropdowns(); // Populate categories on load
         console.log('✅ FormHandlers: All handlers ready');
     }
 
@@ -72,6 +77,353 @@ class FormHandlers {
 
         console.log('✅ Category dropdowns populated');
     }
+
+    /* ====================================================================
+     * PHASE 3: UNIFIED TRANSACTION MODAL
+     * UI orchestration only - routes to existing handlers
+     * ==================================================================== */
+
+    setupUnifiedTransactionForm() {
+        const form = document.getElementById('unifiedTransactionForm');
+        if (!form) {
+            console.warn('Unified transaction form not found');
+            return;
+        }
+
+        // Clone to remove existing listeners
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        // Get elements - FIX: use querySelector on cloned element, not getElementById
+        const typeRadios = newForm.querySelectorAll('input[name="transactionType"]');
+        const recurringCheckbox = newForm.querySelector('#unified_recurring');
+        const frequencyGroup = newForm.querySelector('#unified_frequencyGroup');
+
+        // Setup type change listeners
+        typeRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                this.adaptUnifiedFormFields(radio.value);
+            });
+        });
+
+        // Setup recurring toggle
+        if (recurringCheckbox && frequencyGroup) {
+            recurringCheckbox.addEventListener('change', (e) => {
+                frequencyGroup.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // Setup form submission
+        newForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Detect which button was clicked
+            const continueAdding = e.submitter?.dataset.action === 'continue';
+
+            // Get selected transaction type
+            const selectedType = newForm.querySelector('input[name="transactionType"]:checked').value;
+
+            // Route to appropriate handler
+            this.handleUnifiedTransactionSubmit(selectedType, continueAdding);
+        });
+
+        // Initialize with default type (expense)
+        this.adaptUnifiedFormFields('expense');
+
+        console.log('✅ Unified transaction form handler attached');
+    }
+
+    /**
+     * Adapt form fields based on transaction type
+     * PHASE 3: Field visibility logic only, no business logic
+     */
+    adaptUnifiedFormFields(type) {
+        // Get all field groups
+        const nameGroup = document.getElementById('unified_nameGroup');
+        const nameLabel = document.getElementById('unified_nameLabel');
+        const categoryGroup = document.getElementById('unified_categoryGroup');
+        const accountGroup = document.getElementById('unified_accountGroup');
+        const fromAccountGroup = document.getElementById('unified_fromAccountGroup');
+        const toAccountGroup = document.getElementById('unified_toAccountGroup');
+        const noteGroup = document.getElementById('unified_noteGroup');
+        const recurringSection = document.getElementById('unified_recurringSection');
+        const saveAndContinue = document.getElementById('unified_saveAndContinue');
+
+        // Reset all to hidden
+        if (nameGroup) nameGroup.style.display = 'none';
+        if (categoryGroup) categoryGroup.style.display = 'none';
+        if (accountGroup) accountGroup.style.display = 'none';
+        if (fromAccountGroup) fromAccountGroup.style.display = 'none';
+        if (toAccountGroup) toAccountGroup.style.display = 'none';
+        if (noteGroup) noteGroup.style.display = 'none';
+        if (recurringSection) recurringSection.style.display = 'none';
+
+        // Adapt based on type
+        switch (type) {
+            case 'expense':
+                if (nameGroup) {
+                    nameGroup.style.display = 'block';
+                    if (nameLabel) nameLabel.textContent = 'Nama Pengeluaran';
+                }
+                if (categoryGroup) categoryGroup.style.display = 'block';
+                if (accountGroup) accountGroup.style.display = 'block';
+                if (noteGroup) noteGroup.style.display = 'block';
+                if (recurringSection) recurringSection.style.display = 'block';
+                if (saveAndContinue) saveAndContinue.style.display = 'block';
+
+                // Make category required for expense
+                const categorySelect = document.getElementById('unified_category');
+                if (categorySelect) categorySelect.required = true;
+                break;
+
+            case 'income':
+                if (nameGroup) {
+                    nameGroup.style.display = 'block';
+                    if (nameLabel) nameLabel.textContent = 'Sumber Pendapatan';
+                }
+                if (accountGroup) accountGroup.style.display = 'block';
+                if (noteGroup) noteGroup.style.display = 'block';
+                if (recurringSection) recurringSection.style.display = 'block';
+                if (saveAndContinue) saveAndContinue.style.display = 'block';
+
+                // Category not required for income
+                const categorySelectIncome = document.getElementById('unified_category');
+                if (categorySelectIncome) categorySelectIncome.required = false;
+                break;
+
+            case 'transfer':
+                if (fromAccountGroup) fromAccountGroup.style.display = 'block';
+                if (toAccountGroup) toAccountGroup.style.display = 'block';
+                // Transfer: No name, category, note, recurring, or "Save & Add Another"
+                if (saveAndContinue) saveAndContinue.style.display = 'none';
+                break;
+        }
+
+        console.log(`💳 Adapted unified form for: ${type}`);
+    }
+
+    /**
+     * Handle unified transaction submission
+     * PHASE 3: Routing only - NO business logic
+     */
+    handleUnifiedTransactionSubmit(type, keepOpen = false) {
+        console.log(`💳 Submitting unified transaction: ${type}, keepOpen: ${keepOpen}`);
+
+        // Route to existing handlers based on type
+        switch (type) {
+            case 'expense':
+                this.handleUnifiedExpenseSubmit(keepOpen);
+                break;
+            case 'income':
+                this.handleUnifiedIncomeSubmit(keepOpen);
+                break;
+            case 'transfer':
+                this.handleUnifiedTransferSubmit();
+                break;
+            default:
+                console.error('Unknown transaction type:', type);
+        }
+    }
+
+    /**
+     * Handle expense submission from unified modal
+     * Maps unified form fields to existing data manager calls
+     */
+    handleUnifiedExpenseSubmit(keepOpen = false) {
+        // Get unified form values
+        const name = document.getElementById('unified_name')?.value.trim();
+        const amount = parseFloat(document.getElementById('unified_amount')?.value);
+        const category = document.getElementById('unified_category')?.value;
+        const accountId = parseInt(document.getElementById('unified_account')?.value);
+        const date = document.getElementById('unified_date')?.value;
+        const note = document.getElementById('unified_note')?.value.trim();
+        const isRecurring = document.getElementById('unified_recurring')?.checked;
+        const frequency = document.getElementById('unified_frequency')?.value;
+
+        // Validation
+        if (!name || !amount || !category || !accountId || !date) {
+            this.showError('Harap isi semua field yang diperlukan');
+            return;
+        }
+
+        // Create expense object matching existing schema
+        const expense = {
+            id: Date.now(),
+            name,
+            amount,
+            category,
+            accountId,
+            date,
+            note: note || '',
+            recurring: isRecurring ? { frequency } : null
+        };
+
+        // Call existing data manager
+        this.app.dataManager.addExpense(expense);
+
+        // Store last used values (smart defaults)
+        this.lastUsedAccount.expense = accountId;
+        this.lastUsedCategory.expense = category;
+
+        // Handle keepOpen logic
+        if (keepOpen) {
+            this.showSuccess('✅ Tersimpan! Silakan input data berikutnya.');
+            this.smartResetUnifiedForm('expense', accountId, category);
+        } else {
+            this.showSuccess('Pengeluaran berhasil disimpan!');
+            document.getElementById('unifiedTransactionForm').reset();
+            this.app.uiManager.closeModal('addTransactionModal');
+        }
+
+        // Refresh UI
+        this.app.calculator.calculateFinances();
+        this.app.uiManager.updateUI();
+        this.app.refreshCurrentView();
+    }
+
+    /**
+     * Handle income submission from unified modal
+     */
+    handleUnifiedIncomeSubmit(keepOpen = false) {
+        // Get unified form values
+        const name = document.getElementById('unified_name')?.value.trim();
+        const amount = parseFloat(document.getElementById('unified_amount')?.value);
+        const accountId = parseInt(document.getElementById('unified_account')?.value);
+        const date = document.getElementById('unified_date')?.value;
+        const note = document.getElementById('unified_note')?.value.trim();
+        const isRecurring = document.getElementById('unified_recurring')?.checked;
+        const frequency = document.getElementById('unified_frequency')?.value;
+
+        // Validation
+        if (!name || !amount || !accountId || !date) {
+            this.showError('Harap isi semua field yang diperlukan');
+            return;
+        }
+
+        // Create income object matching existing schema
+        const income = {
+            id: Date.now(),
+            name,
+            amount,
+            accountId,
+            date,
+            note: note || '',
+            recurring: isRecurring ? { frequency } : null
+        };
+
+        // Call existing data manager
+        this.app.dataManager.addIncome(income);
+
+        // Store last used values (smart defaults)
+        this.lastUsedAccount.income = accountId;
+
+        // Handle keepOpen logic
+        if (keepOpen) {
+            this.showSuccess('✅ Tersimpan! Silakan input data berikutnya.');
+            this.smartResetUnifiedForm('income', accountId);
+        } else {
+            this.showSuccess('Pendapatan berhasil ditambahkan!');
+            document.getElementById('unifiedTransactionForm').reset();
+            this.app.uiManager.closeModal('addTransactionModal');
+        }
+
+        // Refresh UI
+        this.app.calculator.calculateFinances();
+        this.app.uiManager.updateUI();
+        this.app.refreshCurrentView();
+    }
+
+    /**
+     * Handle transfer submission from unified modal
+     */
+    handleUnifiedTransferSubmit() {
+        // Get unified form values
+        const fromAccountId = parseInt(document.getElementById('unified_fromAccount')?.value);
+        const toAccountId = parseInt(document.getElementById('unified_toAccount')?.value);
+        const amount = parseFloat(document.getElementById('unified_amount')?.value);
+        const date = document.getElementById('unified_date')?.value;
+
+        // Validation
+        if (!fromAccountId || !toAccountId || !amount || !date) {
+            this.showError('Harap isi semua field yang diperlukan');
+            return;
+        }
+
+        if (fromAccountId === toAccountId) {
+            this.showError('Akun asal dan tujuan tidak boleh sama');
+            return;
+        }
+
+        // Create transfer object
+        const transfer = {
+            id: Date.now(),
+            fromAccountId,
+            toAccountId,
+            amount,
+            date
+        };
+
+        // Call existing data manager
+        this.app.dataManager.addTransfer(transfer);
+
+        // Close modal and refresh
+        this.showSuccess('Transfer berhasil dilakukan!');
+        document.getElementById('unifiedTransactionForm').reset();
+        this.app.uiManager.closeModal('addTransactionModal');
+
+        // Refresh UI
+        this.app.calculator.calculateFinances();
+        this.app.uiManager.updateUI();
+        this.app.refreshCurrentView();
+    }
+
+    /**
+     * Smart reset for "Save & Add Another"
+     * PHASE 3: Keeps type, account, category. Resets name, amount, note, date
+     */
+    smartResetUnifiedForm(type, accountId, categoryId = null) {
+        const form = document.getElementById('unifiedTransactionForm');
+        if (!form) return;
+
+        // Clear fields
+        const nameInput = document.getElementById('unified_name');
+        const amountInput = document.getElementById('unified_amount');
+        const noteInput = document.getElementById('unified_note');
+        const dateInput = document.getElementById('unified_date');
+        const recurringCheckbox = document.getElementById('unified_recurring');
+        const frequencyGroup = document.getElementById('unified_frequencyGroup');
+
+        if (nameInput) nameInput.value = '';
+        if (amountInput) amountInput.value = '';
+        if (noteInput) noteInput.value = '';
+
+        // Reset date to today
+        if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+        // Reset recurring
+        if (recurringCheckbox) recurringCheckbox.checked = false;
+        if (frequencyGroup) frequencyGroup.style.display = 'none';
+
+        // Keep account and category (smart defaults)
+        const accountSelect = document.getElementById('unified_account');
+        if (accountSelect && accountId) accountSelect.value = accountId;
+
+        if (type === 'expense' && categoryId) {
+            const categorySelect = document.getElementById('unified_category');
+            if (categorySelect) categorySelect.value = categoryId;
+        }
+
+        // Focus name field
+        if (nameInput) {
+            setTimeout(() => nameInput.focus(), 100);
+        }
+
+        console.log('💳 Smart reset applied');
+    }
+
+    /* ====================================================================
+     * END PHASE 3
+     * ==================================================================== */
 
     // ============================
     // INCOME FORM HANDLING

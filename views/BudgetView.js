@@ -111,12 +111,12 @@ class BudgetView {
         if (filteredBudgets.length === 0) {
             return `
                 <div class="empty-state" style="grid-column: 1 / -1; padding: var(--space-8) var(--space-4);">
-                    <div class="empty-state-icon" style="font-size: 3rem; margin-bottom: var(--space-3);">📊</div>
-                    <div class="empty-state-title" style="font-size: 1.25rem;">Belum Ada Budget</div>
-                    <div class="empty-state-description" style="max-width: 300px; margin: 0 auto;">
+                    <div class="empty-state-icon" style="font-size: 2.5rem; margin-bottom: var(--space-3); opacity: 0.6;">📊</div>
+                    <div class="empty-state-title" style="font-size: 1rem; margin-bottom: var(--space-2);">${this.currentFilter === 'all' ? 'Belum ada budget yang dibuat.' : 'Tidak ada budget untuk kategori ini.'}</div>
+                    <div class="empty-state-description" style="max-width: 340px; margin: 0 auto; font-size: 0.875rem; opacity: 0.7; line-height: 1.6;">
                         ${this.currentFilter === 'all'
-                    ? 'Mulai kelola pengeluaranmu dengan tombol Tambah Budget di atas.'
-                    : 'Tidak ada budget untuk kategori ini.'}
+                    ? 'Budget membantu melacak pengeluaran dan memberi tahu saat mendekati batas.'
+                    : ''}
                     </div>
                 </div>
             `;

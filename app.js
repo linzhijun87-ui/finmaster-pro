@@ -17,8 +17,9 @@ import InsightEngine from './modules/InsightEngine.js'; // Insight Engine
 
 // Import views
 import DashboardView from './views/DashboardView.js';
-import ExpensesView from './views/ExpensesView.js';
-import IncomeView from './views/IncomeView.js';
+import ExpensesView from './views/ExpensesView.js'; // DEPRECATED - kept for rollback
+import IncomeView from './views/IncomeView.js'; // DEPRECATED - kept for rollback
+import TransactionsView from './views/TransactionsView.js'; // NEW - replaces Expenses + Income
 import ChecklistView from './views/ChecklistView.js';
 import SimulationView from './views/SimulationView.js';
 import SettingsView from './views/SettingsView.js';
@@ -102,18 +103,22 @@ class FinancialApp {
         this.recurringManager = new RecurringManager(this); // Recurring manager
         this.insightEngine = new InsightEngine(this); // Insight engine
 
-        // View modules
+        // Initialize Views Registry
         this.views = {
             dashboard: new DashboardView(this),
+            // PHASE 4: NEW - Unified Transactions View
+            transactions: new TransactionsView(this),
+            // DEPRECATED (Phase 4) - kept for rollback only, not accessible via navigation
             expenses: new ExpensesView(this),
             income: new IncomeView(this),
+            // Active views
             checklist: new ChecklistView(this),
             simulation: new SimulationView(this),
             settings: new SettingsView(this),
-            budget: new BudgetView(this) // Budget view
+            budget: new BudgetView(this)
         };
 
-        console.log('✅ All modules initialized');
+        console.log('✅ All modules initialized successfully');
     }
 
     init() {

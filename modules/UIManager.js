@@ -151,6 +151,39 @@ class UIManager {
                 }
             }
 
+            // PHASE 3: Unified Transaction Modal support
+            if (modalId === 'addTransactionModal') {
+                // Populate all account dropdowns in unified modal
+                this.populateAccountSelect('#unified_account');
+                this.populateAccountSelect('#unified_fromAccount');
+                this.populateAccountSelect('#unified_toAccount');
+
+                // Apply smart defaults for current transaction type
+                if (this.app.formHandlers) {
+                    // Check which radio is selected
+                    const typeRadio = document.querySelector('input[name="transactionType"]:checked');
+                    const currentType = typeRadio ? typeRadio.value : 'expense';
+
+                    // Apply smart defaults based on type
+                    if (currentType === 'expense' && this.app.formHandlers.lastUsedAccount.expense) {
+                        const accountSelect = document.getElementById('unified_account');
+                        const categorySelect = document.getElementById('unified_category');
+
+                        setTimeout(() => {
+                            if (accountSelect) accountSelect.value = this.app.formHandlers.lastUsedAccount.expense;
+                            if (categorySelect && this.app.formHandlers.lastUsedCategory.expense) {
+                                categorySelect.value = this.app.formHandlers.lastUsedCategory.expense;
+                            }
+                        }, 50);
+                    } else if (currentType === 'income' && this.app.formHandlers.lastUsedAccount.income) {
+                        const accountSelect = document.getElementById('unified_account');
+                        setTimeout(() => {
+                            if (accountSelect) accountSelect.value = this.app.formHandlers.lastUsedAccount.income;
+                        }, 50);
+                    }
+                }
+            }
+
             // Focus management for accessibility
             setTimeout(() => {
                 // Try to focus first input

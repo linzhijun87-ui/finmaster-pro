@@ -62,19 +62,15 @@
         <!-- NAVIGATION -->
         <nav class="nav-container">
             <div class="nav-tabs" id="navTabs">
-                <button class="nav-tab" data-tab="dashboard">
-                    <span>📊</span> Dashboard
+                <button class="nav-tab active" data-tab="dashboard">
+                    <span>🏠</span> Dashboard
                 </button>
-                <button class="nav-tab" data-tab="expenses">
-                    <span>💸</span> Pengeluaran
-                    <span class="tab-badge" id="expenseBadge">0</span>
-                </button>
-                <button class="nav-tab" data-tab="income">
-                    <span>💰</span> Pendapatan
+                <!-- PHASE 4: NEW - Unified Transactions Tab -->
+                <button class="nav-tab" data-tab="transactions">
+                    <span>💳</span> Transaksi
                 </button>
                 <button class="nav-tab" data-tab="checklist">
                     <span>✅</span> Checklist
-                    <span class="tab-badge" id="checklistBadge">0</span>
                 </button>
                 <button class="nav-tab" data-tab="budget">
                     <span>📊</span> Budget
@@ -169,6 +165,134 @@
 
     <!-- MODALS & OVERLAYS -->
     <div class="modal-overlay" id="modalOverlay"></div>
+
+    <!-- ===== UNIFIED TRANSACTION MODAL (NEW - Phase 3) ===== -->
+    <div class="modal" id="addTransactionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💳 Tambah Transaksi</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="unifiedTransactionForm">
+                    <!-- Transaction Type Selector -->
+                    <div class="form-group"
+                        style="margin-bottom: var(--space-5); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border-divider);">
+                        <label style="margin-bottom: var(--space-3); font-weight: 600;">Jenis Transaksi</label>
+                        <div style="display: flex; gap: var(--space-4); flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="transactionType" value="expense" checked style="width: auto;">
+                                <span>💸 Pengeluaran</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="transactionType" value="income" style="width: auto;">
+                                <span>💰 Pendapatan</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="radio" name="transactionType" value="transfer" style="width: auto;">
+                                <span>🔄 Transfer</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Name Field (Common for Expense & Income) -->
+                    <div class="form-group" id="unified_nameGroup">
+                        <label for="unified_name" id="unified_nameLabel">Nama Pengeluaran</label>
+                        <input type="text" id="unified_name" required placeholder="Contoh: Makan siang">
+                    </div>
+
+                    <!-- Amount Field (Common for All) -->
+                    <div class="form-group">
+                        <label for="unified_amount">Jumlah</label>
+                        <input type="number" id="unified_amount" required min="0" step="0.01" placeholder="0">
+                    </div>
+
+                    <!-- Category Field (Expense Only) -->
+                    <div class="form-group" id="unified_categoryGroup">
+                        <label for="unified_category">Kategori</label>
+                        <select id="unified_category" required>
+                            <option value="">Pilih kategori</option>
+                            <option value="kebutuhan">🛒 Kebutuhan</option>
+                            <option value="hiburan">🎮 Hiburan</option>
+                            <option value="transport">🚗 Transport</option>
+                            <option value="kesehatan">🏥 Kesehatan</option>
+                            <option value="pendidikan">📚 Pendidikan</option>
+                            <option value="lainnya">📦 Lainnya</option>
+                        </select>
+                    </div>
+
+                    <!-- Account Field (Expense & Income) -->
+                    <div class="form-group" id="unified_accountGroup">
+                        <label for="unified_account">Akun</label>
+                        <select id="unified_account" required>
+                            <option value="">Pilih akun</option>
+                        </select>
+                    </div>
+
+                    <!-- From Account (Transfer Only) -->
+                    <div class="form-group" id="unified_fromAccountGroup" style="display: none;">
+                        <label for="unified_fromAccount">Dari Akun</label>
+                        <select id="unified_fromAccount">
+                            <option value="">Pilih akun</option>
+                        </select>
+                    </div>
+
+                    <!-- To Account (Transfer Only) -->
+                    <div class="form-group" id="unified_toAccountGroup" style="display: none;">
+                        <label for="unified_toAccount">Ke Akun</label>
+                        <select id="unified_toAccount">
+                            <option value="">Pilih akun</option>
+                        </select>
+                    </div>
+
+                    <!-- Note Field (Expense & Income) -->
+                    <div class="form-group" id="unified_noteGroup">
+                        <label for="unified_note">Catatan (Opsional)</label>
+                        <input type="text" id="unified_note" placeholder="Tambahkan catatan...">
+                    </div>
+
+                    <!-- Recurring Options (Expense & Income) -->
+                    <div id="unified_recurringSection"
+                        style="margin-top: 1rem; padding-top: 0.5rem; border-top: 1px solid var(--border-divider);">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="unified_recurring" style="width: auto;">
+                                <span>🔁 Ulangi transaksi ini?</span>
+                            </label>
+                        </div>
+                        <div class="form-group" id="unified_frequencyGroup"
+                            style="display: none; margin-top: 0.5rem; padding-left: 1.5rem; border-left: 2px solid var(--primary);">
+                            <label for="unified_frequency">Frekuensi</label>
+                            <select id="unified_frequency">
+                                <option value="monthly" selected>Setiap Bulan</option>
+                                <option value="weekly">Setiap Minggu</option>
+                                <option value="yearly">Setiap Tahun</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Date Field (Common for All) -->
+                    <div class="form-group">
+                        <label for="unified_date">Tanggal</label>
+                        <input type="date" id="unified_date" required>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div style="display: flex; gap: 10px; margin-top: var(--space-4);">
+                        <button type="submit" class="btn-outline" data-action="continue" style="flex: 1;"
+                            id="unified_saveAndContinue">
+                            ➕ Simpan & Lagi
+                        </button>
+                        <button type="submit" class="btn" style="flex: 1;">
+                            💾 Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== OLD MODALS (DEPRECATED - kept for rollback safety) ===== -->
 
     <!-- Add Expense Modal -->
     <div class="modal" id="addExpenseModal">

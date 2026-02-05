@@ -1,3 +1,10 @@
+/**
+ * ⚠️ DEPRECATED VIEW (Phase 4)
+ * This view is hidden from navigation.
+ * TransactionsView is now the unified transaction hub.
+ * Do NOT add features here.
+ * Preserved for rollback safety only.
+ */
 /* ====== INCOME VIEW MODULE ====== */
 
 class IncomeView {
