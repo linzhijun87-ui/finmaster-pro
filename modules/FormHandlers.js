@@ -136,70 +136,159 @@ class FormHandlers {
     /**
      * Adapt form fields based on transaction type
      * PHASE 3: Field visibility logic only, no business logic
+     * FIX: Dynamically toggle 'required' attribute to prevent validation errors on hidden fields
+     * FIX: Clear field state completely to prevent ghost values and missing dropdown options
      */
     adaptUnifiedFormFields(type) {
         // Get all field groups
         const nameGroup = document.getElementById('unified_nameGroup');
+        const nameInput = document.getElementById('unified_name');
         const nameLabel = document.getElementById('unified_nameLabel');
         const categoryGroup = document.getElementById('unified_categoryGroup');
+        const categorySelect = document.getElementById('unified_category');
         const accountGroup = document.getElementById('unified_accountGroup');
+        const accountSelect = document.getElementById('unified_account');
         const fromAccountGroup = document.getElementById('unified_fromAccountGroup');
+        const fromAccountSelect = document.getElementById('unified_fromAccount');
         const toAccountGroup = document.getElementById('unified_toAccountGroup');
+        const toAccountSelect = document.getElementById('unified_toAccount');
         const noteGroup = document.getElementById('unified_noteGroup');
+        const noteInput = document.getElementById('unified_note');
         const recurringSection = document.getElementById('unified_recurringSection');
         const saveAndContinue = document.getElementById('unified_saveAndContinue');
 
-        // Reset all to hidden
-        if (nameGroup) nameGroup.style.display = 'none';
-        if (categoryGroup) categoryGroup.style.display = 'none';
-        if (accountGroup) accountGroup.style.display = 'none';
-        if (fromAccountGroup) fromAccountGroup.style.display = 'none';
-        if (toAccountGroup) toAccountGroup.style.display = 'none';
+        // STRICT V1.0 POLICY: Explicitly clear ALL user inputs on type change
+        // This ensures no ghost state when switching between types
+        if (nameInput) nameInput.value = '';
+        if (noteInput) noteInput.value = '';
+        if (accountSelect) accountSelect.value = '';
+        // amount is often shared ID, clear it too
+        const amountInput = document.getElementById('unified_amount');
+        if (amountInput) amountInput.value = '';
+
+        // Helper function to hide field, remove required, and CLEAR VALUE
+        const hideField = (group, input) => {
+            if (group) group.style.display = 'none';
+            if (input) {
+                input.required = false;
+                input.value = ''; // CRITICAL: Clear value to prevent ghost state
+            }
+        };
+
+        // Helper function to show field and add required
+        const showField = (group, input, isRequired = true) => {
+            if (group) group.style.display = 'block';
+            if (input && isRequired) input.required = true;
+        };
+
+        // Reset all to hidden, remove required, and clear values
+        hideField(nameGroup, nameInput);
+        hideField(categoryGroup, categorySelect);
+        hideField(accountGroup, accountSelect);
+        hideField(fromAccountGroup, fromAccountSelect);
+        hideField(toAccountGroup, toAccountSelect);
         if (noteGroup) noteGroup.style.display = 'none';
         if (recurringSection) recurringSection.style.display = 'none';
 
         // Adapt based on type
         switch (type) {
             case 'expense':
-                if (nameGroup) {
-                    nameGroup.style.display = 'block';
-                    if (nameLabel) nameLabel.textContent = 'Nama Pengeluaran';
-                }
-                if (categoryGroup) categoryGroup.style.display = 'block';
-                if (accountGroup) accountGroup.style.display = 'block';
+                // Show and require: name, category, account
+                showField(nameGroup, nameInput, true);
+                showField(categoryGroup, categorySelect, true);
+                showField(accountGroup, accountSelect, true);
+
+                if (nameLabel) nameLabel.textContent = 'Nama Pengeluaran';
                 if (noteGroup) noteGroup.style.display = 'block';
                 if (recurringSection) recurringSection.style.display = 'block';
                 if (saveAndContinue) saveAndContinue.style.display = 'block';
 
-                // Make category required for expense
-                const categorySelect = document.getElementById('unified_category');
-                if (categorySelect) categorySelect.required = true;
+                // CRITICAL FIX: Repopulate category dropdown for expense
+                this.populateUnifiedCategoryDropdown('expense');
                 break;
 
             case 'income':
-                if (nameGroup) {
-                    nameGroup.style.display = 'block';
-                    if (nameLabel) nameLabel.textContent = 'Sumber Pendapatan';
-                }
-                if (accountGroup) accountGroup.style.display = 'block';
+                // Show and require: name, category, account
+                // REGRESSION FIX: Income also needs category dropdown
+                showField(nameGroup, nameInput, true);
+                showField(categoryGroup, categorySelect, true);
+                showField(accountGroup, accountSelect, true);
+
+                if (nameLabel) nameLabel.textContent = 'Sumber Pendapatan';
                 if (noteGroup) noteGroup.style.display = 'block';
                 if (recurringSection) recurringSection.style.display = 'block';
                 if (saveAndContinue) saveAndContinue.style.display = 'block';
 
-                // Category not required for income
-                const categorySelectIncome = document.getElementById('unified_category');
-                if (categorySelectIncome) categorySelectIncome.required = false;
+                // CRITICAL FIX: Repopulate category dropdown for income
+                this.populateUnifiedCategoryDropdown('income');
                 break;
 
             case 'transfer':
-                if (fromAccountGroup) fromAccountGroup.style.display = 'block';
-                if (toAccountGroup) toAccountGroup.style.display = 'block';
-                // Transfer: No name, category, note, recurring, or "Save & Add Another"
+                // Show and require: fromAccount, toAccount (NO name, category, account)
+                showField(fromAccountGroup, fromAccountSelect, true);
+                showField(toAccountGroup, toAccountSelect, true);
+                // Hide and remove required from unused fields
+                hideField(nameGroup, nameInput);
+                hideField(categoryGroup, categorySelect);
+                hideField(accountGroup, accountSelect);
+                if (noteInput) noteInput.value = ''; // Clear note for transfer
+
+                // Transfer: No note, recurring, or "Save & Add Another"
                 if (saveAndContinue) saveAndContinue.style.display = 'none';
                 break;
         }
 
         console.log(`💳 Adapted unified form for: ${type}`);
+    }
+
+    /**
+     * Populate category dropdown for unified transaction form
+     * Handles both expense and income categories
+     * REGRESSION FIX: Income categories restored
+     */
+    populateUnifiedCategoryDropdown(type) {
+        const categorySelect = document.getElementById('unified_category');
+        if (!categorySelect) return;
+
+        // CRITICAL: Always clear existing options and value first
+        categorySelect.innerHTML = '';
+        categorySelect.value = '';
+
+        let html = '<option value="" disabled selected>Pilih kategori</option>';
+
+        if (type === 'expense' && this.app.categoryManager) {
+            // Get expense categories from CategoryManager
+            const expenseCategories = this.app.categoryManager.getCategoriesByType('expense');
+            expenseCategories.forEach(cat => {
+                html += `<option value="${cat.key}">${cat.icon} ${cat.name}</option>`;
+            });
+            categorySelect.innerHTML = html;
+            console.log('✅ Expense category dropdown populated');
+        } else if (type === 'income') {
+            // REGRESSION FIX: Income categories now dynamic
+            let incomeCategories = [];
+
+            // Try to get from CategoryManager first
+            if (this.app.categoryManager) {
+                incomeCategories = this.app.categoryManager.getCategoriesByType('income');
+            }
+
+            // Fallback if empty (Safety net)
+            if (!incomeCategories || incomeCategories.length === 0) {
+                incomeCategories = [
+                    { key: 'gaji', icon: '💼', name: 'Gaji' },
+                    { key: 'freelance', icon: '💻', name: 'Freelance' },
+                    { key: 'investasi', icon: '📈', name: 'Investasi' },
+                    { key: 'lainnya', icon: '💰', name: 'Lainnya' }
+                ];
+            }
+
+            incomeCategories.forEach(cat => {
+                html += `<option value="${cat.key}">${cat.icon} ${cat.name}</option>`;
+            });
+            categorySelect.innerHTML = html;
+            console.log(`✅ Income category dropdown populated (${incomeCategories.length} items)`);
+        }
     }
 
     /**
@@ -246,20 +335,39 @@ class FormHandlers {
             return;
         }
 
-        // Create expense object matching existing schema
-        const expense = {
-            id: Date.now(),
+        // Get account name
+        const account = this.app.state.accounts.find(a => a.id === accountId);
+        if (!account) {
+            this.showError('Akun tidak valid');
+            return;
+        }
+
+        // Create expense object matching DataManager schema
+        const expenseData = {
             name,
             amount,
             category,
+            account: account.name,
             accountId,
             date,
-            note: note || '',
-            recurring: isRecurring ? { frequency } : null
+            note: note || ''
         };
 
-        // Call existing data manager
-        this.app.dataManager.addExpense(expense);
+        // Call unified DataManager API
+        this.app.dataManager.addTransaction('expenses', expenseData);
+
+        // Handle recurring if enabled
+        if (isRecurring && this.app.recurringManager) {
+            this.app.recurringManager.addRecurring({
+                type: 'expense',
+                name,
+                amount,
+                category,
+                accountId,
+                accountName: account.name,
+                frequency: frequency || 'monthly'
+            });
+        }
 
         // Store last used values (smart defaults)
         this.lastUsedAccount.expense = accountId;
@@ -288,6 +396,7 @@ class FormHandlers {
         // Get unified form values
         const name = document.getElementById('unified_name')?.value.trim();
         const amount = parseFloat(document.getElementById('unified_amount')?.value);
+        const category = document.getElementById('unified_category')?.value;
         const accountId = parseInt(document.getElementById('unified_account')?.value);
         const date = document.getElementById('unified_date')?.value;
         const note = document.getElementById('unified_note')?.value.trim();
@@ -295,32 +404,53 @@ class FormHandlers {
         const frequency = document.getElementById('unified_frequency')?.value;
 
         // Validation
-        if (!name || !amount || !accountId || !date) {
+        if (!name || !amount || !category || !accountId || !date) {
             this.showError('Harap isi semua field yang diperlukan');
             return;
         }
 
-        // Create income object matching existing schema
-        const income = {
-            id: Date.now(),
+        // Get account name
+        const account = this.app.state.accounts.find(a => a.id === accountId);
+        if (!account) {
+            this.showError('Akun tidak valid');
+            return;
+        }
+
+        // Create income object matching DataManager schema
+        const incomeData = {
             name,
             amount,
+            category, // Use actual category from dropdown (gaji, freelance, investasi, lainnya)
+            account: account.name,
             accountId,
             date,
-            note: note || '',
-            recurring: isRecurring ? { frequency } : null
+            note: note || ''
         };
 
-        // Call existing data manager
-        this.app.dataManager.addIncome(income);
+        // Call unified DataManager API
+        this.app.dataManager.addTransaction('income', incomeData);
+
+        // Handle recurring if enabled
+        if (isRecurring && this.app.recurringManager) {
+            this.app.recurringManager.addRecurring({
+                type: 'income',
+                name,
+                amount,
+                category,
+                accountId,
+                accountName: account.name,
+                frequency: frequency || 'monthly'
+            });
+        }
 
         // Store last used values (smart defaults)
         this.lastUsedAccount.income = accountId;
+        this.lastUsedCategory.income = category;
 
         // Handle keepOpen logic
         if (keepOpen) {
             this.showSuccess('✅ Tersimpan! Silakan input data berikutnya.');
-            this.smartResetUnifiedForm('income', accountId);
+            this.smartResetUnifiedForm('income', accountId, category);
         } else {
             this.showSuccess('Pendapatan berhasil ditambahkan!');
             document.getElementById('unifiedTransactionForm').reset();
@@ -354,17 +484,16 @@ class FormHandlers {
             return;
         }
 
-        // Create transfer object
-        const transfer = {
-            id: Date.now(),
+        // Create transfer object (ID is generated by DataManager)
+        const transferData = {
             fromAccountId,
             toAccountId,
             amount,
             date
         };
 
-        // Call existing data manager
-        this.app.dataManager.addTransfer(transfer);
+        // Call DataManager API
+        this.app.dataManager.addTransfer(transferData);
 
         // Close modal and refresh
         this.showSuccess('Transfer berhasil dilakukan!');
@@ -379,47 +508,34 @@ class FormHandlers {
 
     /**
      * Smart reset for "Save & Add Another"
-     * PHASE 3: Keeps type, account, category. Resets name, amount, note, date
+     * STRICT V1.0 POLICY: Reset to "Expense" default, Clear ALL fields except Date
+     * No smart defaults for account/category - Clean slate every time.
      */
     smartResetUnifiedForm(type, accountId, categoryId = null) {
         const form = document.getElementById('unifiedTransactionForm');
         if (!form) return;
 
-        // Clear fields
-        const nameInput = document.getElementById('unified_name');
-        const amountInput = document.getElementById('unified_amount');
-        const noteInput = document.getElementById('unified_note');
-        const dateInput = document.getElementById('unified_date');
-        const recurringCheckbox = document.getElementById('unified_recurring');
-        const frequencyGroup = document.getElementById('unified_frequencyGroup');
-
-        if (nameInput) nameInput.value = '';
-        if (amountInput) amountInput.value = '';
-        if (noteInput) noteInput.value = '';
-
-        // Reset date to today
-        if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-
-        // Reset recurring
-        if (recurringCheckbox) recurringCheckbox.checked = false;
-        if (frequencyGroup) frequencyGroup.style.display = 'none';
-
-        // Keep account and category (smart defaults)
-        const accountSelect = document.getElementById('unified_account');
-        if (accountSelect && accountId) accountSelect.value = accountId;
-
-        if (type === 'expense' && categoryId) {
-            const categorySelect = document.getElementById('unified_category');
-            if (categorySelect) categorySelect.value = categoryId;
+        // Reset to default type 'expense' as per v1.0 Requirement
+        const expenseRadio = form.querySelector('input[value="expense"]');
+        if (expenseRadio) {
+            expenseRadio.checked = true;
+            // This will trigger adaptUnifiedFormFields which wipes common fields
+            this.adaptUnifiedFormFields('expense');
         }
 
+        // Reset date to today (Requirement: "Only keep: date = today")
+        const dateInput = document.getElementById('unified_date');
+        if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
         // Focus name field
+        const nameInput = document.getElementById('unified_name');
         if (nameInput) {
             setTimeout(() => nameInput.focus(), 100);
         }
 
-        console.log('💳 Smart reset applied');
+        console.log('🔄 Form soft-reset for next entry (Defaulted to Expense)');
     }
+
 
     /* ====================================================================
      * END PHASE 3

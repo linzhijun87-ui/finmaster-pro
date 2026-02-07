@@ -21,14 +21,7 @@ class BudgetView {
         this.app.uiManager.setupScrollReveal();
     }
 
-    // Legacy render support (deprecated)
-    render() {
-        console.warn('⚠️ using legacy render on BudgetView');
-        const html = this.getHtml();
-        this.app.elements.mainContent.innerHTML = html;
-        this.app.elements.mainContent.className = 'main-content budget-view';
-        setTimeout(() => this.afterRender(), 50);
-    }
+
 
     getBudgetHTML() {
         return `
@@ -210,39 +203,40 @@ class BudgetView {
     }
 
     setupEventListeners() {
-        // Listen for budget changes
-        document.addEventListener('budget-changed', (e) => {
+        // Store bound handlers to allow removal later
+        this.handleBudgetChanged = (e) => {
             console.log('📊 Budget changed event received:', e.detail);
             if (this.app.state.activeTab === 'budget') {
-                this.refresh();
+                this.app.refreshCurrentView();
             }
-        });
+        };
 
-        // Listen for expense changes
-        document.addEventListener('expense-changed', (e) => {
+        this.handleExpenseChanged = (e) => {
             console.log('💸 Expense changed event received:', e.detail);
             if (this.app.state.activeTab === 'budget') {
-                this.refresh();
+                this.app.refreshCurrentView();
             }
-        });
+        };
+
+        // Listen for budget changes
+        document.addEventListener('budget-changed', this.handleBudgetChanged);
+
+        // Listen for expense changes
+        document.addEventListener('expense-changed', this.handleExpenseChanged);
     }
 
-    refresh() {
-        console.log('🔄 Refreshing budget view...');
-
-        if (!this.initialized) {
-            this.render();
-            return;
+    destroy() {
+        console.log('🧹 Destroying Budget View...');
+        if (this.handleBudgetChanged) {
+            document.removeEventListener('budget-changed', this.handleBudgetChanged);
         }
-
-        // Just re-render everything for simplicity in this strict mode, or target Budget Overview if exists
-        // Since we removed flip card, we can just reload the grid and stats
-
-        // This is a simpler strategy: re-render the view content if structure is staticish
-        // Or update specific parts
-
-        this.render();
+        if (this.handleExpenseChanged) {
+            document.removeEventListener('expense-changed', this.handleExpenseChanged);
+        }
+        this.initialized = false;
     }
+
+
 
     refreshBudgetGrid() {
         const budgetGrid = document.getElementById('budgetGrid');

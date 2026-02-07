@@ -556,13 +556,16 @@ onmouseout = "this.style.background='transparent'" >
                 });
             }
             document.body.appendChild(filterPopover);
+            this.filterPopover = filterPopover; // Store reference for cleanup
+        } else if (filterPopover) {
+            this.filterPopover = filterPopover;
         }
 
-        const closePopover = () => {
-            if (filterPopover) filterPopover.classList.remove('is-open');
+        this.closePopover = () => {
+            if (this.filterPopover) this.filterPopover.classList.remove('is-open');
         };
 
-        if (closeFilterBtn) closeFilterBtn.addEventListener('click', closePopover);
+        if (closeFilterBtn) closeFilterBtn.addEventListener('click', this.closePopover);
 
         // Toggle & Position
         if (filterTrigger) {
@@ -570,12 +573,12 @@ onmouseout = "this.style.background='transparent'" >
                 e.preventDefault();
                 e.stopPropagation(); // Prevent immediate close by document listener
 
-                if (!filterPopover) return;
+                if (!this.filterPopover) return;
 
-                if (filterPopover.classList.contains('is-open')) {
-                    closePopover();
+                if (this.filterPopover.classList.contains('is-open')) {
+                    this.closePopover();
                 } else {
-                    filterPopover.classList.add('is-open');
+                    this.filterPopover.classList.add('is-open');
                     this.updateActiveFiltersDisplay();
 
                     // Desktop Positioning Logic
@@ -588,28 +591,31 @@ onmouseout = "this.style.background='transparent'" >
                         // But ensure doesn't overflow left screen edge
                         if (left < 10) left = 10;
 
-                        filterPopover.style.top = (rect.bottom + 8) + 'px';
-                        filterPopover.style.left = left + 'px';
-                        filterPopover.style.width = popoverWidth + 'px';
+                        this.filterPopover.style.top = (rect.bottom + 8) + 'px';
+                        this.filterPopover.style.left = left + 'px';
+                        this.filterPopover.style.width = popoverWidth + 'px';
                     } else {
                         // Mobile: handled by CSS (bottom: 0)
-                        filterPopover.style.top = '';
-                        filterPopover.style.left = '';
-                        filterPopover.style.width = '';
+                        this.filterPopover.style.top = '';
+                        this.filterPopover.style.left = '';
+                        this.filterPopover.style.width = '';
                     }
                 }
             });
         }
 
-        // Close on click outside
-        document.addEventListener('click', (e) => {
-            if (filterPopover && filterPopover.classList.contains('is-open')) {
+        // Close on click outside (Stored for cleanup)
+        this.handleDocumentClickFilter = (e) => {
+            if (this.filterPopover && this.filterPopover.classList.contains('is-open')) {
                 // If click is NOT inside popover AND NOT on the trigger
-                if (!filterPopover.contains(e.target) && !filterTrigger.contains(e.target)) {
-                    closePopover();
+                // Note: filterTrigger might be gone if we navigated, but listener should be removed by then
+                const trigger = document.getElementById('filterTriggerBtn');
+                if (!this.filterPopover.contains(e.target) && (!trigger || !trigger.contains(e.target))) {
+                    this.closePopover();
                 }
             }
-        });
+        };
+        document.addEventListener('click', this.handleDocumentClickFilter);
 
         // Filter Logic - reuse existing logic but ensure elements are found (they are now in modal)
         const typeFilter = document.getElementById('typeFilter');
@@ -745,14 +751,15 @@ onmouseout = "this.style.background='transparent'" >
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         };
 
-        // Close menu when clicking outside
-        document.addEventListener('click', (e) => {
+        // Close menu when clicking outside (Store reference for cleanup)
+        this.handleClickOutsideMenu = (e) => {
             if (!e.target.closest('.transaction-overflow')) {
                 document.querySelectorAll('.overflow-menu').forEach(m => {
                     m.style.display = 'none';
                 });
             }
-        });
+        };
+        document.addEventListener('click', this.handleClickOutsideMenu);
 
         // Handle action clicks from overflow menu
         transactionsList.addEventListener('click', (e) => {
@@ -865,6 +872,13 @@ onmouseout = "this.style.background='transparent'" >
         return icons[type] || '📄';
     }
 
+    // Standard refresh interface for App.js
+    refresh() {
+        console.log('🔄 Refreshing TransactionsView list...');
+        this.refreshList();
+        this.updateActiveFiltersDisplay();
+    }
+
     refreshList() {
         const list = document.getElementById('transactionsList');
         if (list) {
@@ -882,6 +896,26 @@ onmouseout = "this.style.background='transparent'" >
             // Remove empty state
             emptyState.remove();
         }
+    }
+
+    destroy() {
+        console.log('🧹 Destroying Transactions View...');
+
+        // Remove global listeners
+        if (this.handleDocumentClickFilter) {
+            document.removeEventListener('click', this.handleDocumentClickFilter);
+        }
+        if (this.handleClickOutsideMenu) {
+            document.removeEventListener('click', this.handleClickOutsideMenu);
+        }
+
+        // Remove popover from body to prevent duplicates/leaks
+        if (this.filterPopover && this.filterPopover.parentNode === document.body) {
+            this.filterPopover.remove();
+        }
+
+        // Clear references
+        this.filterPopover = null;
     }
 }
 

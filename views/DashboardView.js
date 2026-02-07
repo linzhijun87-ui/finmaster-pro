@@ -50,14 +50,7 @@ class DashboardView {
         this.app.uiManager.setupScrollReveal();
     }
 
-    // Legacy render support (deprecated)
-    render() {
-        console.warn('⚠️ using legacy render on Dashboard');
-        const html = this.getHtml();
-        this.app.elements.mainContent.innerHTML = html;
-        this.app.elements.mainContent.className = 'main-content dashboard-view';
-        setTimeout(() => this.afterRender(), 50);
-    }
+
 
     // TAMBAHKAN method baru untuk update content tanpa merusak chart:
     updateDashboardContent() {
@@ -922,20 +915,7 @@ class DashboardView {
         });
     }
 
-    refresh() {
-        console.log('🔄 Refreshing dashboard...');
 
-        if (!this.initialized) {
-            this.render();
-            return;
-        }
-
-        // Update dashboard content tanpa merusak chart
-        this.updateDashboardContent();
-
-        // Update chart data
-        this.updateChartData();
-    }
 
     updateStats() {
         // Update income

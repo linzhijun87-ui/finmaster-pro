@@ -211,7 +211,7 @@
                     <div class="form-group" id="unified_categoryGroup">
                         <label for="unified_category">Kategori</label>
                         <select id="unified_category" required>
-                            <option value="">Pilih kategori</option>
+                            <option value="" disabled selected>Pilih kategori</option>
                             <option value="kebutuhan">🛒 Kebutuhan</option>
                             <option value="hiburan">🎮 Hiburan</option>
                             <option value="transport">🚗 Transport</option>
@@ -225,7 +225,7 @@
                     <div class="form-group" id="unified_accountGroup">
                         <label for="unified_account">Akun</label>
                         <select id="unified_account" required>
-                            <option value="">Pilih akun</option>
+                            <option value="" disabled selected>Pilih akun</option>
                         </select>
                     </div>
 
@@ -233,7 +233,7 @@
                     <div class="form-group" id="unified_fromAccountGroup" style="display: none;">
                         <label for="unified_fromAccount">Dari Akun</label>
                         <select id="unified_fromAccount">
-                            <option value="">Pilih akun</option>
+                            <option value="" disabled selected>Pilih akun</option>
                         </select>
                     </div>
 
@@ -241,7 +241,7 @@
                     <div class="form-group" id="unified_toAccountGroup" style="display: none;">
                         <label for="unified_toAccount">Ke Akun</label>
                         <select id="unified_toAccount">
-                            <option value="">Pilih akun</option>
+                            <option value="" disabled selected>Pilih akun</option>
                         </select>
                     </div>
 
@@ -620,6 +620,100 @@
                         💾 Simpan Budget
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- UX POLISH: Custom Add Category Modal -->
+    <div class="modal" id="addCategoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tambah Kategori</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm" onsubmit="event.preventDefault(); window.processAddCategory();">
+                    <input type="hidden" id="addCategoryType">
+
+                    <!-- Icon Picker -->
+                    <div class="form-group">
+                        <label>Icon Kategori</label>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                            <div id="categoryIconPreview" onclick="window.toggleIconPicker()"
+                                style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-divider); border-radius: 8px; cursor: pointer;">
+                                📦
+                            </div>
+                            <div class="text-muted" style="font-size: 0.875rem;">
+                                Klik icon untuk mengubah (opsional)
+                            </div>
+                        </div>
+
+                        <!-- Hidden Icon Grid -->
+                        <div id="iconPickerGrid"
+                            style="display: none; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 12px; padding: 12px; background: var(--bg-surface); border-radius: 8px; border: 1px solid var(--border-divider);">
+                            <!-- Icons injected by JS -->
+                        </div>
+                        <input type="hidden" id="selectedCategoryIcon" value="📦">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newCategoryName">Nama Kategori</label>
+                        <input type="text" id="newCategoryName" required placeholder="Contoh: Belanja Online">
+                    </div>
+
+                    <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
+                        <button type="button" class="btn-outline modal-close" style="flex: 1;">Batal</button>
+                        <button type="submit" class="btn" style="flex: 1;">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- UX POLISH: Delete Category Confirmation -->
+    <div class="modal" id="deleteCategoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Hapus Kategori?</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Kategori <strong id="deleteCategoryNameDisplay"></strong> akan dihapus.</p>
+                <p class="text-muted" style="font-size: 0.9rem; margin-top: 8px;">
+                    Data transaksi yang sudah ada tidak akan terpengaruh, namun akan kehilangan label kategori ini.
+                </p>
+
+                <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
+                    <button type="button" class="btn-outline modal-close" style="flex: 1;">Batal</button>
+                    <button type="button" id="confirmDeleteCategoryBtn" class="btn btn-danger"
+                        style="flex: 1; background: var(--danger); border: none;">
+                        Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UX POLISH: Delete Transfer Confirmation -->
+    <div class="modal" id="deleteTransferModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Hapus Transfer?</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Transfer ini akan dihapus permanen.</p>
+                <p class="text-muted" style="font-size: 0.9rem; margin-top: 8px;">
+                    Saldo akun pengirim dan penerima akan dikembalikan ke nilai sebelum transfer.
+                </p>
+
+                <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
+                    <button type="button" class="btn-outline modal-close" style="flex: 1;">Batal</button>
+                    <button type="button" id="confirmDeleteTransferBtn" class="btn btn-danger"
+                        style="flex: 1; background: var(--danger); border: none;">
+                        Hapus
+                    </button>
+                </div>
             </div>
         </div>
     </div>

@@ -273,19 +273,21 @@ class DataManager {
             name: data.name,
             amount: data.amount,
             category: data.category,
-            account: data.account || '', // Account name (NEW)
-            accountId: data.accountId || null, // Account ID (NEW)
+            account: data.account || '', // Account name
+            accountId: data.accountId || null, // Account ID
             date: data.date || new Date().toISOString().split('T')[0],
             note: data.note || '',
             createdAt: new Date().toISOString()
         };
 
         this.app.state.transactions[type].push(transaction);
+
+        // CRITICAL: Mutate account balance (Source of Truth)
+        this.applyMutation(type, transaction);
+
         this.saveData(true);
 
-        // NO balance updates - balances are derived
-
-        // Emit account-changed for balance recalculation in views
+        // Emit account-changed for simple listeners
         if (transaction.accountId) {
             document.dispatchEvent(new CustomEvent('account-changed', {
                 detail: { action: 'transaction-added', accountId: transaction.accountId }
@@ -296,10 +298,121 @@ class DataManager {
         return transaction;
     }
 
-    deleteTransaction(type, id) {
-        this.app.state.transactions[type] = this.app.state.transactions[type].filter(item => item.id !== id);
+    addTransfer(data) {
+        const id = Date.now();
+        const transfer = {
+            id,
+            fromAccountId: data.fromAccountId,
+            toAccountId: data.toAccountId,
+            amount: data.amount,
+            date: data.date || new Date().toISOString().split('T')[0],
+            createdAt: new Date().toISOString()
+        };
+
+        if (!this.app.state.transfers) this.app.state.transfers = [];
+        this.app.state.transfers.push(transfer);
+
+        // CRITICAL: Mutate balances for transfer
+        this.applyTransferMutation(transfer);
+
         this.saveData(true);
-        console.log(`🗑️ ${type} transaction deleted: ${id}`);
+        console.log('✅ Transfer added:', transfer);
+        return transfer;
+    }
+
+    deleteTransaction(type, id) {
+        const list = this.app.state.transactions[type];
+        const transaction = list.find(item => item.id == id); // Loose equality for string/number match
+
+        if (transaction) {
+            // Reverse mutation BEFORE removing
+            this.reverseMutation(type, transaction);
+
+            // Remove from list
+            this.app.state.transactions[type] = list.filter(item => item.id !== transaction.id);
+            this.saveData(true);
+            console.log(`🗑️ ${type} transaction deleted: ${id}`);
+        } else {
+            console.warn(`Transaction ${id} not found for deletion`);
+        }
+    }
+
+    deleteTransfer(id) {
+        const transfer = this.app.state.transfers.find(t => t.id == id);
+        if (transfer) {
+            // Reverse transfer mutation
+            this.reverseTransferMutation(transfer);
+
+            this.app.state.transfers = this.app.state.transfers.filter(t => t.id != id);
+            this.saveData(true);
+            console.log(`🗑️ Transfer deleted: ${id}`);
+        }
+    }
+
+    // ====== BALANCE MUTATION LOGIC ======
+
+    applyMutation(type, tx) {
+        if (!tx.accountId) return;
+        const account = this.app.state.accounts.find(a => a.id == tx.accountId);
+        if (!account) return;
+
+        // Ensure balance exists, default to initial if undefined (Migration support)
+        if (typeof account.balance === 'undefined') {
+            account.balance = account.initialBalance || 0;
+        }
+
+        if (type === 'expense') {
+            account.balance -= tx.amount;
+        } else if (type === 'income') {
+            account.balance += tx.amount;
+        }
+        console.log(`💰 Balance updated for ${account.name}: ${account.balance}`);
+    }
+
+    reverseMutation(type, tx) {
+        if (!tx.accountId) return;
+        const account = this.app.state.accounts.find(a => a.id == tx.accountId);
+        if (!account) return;
+
+        // Ensure balance exists
+        if (typeof account.balance === 'undefined') {
+            account.balance = account.initialBalance || 0;
+        }
+
+        if (type === 'expense') {
+            account.balance += tx.amount; // Add back
+        } else if (type === 'income') {
+            account.balance -= tx.amount; // Remove
+        }
+        console.log(`💰 Balance reverted for ${account.name}: ${account.balance}`);
+    }
+
+    applyTransferMutation(tx) {
+        const fromAccount = this.app.state.accounts.find(a => a.id == tx.fromAccountId);
+        const toAccount = this.app.state.accounts.find(a => a.id == tx.toAccountId);
+
+        if (fromAccount) {
+            if (typeof fromAccount.balance === 'undefined') fromAccount.balance = fromAccount.initialBalance || 0;
+            fromAccount.balance -= tx.amount;
+        }
+        if (toAccount) {
+            if (typeof toAccount.balance === 'undefined') toAccount.balance = toAccount.initialBalance || 0;
+            toAccount.balance += tx.amount;
+        }
+    }
+
+    reverseTransferMutation(tx) {
+        const fromAccount = this.app.state.accounts.find(a => a.id == tx.fromAccountId);
+        const toAccount = this.app.state.accounts.find(a => a.id == tx.toAccountId);
+
+        if (fromAccount) {
+            if (typeof fromAccount.balance === 'undefined') fromAccount.balance = fromAccount.initialBalance || 0;
+            fromAccount.balance += tx.amount; // Refresh
+        }
+        if (toAccount) {
+            if (typeof toAccount.balance === 'undefined') toAccount.balance = toAccount.initialBalance || 0;
+            toAccount.balance -= tx.amount; // Revert
+        }
     }
 
     // ====== GOAL MANAGEMENT ======

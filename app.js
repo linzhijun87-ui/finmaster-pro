@@ -30,6 +30,7 @@ import { APP_CONFIG } from './utils/Constants.js';
 
 class FinancialApp {
     constructor() {
+        window.app = this; // Expose to window for global handlers
         console.log('🚀 Initializing Financial Masterplan PRO v2.1');
 
         // Initialize state
@@ -67,7 +68,7 @@ class FinancialApp {
                 notifications: true,
                 autoSave: true
             },
-            activeTab: 'dashboard',
+            activeTab: null, // Start with null to force initial render
             isLoading: true,
             isChartReady: false
         };
@@ -262,42 +263,45 @@ class FinancialApp {
 
     // ====== PUBLIC API METHODS ======
 
-    showView(viewName) {
-        console.log(`🔀 Switching to view: ${viewName}`);
+    showView(viewName, options = { force: false }) {
+        this.state.isLoading = true;
 
-        // Don't switch if already on this view
-        if (this.state.activeTab === viewName && !this.state.isLoading) {
-            console.log(`ℹ️ Already on ${viewName} view, refreshing...`);
-            this.refreshCurrentView();
+        // Prevent infinite recursion and unnecessary re-renders
+        if (!options.force && this.state.activeTab === viewName) {
+            console.log(`ℹ️ Already on view ${viewName}, skipping render.`);
+            this.state.isLoading = false;
             return;
         }
 
+        console.log(`Navigation: Switching to ${viewName} (Force: ${options.force})`);
+
+        // Update navigation UI
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.tab === viewName) {
+                item.classList.add('active');
+            }
+        });
+
         const switchContent = () => {
-            // 1. CLEANUP: Destroy previous view
-            const previousView = this.state.activeTab;
-            if (previousView && this.views[previousView]) {
-                if (typeof this.views[previousView].destroy === 'function') {
-                    console.log(`🧹 Cleaning up previous view: ${previousView}`);
-                    this.views[previousView].destroy();
-                }
-            }
-
-            // Update state
-            this.state.activeTab = viewName;
-            this.state.isLoading = true;
-
-            // Update navigation
-            this.uiManager.updateNavigation(viewName);
-
-            // 2. CLEAR DOM
-            // This ensures we start with a clean slate
-            if (this.elements.mainContent) {
-                this.elements.mainContent.innerHTML = '';
-                // Add entrance animation class
-                this.elements.mainContent.className = `main-content ${viewName}-view page-entrance`;
-            }
-
             try {
+                // 1. CLEANUP: Destroy previous view if needed
+                const previousView = this.views[this.state.activeTab];
+                if (previousView && typeof previousView.destroy === 'function') {
+                    previousView.destroy();
+                }
+
+                // 2. STATE: Update active tab
+                this.state.activeTab = viewName;
+
+                // 2. CLEAR DOM
+                // This ensures we start with a clean slate
+                if (this.elements.mainContent) {
+                    this.elements.mainContent.innerHTML = '';
+                    // Add entrance animation class
+                    this.elements.mainContent.className = `main-content ${viewName}-view page-entrance`;
+                }
+
                 if (this.views[viewName]) {
                     const view = this.views[viewName];
 
@@ -854,9 +858,17 @@ class FinancialApp {
     // ====== UTILITY METHODS ======
 
     refreshCurrentView() {
+        // STRICT V1.0 POLICY: Single Render Owner
+        // App controls rendering via showView. Views do not refresh themselves.
+        /*
         const currentView = this.views[this.state.activeTab];
         if (currentView && typeof currentView.refresh === 'function') {
             currentView.refresh();
+        }
+        */
+        if (this.state.activeTab) {
+            console.log(`🔄 Force refreshing view: ${this.state.activeTab}`);
+            this.showView(this.state.activeTab, { force: true });
         }
     }
 

@@ -91,19 +91,6 @@ class EventManager {
         }
     }
 
-    // ====== MODAL EVENTS ======
-    setupModalEvents() {
-        // Modal close buttons
-        document.querySelectorAll('.modal-close').forEach(btn => {
-            this.addEventHandler(btn, 'click', () => this.app.uiManager.closeModal());
-        });
-
-        // Modal overlay
-        if (this.app.elements.modalOverlay) {
-            this.addEventHandler(this.app.elements.modalOverlay, 'click', () => this.app.uiManager.closeModal());
-        }
-    }
-
     // ====== FORM EVENTS ======
     setupFormEvents() {
         // Expense form
@@ -484,16 +471,16 @@ class EventManager {
         // Budget events - refresh budget view when budgets change
         this.addEventHandler(document, 'budget-changed', (e) => {
             console.log('📊 Budget changed:', e.detail);
-            if (this.app.state.activeTab === 'budget' && this.app.views.budget) {
-                this.app.views.budget.refresh();
+            if (this.app.state.activeTab === 'budget') {
+                this.app.refreshCurrentView();
             }
         });
 
         // Expense events - refresh budget view when expenses change
         this.addEventHandler(document, 'expense-changed', (e) => {
             console.log('💸 Expense changed:', e.detail);
-            if (this.app.state.activeTab === 'budget' && this.app.views.budget) {
-                this.app.views.budget.refresh();
+            if (this.app.state.activeTab === 'budget') {
+                this.app.refreshCurrentView();
             }
         });
 
@@ -644,12 +631,20 @@ class EventManager {
     setupModalEvents() {
         // Modal close buttons
         document.querySelectorAll('.modal-close').forEach(btn => {
-            this.addEventHandler(btn, 'click', () => this.app.uiManager.closeModal());
+            this.addEventHandler(btn, 'click', () => {
+                this.app.uiManager.closeModal();
+                // BUG FIX: Reset unified transaction form when modal is closed
+                this.resetUnifiedFormOnClose();
+            });
         });
 
         // Modal overlay
         if (this.app.elements.modalOverlay) {
-            this.addEventHandler(this.app.elements.modalOverlay, 'click', () => this.app.uiManager.closeModal());
+            this.addEventHandler(this.app.elements.modalOverlay, 'click', () => {
+                this.app.uiManager.closeModal();
+                // BUG FIX: Reset unified transaction form when modal is closed
+                this.resetUnifiedFormOnClose();
+            });
         }
 
         // ====== CUSTOM DATE MODAL ======
@@ -674,6 +669,38 @@ class EventManager {
                 this.validateCustomDateRange();
             }
         });
+    }
+
+    /**
+     * Reset unified transaction form when modal is closed/canceled
+     * Prevents ghost values when reopening modal
+     * BUG FIX: Critical form state leak fix
+     */
+    resetUnifiedFormOnClose() {
+        const form = document.getElementById('unifiedTransactionForm');
+        if (!form) return;
+
+        // Reset the form to clear all values
+        form.reset();
+
+        // Reset to default transaction type (expense)
+        const expenseRadio = form.querySelector('input[name="transactionType"][value="expense"]');
+        if (expenseRadio) {
+            expenseRadio.checked = true;
+        }
+
+        // Reset date to today
+        const dateInput = document.getElementById('unified_date');
+        if (dateInput) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        // Re-adapt form fields to expense type (default)
+        if (this.app.formHandlers) {
+            this.app.formHandlers.adaptUnifiedFormFields('expense');
+        }
+
+        console.log('💳 Unified form reset on modal close');
     }
 
     // ====== CUSTOM DATE FILTER HANDLER ======

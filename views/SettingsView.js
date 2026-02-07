@@ -5,6 +5,11 @@ class SettingsView {
         this.app = app;
     }
 
+    destroy() {
+        console.log('🧹 Destroying SettingsView...');
+        // Clean up any potential zombie listeners here
+    }
+
     // NEW ARCHITECTURE: Return HTML string only
     getHtml() {
         console.log('⚙️ Getting Settings View HTML...');
@@ -17,14 +22,7 @@ class SettingsView {
         this.initialize();
     }
 
-    // Legacy render support (deprecated)
-    render() {
-        console.warn('⚠️ using legacy render on SettingsView');
-        const html = this.getHtml();
-        this.app.elements.mainContent.innerHTML = html;
-        this.app.elements.mainContent.className = 'main-content settings-view';
-        setTimeout(() => this.afterRender(), 50);
-    }
+
 
     getSettingsHTML() {
         return `
@@ -568,7 +566,7 @@ class SettingsView {
                                     </div>
                                     ${t.note ? `<div style="font-size: 0.75rem; margin-top: 4px;">${t.note}</div>` : ''}
                                 </div>
-                                <button class="btn-outline btn-sm danger" onclick="window.handleDeleteTransfer(${t.id})" style="font-size: 0.75rem;">
+                                <button class="btn-outline btn-sm danger delete-transfer-btn" data-id="${t.id}" style="font-size: 0.75rem;">
                                     🗑️ Hapus
                                 </button>
                             </div>
@@ -685,6 +683,19 @@ class SettingsView {
     }
 
     setupEventListeners() {
+        // Transfer Delete Delegation
+        const settingsGrid = document.querySelector('.settings-grid');
+        if (settingsGrid) {
+            settingsGrid.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-transfer-btn');
+                if (deleteBtn) {
+                    const id = deleteBtn.dataset.id;
+                    // UX POLISH: Use custom modal instead of native confirm
+                    window.handleDeleteTransfer(id);
+                }
+            });
+        }
+
         // Edit profile button
         document.getElementById('editProfileBtn')?.addEventListener('click', () => {
             this.editProfile();
@@ -761,7 +772,7 @@ class SettingsView {
             this.app.state.user.name = newName.trim();
             this.app.state.user.avatar = newName.trim().split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
             this.app.dataManager.saveData(false);
-            this.refresh();
+            this.app.refreshCurrentView();
             this.app.uiManager.showNotification('Profil berhasil diperbarui!', 'success');
         }
     }
@@ -804,56 +815,7 @@ class SettingsView {
         }
     }
 
-    refresh() {
-        // Refresh profile section
-        const profileAvatar = document.getElementById('profileAvatar');
-        const profileName = document.getElementById('profileName');
 
-        if (profileAvatar) {
-            profileAvatar.textContent = this.app.state.user.avatar;
-        }
-
-        if (profileName) {
-            profileName.textContent = this.app.state.user.name;
-        }
-
-        // Refresh profile stats
-        const profileStats = this.getProfileStats();
-        const profileStatElements = document.querySelectorAll('.profile-stat .stat-value');
-        if (profileStatElements.length >= 3) {
-            profileStatElements[1].textContent = profileStats.totalTransactions;
-            profileStatElements[2].textContent = profileStats.activeGoals;
-        }
-
-        // Refresh settings controls
-        this.refreshSettingsControls();
-
-        // Refresh Account List
-        const accountList = document.querySelector('.account-list');
-        if (accountList) {
-            // We need to re-generate the account list HTML
-            const accounts = this.app.calculator.getAccountsWithBalances();
-            accountList.innerHTML = accounts.length > 0 ? accounts.map(acc => `
-                <div class="account-item ${!acc.active ? 'inactive' : ''}" style="padding: 12px; border-bottom: 1px solid var(--border-divider); display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                            ${this.getAccountIcon(acc.type)}
-                            ${acc.name}
-                            ${!acc.active ? '<span style="font-size: 0.7rem; background: var(--gray-200); padding: 2px 6px; border-radius: 4px;">Nonaktif</span>' : ''}
-                        </div>
-                        <div class="text-muted" style="font-size: 0.8rem;">
-                            ${acc.active
-                    ? `Saldo: ${this.app.calculator.formatCurrency(acc.currentBalance)}`
-                    : `(Nonaktif)`}
-                        </div>
-                    </div>
-                    <button class="btn-outline btn-sm" onclick="handleEditAccount(${acc.id})">
-                        ✏️
-                    </button>
-                </div>
-            `).join('') : '<div class="text-muted text-center p-3">Belum ada akun. Tambahkan sekarang!</div>';
-        }
-    }
 
     refreshSettingsControls() {
         // Theme select
@@ -913,7 +875,7 @@ window.saveClientId = function () {
     if (clientId) {
         localStorage.setItem('fm_gdrive_client_id', clientId);
         window.app.backupManager.initialize(clientId);
-        window.app.views.settings.refresh(); // Re-render section
+        window.app.refreshCurrentView(); // Re-render section
         window.app.uiManager.showNotification('Client ID disimpan', 'success');
     }
 };
@@ -922,14 +884,14 @@ window.resetClientId = function () {
     if (confirm('Reset Client ID? Koneksi akan terputus.')) {
         localStorage.removeItem('fm_gdrive_client_id');
         window.app.backupManager.logout();
-        window.app.views.settings.refresh();
+        window.app.refreshCurrentView();
     }
 };
 
 window.handleGoogleLogin = async function () {
     try {
         await window.app.backupManager.login();
-        window.app.views.settings.refresh();
+        window.app.refreshCurrentView();
         window.app.uiManager.showNotification('Login Berhasil', 'success');
     } catch (error) {
         window.app.uiManager.showNotification('Login Gagal: ' + error.message, 'error');
@@ -938,7 +900,7 @@ window.handleGoogleLogin = async function () {
 
 window.handleGoogleLogout = function () {
     window.app.backupManager.logout();
-    window.app.views.settings.refresh();
+    window.app.refreshCurrentView();
     window.app.uiManager.showNotification('Logout Berhasil', 'info');
 };
 
@@ -1049,28 +1011,79 @@ window.switchCategoryTab = function (type) {
     document.getElementById('incomeCategoriesTab').style.display = type === 'income' ? 'block' : 'none';
 };
 
-window.handleAddCategory = function (type) {
-    const name = prompt(`Masukkan nama kategori ${type === 'income' ? 'pendapatan' : 'pengeluaran'} baru:`);
-    if (!name || !name.trim()) return;
+// ====== ICON PICKER LOGIC ======
+const CATEGORY_ICONS = ['🥡', '🛒', '🎬', '🚗', '🏥', '📚', '📦', '🏠', '✈️', '🎮', '💊', '🐶', '👶', '🎁', '📄', '💸', '👔', '🔧', '💻', '🏦'];
 
-    const icon = prompt('Masukkan emoji icon (opsional):', type === 'income' ? '💵' : '📦');
+window.toggleIconPicker = function () {
+    const grid = document.getElementById('iconPickerGrid');
+    if (!grid) return;
+
+    if (grid.style.display === 'none') {
+        grid.style.display = 'grid';
+        // Populate if empty
+        if (grid.children.length === 0) {
+            grid.innerHTML = CATEGORY_ICONS.map(icon =>
+                `<div onclick="window.selectCategoryIcon('${icon}')" 
+                      style="cursor: pointer; padding: 8px; text-align: center; font-size: 1.5rem; border-radius: 4px; transition: background 0.2s;"
+                      onmouseover="this.style.background='var(--bg-default)'" 
+                      onmouseout="this.style.background='transparent'">
+                    ${icon}
+                </div>`
+            ).join('');
+        }
+    } else {
+        grid.style.display = 'none';
+    }
+};
+
+window.selectCategoryIcon = function (icon) {
+    document.getElementById('selectedCategoryIcon').value = icon;
+    document.getElementById('categoryIconPreview').textContent = icon;
+    document.getElementById('iconPickerGrid').style.display = 'none';
+};
+
+// ====== NEW MODAL HANDLERS ======
+
+window.handleAddCategory = function (type) {
+    // Reset form
+    document.getElementById('addCategoryForm').reset();
+    document.getElementById('addCategoryType').value = type;
+
+    const defaultIcon = type === 'income' ? '💵' : '📦';
+    document.getElementById('selectedCategoryIcon').value = defaultIcon;
+    document.getElementById('categoryIconPreview').textContent = defaultIcon;
+
+    const grid = document.getElementById('iconPickerGrid');
+    if (grid) grid.style.display = 'none';
+
+    window.app.uiManager.openModal('addCategoryModal');
+
+    // Focus on input
+    setTimeout(() => document.getElementById('newCategoryName').focus(), 100);
+};
+
+window.processAddCategory = function () {
+    const name = document.getElementById('newCategoryName').value;
+    const type = document.getElementById('addCategoryType').value;
+    const icon = document.getElementById('selectedCategoryIcon').value;
+
+    if (!name || !name.trim()) return;
 
     try {
         window.app.categoryManager.addCategory({
             name: name.trim(),
             type: type,
-            icon: icon || (type === 'income' ? '💵' : '📦')
+            icon: icon
         });
 
+        window.app.uiManager.closeModal('addCategoryModal');
         window.app.uiManager.showNotification('Kategori berhasil ditambahkan!', 'success');
 
-        // Refresh category dropdowns in forms
         if (window.app.formHandlers) {
             window.app.formHandlers.populateCategoryDropdowns();
         }
 
-        // Refresh settings view
-        window.app.views.settings.refresh();
+        window.app.refreshCurrentView();
     } catch (error) {
         window.app.uiManager.showNotification(`Error: ${error.message}`, 'error');
     }
@@ -1078,36 +1091,55 @@ window.handleAddCategory = function (type) {
 
 window.handleDeleteCategory = function (id) {
     const category = window.app.state.categories.find(c => c.id === id);
-    if (!category) {
-        window.app.uiManager.showNotification('Kategori tidak ditemukan', 'error');
-        return;
+    if (!category) return;
+
+    const nameDisplay = document.getElementById('deleteCategoryNameDisplay');
+    if (nameDisplay) nameDisplay.textContent = category.name;
+
+    const confirmBtn = document.getElementById('confirmDeleteCategoryBtn');
+    if (confirmBtn) {
+        // Remove old listeners to prevent duplicates if any (though usually cleaner to just set onclick)
+        confirmBtn.onclick = () => window.processDeleteCategory(id);
     }
 
-    const isReferenced = window.app.categoryManager.isCategoryReferenced(category.key);
+    window.app.uiManager.openModal('deleteCategoryModal');
+};
 
-    let confirmMessage = `Hapus kategori "${category.name}"?`;
-    if (isReferenced) {
-        confirmMessage += '\n\n⚠️ PERHATIAN: Kategori ini digunakan dalam transaksi. Transaksi lama akan menampilkan "Deleted Category".';
-    }
-
-    if (!confirm(confirmMessage)) return;
-
+window.processDeleteCategory = function (id) {
     try {
         window.app.categoryManager.deleteCategory(id);
+        window.app.uiManager.closeModal('deleteCategoryModal');
         window.app.uiManager.showNotification('Kategori berhasil dihapus', 'info');
 
-        // Refresh category dropdowns in forms
         if (window.app.formHandlers) {
             window.app.formHandlers.populateCategoryDropdowns();
         }
 
-        // Refresh settings view
-        window.app.views.settings.refresh();
+        window.app.refreshCurrentView();
 
         // Refresh other views that might display categories
         if (window.app.state.activeTab === 'expenses' || window.app.state.activeTab === 'income') {
             window.app.refreshCurrentView();
         }
+    } catch (error) {
+        window.app.uiManager.showNotification(`Error: ${error.message}`, 'error');
+    }
+};
+
+window.handleDeleteTransfer = function (id) {
+    const confirmBtn = document.getElementById('confirmDeleteTransferBtn');
+    if (confirmBtn) {
+        confirmBtn.onclick = () => window.processDeleteTransfer(id);
+    }
+    window.app.uiManager.openModal('deleteTransferModal');
+};
+
+window.processDeleteTransfer = function (id) {
+    try {
+        window.app.dataManager.deleteTransfer(id);
+        window.app.uiManager.closeModal('deleteTransferModal');
+        window.app.uiManager.showNotification('Transfer dihapus', 'success');
+        window.app.refreshCurrentView();
     } catch (error) {
         window.app.uiManager.showNotification(`Error: ${error.message}`, 'error');
     }
