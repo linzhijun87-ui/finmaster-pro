@@ -455,8 +455,8 @@ class TransactionsView {
                 </div>
                 ${hasActions ? `
                     <div class="transaction-overflow" style="flex-shrink: 0; position: relative;">
-                        <button class="overflow-btn" onclick="toggleTransactionMenu('${id}')" style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: var(--text-muted, #9ca3af); font-size: 1.125rem; line-height: 1; transition: all 0.15s ease; border-radius: 4px;">⋮</button>
-                        <div class="overflow-menu" id="transaction-menu-${id}" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 140px; z-index: 100;">
+                        <button class="overflow-btn" data-transaction-id="${id}" style="padding: 6px 8px; border: none; background: transparent; cursor: pointer; color: var(--text-muted, #9ca3af); font-size: 1.125rem; line-height: 1; transition: all 0.15s ease; border-radius: 4px;">⋮</button>
+                        <div class="overflow-menu" id="transaction-menu-${id}" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 140px; z-index: 100;">
                             ${this.getOverflowMenuHTML(actions, type, id)}
                         </div>
                     </div>
@@ -514,17 +514,17 @@ title = "${this.getActionTitle(action)}" >
         return actions.map(action => {
             const { icon, label } = actionLabels[action] || { icon: '', label: action };
             return `
-    < button class="overflow-menu-item"
-data - action="${action}"
-data - type="${type}"
-data - id="${id}"
-style = "width: 100%; padding: 10px 14px; border: none; background: transparent; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.875rem; transition: background-color 0.15s ease; color: var(--text-primary, #1a1a1a);"
-onmouseover = "this.style.background='rgba(0,0,0,0.04)'"
-onmouseout = "this.style.background='transparent'" >
+                <button class="overflow-menu-item"
+                    data-action="${action}"
+                    data-type="${type}"
+                    data-id="${id}"
+                    style="width: 100%; padding: 10px 14px; border: none; background: transparent; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.875rem; transition: background-color 0.15s ease; color: var(--text-primary);"
+                    onmouseover="this.style.background='var(--surface-hover)'"
+                    onmouseout="this.style.background='transparent'">
                     <span style="font-size: 1rem;">${icon}</span>
                     <span>${label}</span>
-                </button >
-    `;
+                </button>
+            `;
         }).join('');
     }
 
@@ -739,21 +739,26 @@ onmouseout = "this.style.background='transparent'" >
         const transactionsList = document.getElementById('transactionsList');
         if (!transactionsList) return;
 
-        // Global menu toggle function
-        window.toggleTransactionMenu = (id) => {
-            const menu = document.getElementById(`transaction - menu - ${id} `);
-            if (!menu) return;
+        // Event delegation for overflow menu toggle
+        transactionsList.addEventListener('click', (e) => {
+            const overflowBtn = e.target.closest('.overflow-btn');
+            if (overflowBtn) {
+                e.stopPropagation();
+                const id = overflowBtn.dataset.transactionId;
+                const menu = document.getElementById(`transaction-menu-${id}`);
+                if (!menu) return;
 
-            // Close all other menus
-            document.querySelectorAll('.overflow-menu').forEach(m => {
-                if (m.id !== `transaction - menu - ${id} `) {
-                    m.style.display = 'none';
-                }
-            });
+                // Close all other menus
+                document.querySelectorAll('.overflow-menu').forEach(m => {
+                    if (m.id !== `transaction-menu-${id}`) {
+                        m.style.display = 'none';
+                    }
+                });
 
-            // Toggle this menu
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        };
+                // Toggle this menu
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+        });
 
         // Close menu when clicking outside (Store reference for cleanup)
         this.handleClickOutsideMenu = (e) => {

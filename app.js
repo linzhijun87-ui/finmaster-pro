@@ -20,6 +20,7 @@ import DashboardView from './views/DashboardView.js';
 import ExpensesView from './views/ExpensesView.js'; // DEPRECATED - kept for rollback
 import IncomeView from './views/IncomeView.js'; // DEPRECATED - kept for rollback
 import TransactionsView from './views/TransactionsView.js'; // NEW - replaces Expenses + Income
+import AnalysisView from './views/AnalysisView.js'; // NEW - v1.1.0
 import ChecklistView from './views/ChecklistView.js';
 import SimulationView from './views/SimulationView.js';
 import SettingsView from './views/SettingsView.js';
@@ -109,6 +110,8 @@ class FinancialApp {
             dashboard: new DashboardView(this),
             // PHASE 4: NEW - Unified Transactions View
             transactions: new TransactionsView(this),
+            // NEW: Analysis View (v1.1.0)
+            analysis: new AnalysisView(this),
             // DEPRECATED (Phase 4) - kept for rollback only, not accessible via navigation
             expenses: new ExpensesView(this),
             income: new IncomeView(this),
