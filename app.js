@@ -276,7 +276,7 @@ class FinancialApp {
         console.log(`Navigation: Switching to ${viewName} (Force: ${options.force})`);
 
         // Update navigation UI
-        document.querySelectorAll('.nav-item').forEach(item => {
+        document.querySelectorAll('.nav-tab').forEach(item => {
             item.classList.remove('active');
             if (item.dataset.tab === viewName) {
                 item.classList.add('active');

@@ -109,13 +109,8 @@ class TransactionsView {
             </div>
 
             <!-- Transaction List Container -->
-            <div style="background: var(--surface-secondary, rgba(0,0,0,0.01)); border-radius: 12px; padding: var(--space-4); padding-left: var(--space-5); min-height: 50vh;">
-                <div class="transactions-list" id="transactionsList">
-                    ${this.getTransactionListHTML()}
-                </div>
-
-                <!-- Empty State -->
-                ${this.getEmptyStateHTML()}
+            <div id="transactionsRenderContainer" style="background: var(--surface-secondary, rgba(0,0,0,0.01)); border-radius: 12px; padding: var(--space-4); padding-left: var(--space-5); min-height: 50vh;">
+                ${this.renderContent()}
             </div>
 
             <!-- Floating Action Button (FAB) -->
@@ -389,13 +384,23 @@ class TransactionsView {
 
     // ====== TRANSACTION LIST ======
 
-    getTransactionListHTML() {
+    // ====== RENDER LOGIC ======
+
+    renderContent() {
         const transactions = this.getFilteredTransactions();
 
         if (transactions.length === 0) {
-            return ''; // Empty state will show
+            return this.getEmptyStateHTML();
         }
 
+        return `
+            <div class="transactions-list" id="transactionsList">
+                ${this.generateListHTML(transactions)}
+            </div>
+        `;
+    }
+
+    generateListHTML(transactions) {
         // Group by date
         const grouped = this.groupByDate(transactions);
 
@@ -410,6 +415,11 @@ class TransactionsView {
         }
 
         return html;
+    }
+
+    getTransactionListHTML() {
+        // Forwarder for backward compatibility / legacy calls if any
+        return this.renderContent();
     }
 
     getTransactionItemHTML(transaction) {
@@ -521,19 +531,13 @@ onmouseout = "this.style.background='transparent'" >
     // ====== EMPTY STATE ======
 
     getEmptyStateHTML() {
-        const transactions = this.getFilteredTransactions();
-
-        if (transactions.length > 0) {
-            return '';
-        }
-
         return `
-    < div class="empty-state" style = "text-align: center; padding: var(--space-8) var(--space-4); color: var(--text-muted); max-width: 400px; margin: 0 auto;" >
+            <div class="empty-state" style="text-align: center; padding: var(--space-8) var(--space-4); color: var(--text-muted); max-width: 400px; margin: 0 auto;">
                 <div style="font-size: 2.5rem; margin-bottom: var(--space-4); opacity: 0.6;">📭</div>
                 <div style="font-size: 1rem; line-height: 1.6; margin-bottom: var(--space-2);">Tidak ada transaksi di sini.</div>
                 <div style="font-size: 0.875rem; opacity: 0.7; line-height: 1.5;">Anda bisa mulai kapan saja.</div>
-            </div >
-    `;
+            </div>
+        `;
     }
 
     // ====== FILTER LOGIC ======
@@ -880,21 +884,9 @@ onmouseout = "this.style.background='transparent'" >
     }
 
     refreshList() {
-        const list = document.getElementById('transactionsList');
-        if (list) {
-            list.innerHTML = this.getTransactionListHTML();
-        }
-
-        // Also update empty state
-        const emptyState = document.querySelector('.empty-state');
-        const newEmptyState = this.getEmptyStateHTML();
-
-        if (newEmptyState && !emptyState) {
-            // Add empty state
-            list.insertAdjacentHTML('afterend', newEmptyState);
-        } else if (!newEmptyState && emptyState) {
-            // Remove empty state
-            emptyState.remove();
+        const container = document.getElementById('transactionsRenderContainer');
+        if (container) {
+            container.innerHTML = this.renderContent();
         }
     }
 
