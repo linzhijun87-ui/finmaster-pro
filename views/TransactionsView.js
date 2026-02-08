@@ -435,7 +435,7 @@ class TransactionsView {
                 <div class="transaction-details" style="flex: 1; min-width: 0;">
                     <div class="transaction-name" style="font-weight: 600; font-size: 0.9375rem; margin-bottom: 3px; color: var(--text-primary, #1a1a1a); letter-spacing: -0.01em;">${name}</div>
                     <div class="transaction-meta" style="font-size: 0.8125rem; color: var(--text-muted, #6b7280); display: flex; align-items: center; gap: 6px;">
-                        ${category ? `<span>${category}</span><span style="opacity: 0.4;">·</span>` : ''}
+                        ${category ? `<span>${this.app.uiManager.getCategoryName(category)}</span><span style="opacity: 0.4;">·</span>` : ''}
                         <span>${account}</span>
                     </div>
                 </div>
