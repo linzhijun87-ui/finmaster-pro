@@ -826,6 +826,9 @@ title = "${this.getActionTitle(action)}" >
         // Open edit modal (reusing existing modal)
         this.app.uiManager.openModal('editExpenseModal');
 
+        // CRITICAL FIX: Populate category dropdown (needed for custom dropdown to work)
+        this.app.formHandlers.populateCategorySelect('#editExpenseCategory', 'expense');
+
         // Populate form (reusing existing logic pattern)
         document.getElementById('editExpenseId').value = expense.id;
         document.getElementById('editExpenseName').value = expense.name;
