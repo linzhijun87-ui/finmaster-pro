@@ -353,7 +353,7 @@ class TransactionsView {
             " onfocus="this.style.borderColor='var(--primary, #2563eb)'" onblur="this.style.borderColor='var(--border-color, rgba(0,0,0,0.1))'">
                 <option value="all">Semua Akun</option>
                 ${accounts.map(acc => `
-                    <option value="${acc.id}">${acc.icon} ${acc.name}</option>
+                    <option value="${acc.id}">${acc.name}</option>
                 `).join('')}
             </select>
         `;
@@ -826,14 +826,16 @@ title = "${this.getActionTitle(action)}" >
         // Open edit modal (reusing existing modal)
         this.app.uiManager.openModal('editExpenseModal');
 
-        // CRITICAL FIX: Populate category dropdown (needed for custom dropdown to work)
+        // CRITICAL FIX: Populate dropdowns BEFORE setting values
         this.app.formHandlers.populateCategorySelect('#editExpenseCategory', 'expense');
+        this.app.uiManager.populateAccountSelect('#editExpenseAccount');
 
-        // Populate form (reusing existing logic pattern)
+        // Populate form fields AFTER dropdowns are populated
         document.getElementById('editExpenseId').value = expense.id;
         document.getElementById('editExpenseName').value = expense.name;
         document.getElementById('editExpenseAmount').value = expense.amount;
         document.getElementById('editExpenseCategory').value = expense.category;
+        document.getElementById('editExpenseAccount').value = expense.accountId;
         document.getElementById('editExpenseDate').value = expense.date;
 
         const noteField = document.getElementById('editExpenseNote');

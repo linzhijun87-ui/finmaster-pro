@@ -1892,7 +1892,7 @@ class FormHandlers {
 
         select.innerHTML = '<option value="">Pilih Kategori</option>' +
             categories.map(cat =>
-                `<option value="${cat.id}">${cat.icon} ${cat.name}</option>`
+                `<option value="${cat.key}">${cat.icon} ${cat.name}</option>`
             ).join('');
     }
 }

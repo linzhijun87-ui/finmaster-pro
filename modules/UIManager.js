@@ -153,6 +153,19 @@ class UIManager {
 
             // PHASE 3: Unified Transaction Modal support
             if (modalId === 'addTransactionModal') {
+                // CRITICAL FIX: Reset form to clean state on modal open
+                const form = document.getElementById('unifiedTransactionForm');
+                if (form) form.reset();
+
+                // Reset to default type (expense) and adapt fields
+                const expenseRadio = document.querySelector('input[name="transactionType"][value="expense"]');
+                if (expenseRadio) {
+                    expenseRadio.checked = true;
+                    if (this.app.formHandlers) {
+                        this.app.formHandlers.adaptUnifiedFormFields('expense');
+                    }
+                }
+
                 // Populate all account dropdowns in unified modal
                 this.populateAccountSelect('#unified_account');
                 this.populateAccountSelect('#unified_fromAccount');

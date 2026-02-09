@@ -496,8 +496,13 @@ class AnalysisView {
                 return date >= startDate && date <= endDate;
             })
             .forEach(exp => {
-                const cat = exp.category || 'Tidak berkategori';
-                byCategory[cat] = (byCategory[cat] || 0) + exp.amount;
+                // CRITICAL FIX: Resolve category key to name
+                const categoryKey = exp.category || 'uncategorized';
+                const categoryName = this.app.categoryManager
+                    ? this.app.categoryManager.getCategoryName(categoryKey)
+                    : (categoryKey || 'Tidak berkategori');
+
+                byCategory[categoryName] = (byCategory[categoryName] || 0) + exp.amount;
             });
 
         return byCategory;
