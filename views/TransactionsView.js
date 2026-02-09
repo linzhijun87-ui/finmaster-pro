@@ -16,6 +16,7 @@ class TransactionsView {
 
         // Filter state
         this.selectedType = 'all'; // 'all', 'income', 'expense', 'transfer'
+        this.selectedCategory = 'all'; // Filter by category
         this.selectedAccount = 'all';
         this.selectedMonth = null;
         this.selectedYear = null;
@@ -150,6 +151,10 @@ class TransactionsView {
                         ${this.getTypeFilterHTML()}
                     </div>
                     <div>
+                        <label class="filter-label" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.8125rem; color: var(--text-secondary);">Kategori</label>
+                        ${this.getCategoryFilterHTML()}
+                    </div>
+                    <div>
                         <label class="filter-label" style="display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.8125rem; color: var(--text-secondary);">Akun</label>
                         ${this.getAccountFilterHTML()}
                     </div>
@@ -277,6 +282,7 @@ class TransactionsView {
     getActiveFiltersHTML() {
         const filters = [];
         if (this.selectedType !== 'all') filters.push(this.getTypeLabel(this.selectedType));
+        if (this.selectedCategory !== 'all') filters.push(this.getCategoryLabel(this.selectedCategory));
         if (this.selectedAccount !== 'all') filters.push(this.getAccountLabel(this.selectedAccount));
         if (this.selectedMonth && this.selectedYear) filters.push(`${this.getMonthName(this.selectedMonth)} ${this.selectedYear}`);
 
@@ -302,6 +308,10 @@ class TransactionsView {
     getAccountLabel(id) {
         const acc = (this.app.state.accounts || []).find(a => a.id == id);
         return acc ? acc.name : 'Akun';
+    }
+    getCategoryLabel(key) {
+        const category = this.app.categoryManager ? this.app.categoryManager.getCategoryByKey(key) : null;
+        return category ? category.name : 'Kategori';
     }
     getMonthName(idx) {
         return ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Akt', 'Nov', 'Des'][idx];
@@ -329,6 +339,39 @@ class TransactionsView {
                 <option value="expense">💸 Pengeluaran</option>
                 <option value="income">💰 Pendapatan</option>
                 <option value="transfer">🔄 Transfer</option>
+            </select>
+        `;
+    }
+
+    getCategoryFilterHTML() {
+        // Determine which categories to show based on selected type
+        let categories = [];
+        if (this.selectedType === 'income') {
+            categories = this.app.categoryManager ? this.app.categoryManager.getCategoriesByType('income') : [];
+        } else {
+            // For 'all' and 'expense', show expense categories
+            categories = this.app.categoryManager ? this.app.categoryManager.getCategoriesByType('expense') : [];
+        }
+
+        return `
+            <select id="categoryFilter" class="filter-select" style="
+                font-size: 0.8125rem; 
+                padding: 6px 12px; 
+                border: 1px solid var(--border-color, rgba(0,0,0,0.1)); 
+                border-radius: 8px; 
+                background: var(--surface, white); 
+                color: var(--text-primary, #1a1a1a);
+                min-width: 110px; 
+                height: 36px;
+                cursor: pointer;
+                outline: none;
+                transition: border-color 0.15s ease;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            " onfocus="this.style.borderColor='var(--primary, #2563eb)'" onblur="this.style.borderColor='var(--border-color, rgba(0,0,0,0.1))'">
+                <option value="all">Semua Kategori</option>
+                ${categories.map(cat =>
+            `<option value="${cat.key}">${cat.name}</option>`
+        ).join('')}
             </select>
         `;
     }
@@ -629,8 +672,20 @@ title = "${this.getActionTitle(action)}" >
         if (typeFilter) {
             typeFilter.addEventListener('change', (e) => {
                 this.selectedType = e.target.value;
+                // Reset category filter since we're changing type
+                this.selectedCategory = 'all';
                 this.updateActiveFiltersDisplay();
-                // We refresh list immediately, or we could wait for "Apply" - keeping instant for responsiveness
+                // Refresh list and re-render popover to update category options
+                this.refreshList();
+                this.refreshFilterPopover();
+            });
+        }
+
+        const categoryFilter = document.getElementById('categoryFilter');
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', (e) => {
+                this.selectedCategory = e.target.value;
+                this.updateActiveFiltersDisplay();
                 this.refreshList();
             });
         }
@@ -697,6 +752,11 @@ title = "${this.getActionTitle(action)}" >
         // Type filter
         if (this.selectedType !== 'all') {
             filtered = filtered.filter(tx => tx.type === this.selectedType);
+        }
+
+        // Category filter
+        if (this.selectedCategory !== 'all') {
+            filtered = filtered.filter(tx => tx.category === this.selectedCategory);
         }
 
         // Account filter
@@ -891,6 +951,27 @@ title = "${this.getActionTitle(action)}" >
         console.log('🔄 Refreshing TransactionsView list...');
         this.refreshList();
         this.updateActiveFiltersDisplay();
+    }
+
+    refreshFilterPopover() {
+        // Update category dropdown options when type changes
+        const categoryFilterContainer = document.querySelector('#filterPopover > div:nth-child(2) > div:nth-child(2)');
+        if (categoryFilterContainer) {
+            const label = categoryFilterContainer.querySelector('label');
+            categoryFilterContainer.innerHTML = '';
+            if (label) categoryFilterContainer.appendChild(label);
+            categoryFilterContainer.innerHTML += this.getCategoryFilterHTML();
+
+            // Re-attach event listener to new dropdown
+            const newCategoryFilter = document.getElementById('categoryFilter');
+            if (newCategoryFilter) {
+                newCategoryFilter.addEventListener('change', (e) => {
+                    this.selectedCategory = e.target.value;
+                    this.updateActiveFiltersDisplay();
+                    this.refreshList();
+                });
+            }
+        }
     }
 
     refreshList() {
