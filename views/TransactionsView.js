@@ -796,11 +796,13 @@ title = "${this.getActionTitle(action)}" >
             });
         }
 
-        const transactionsList = document.getElementById('transactionsList');
-        if (!transactionsList) return;
+        // CRITICAL FIX: Use event delegation on STABLE parent container
+        // This survives DOM replacements during refreshList()
+        const container = document.getElementById('transactionsRenderContainer');
+        if (!container) return;
 
         // Event delegation for overflow menu toggle
-        transactionsList.addEventListener('click', (e) => {
+        container.addEventListener('click', (e) => {
             const overflowBtn = e.target.closest('.overflow-btn');
             if (overflowBtn) {
                 e.stopPropagation();
@@ -831,7 +833,7 @@ title = "${this.getActionTitle(action)}" >
         document.addEventListener('click', this.handleClickOutsideMenu);
 
         // Handle action clicks from overflow menu
-        transactionsList.addEventListener('click', (e) => {
+        container.addEventListener('click', (e) => {
             const menuItem = e.target.closest('.overflow-menu-item');
             if (!menuItem) return;
 
