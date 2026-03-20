@@ -43,6 +43,17 @@ class FormHandlers {
     }
 
     /**
+     * Strict parsing for monetary amounts as requested by user
+     */
+    getValidAmount(valueStr, allowZero = false) {
+        const amount = Number(valueStr);
+        if (valueStr === undefined || valueStr === null || valueStr === '' || isNaN(amount) || (!allowZero && amount <= 0)) {
+            throw new Error('Invalid amount: ' + valueStr);
+        }
+        return this.app.calculator.normalizeAmount(amount);
+    }
+
+    /**
      * Populate category dropdowns dynamically from CategoryManager
      */
     populateCategoryDropdowns() {
@@ -596,7 +607,14 @@ class FormHandlers {
         const frequencyInput = document.getElementById('incomeFrequency');
 
         const name = nameInput?.value?.trim();
-        const amount = parseInt(amountInput?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(amountInput?.value);
+        } catch (e) {
+            this.showError('Jumlah pendapatan tidak valid');
+            this.resetButton(submitBtn, '💰 Simpan');
+            return;
+        }
         const category = categoryInput?.value;
         const accountId = parseInt(accountInput?.value);
         const date = dateInput?.value;
@@ -765,7 +783,14 @@ class FormHandlers {
         const dateInput = document.getElementById('expenseDate');
 
         const name = nameInput?.value?.trim();
-        const amount = parseInt(amountInput?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(amountInput?.value);
+        } catch (e) {
+            this.showError('Jumlah pengeluaran tidak valid');
+            resetUI();
+            return;
+        }
         const category = categoryInput?.value;
         const accountId = parseInt(accountInput?.value);
         const date = dateInput?.value;
@@ -1041,9 +1066,15 @@ class FormHandlers {
         }
 
         const name = document.getElementById('goalName')?.value?.trim();
-        const target = parseInt(document.getElementById('goalTarget')?.value) || 0;
-        const deadline = document.getElementById('goalDeadline')?.value;
-        const current = parseInt(document.getElementById('goalCurrent')?.value) || 0;
+        let target = 0, current = 0;
+        try {
+            target = this.getValidAmount(document.getElementById('goalTarget')?.value);
+            current = this.getValidAmount(document.getElementById('goalCurrent')?.value, true);
+        } catch(e) {
+            this.showError('Target atau Simpanan Awal tidak valid');
+            this.resetButton(submitBtn, '🎯 Buat Goal Baru');
+            return;
+        }
 
         // Validation
         if (!name || !target || !deadline) {
@@ -1150,8 +1181,15 @@ class FormHandlers {
 
         const id = document.getElementById('editGoalId')?.value;
         const name = document.getElementById('editGoalName')?.value?.trim();
-        const target = parseInt(document.getElementById('editGoalTarget')?.value) || 0;
-        const newCurrent = parseInt(document.getElementById('editGoalCurrent')?.value) || 0;
+        let target = 0, newCurrent = 0;
+        try {
+            target = this.getValidAmount(document.getElementById('editGoalTarget')?.value);
+            newCurrent = this.getValidAmount(document.getElementById('editGoalCurrent')?.value, true);
+        } catch(e) {
+            this.showError('Target atau Jumlah Alokasi tidak valid');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
         const deadline = document.getElementById('editGoalDeadline')?.value;
         const priority = parseInt(document.getElementById('editGoalPriority')?.value) || 2;
 
@@ -1277,7 +1315,7 @@ class FormHandlers {
             if (selectedAccount) maxAmount = selectedAccount.balance || 0;
         }
 
-        const val = parseInt(amountInput?.value) || 0;
+        const val = Number(amountInput?.value) || 0;
 
         if (selectedAccountId && val > maxAmount) {
             if (warning) warning.style.display = 'block';
@@ -1299,7 +1337,14 @@ class FormHandlers {
         }
 
         const id = document.getElementById('addFundsGoalId')?.value;
-        const amount = parseInt(document.getElementById('addFundsAmount')?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(document.getElementById('addFundsAmount')?.value);
+        } catch(e) {
+            this.showError('Jumlah tidak valid');
+            this.resetButton(submitBtn, '💾 Simpan Alokasi');
+            return;
+        }
         const accountId = document.getElementById('addFundsAccount')?.value;
 
         // Validation
@@ -1593,7 +1638,14 @@ class FormHandlers {
         }
 
         const name = document.getElementById('budgetName')?.value?.trim();
-        const amount = parseInt(document.getElementById('budgetAmount')?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(document.getElementById('budgetAmount')?.value);
+        } catch(e) {
+            this.showError('Jumlah budget tidak valid');
+            this.resetButton(submitBtn, '💾 Simpan Budget');
+            return;
+        }
         const category = document.getElementById('budgetCategory')?.value;
         const period = document.getElementById('budgetPeriod')?.value || 'monthly';
 
@@ -1662,7 +1714,14 @@ class FormHandlers {
 
         const id = parseInt(document.getElementById('editBudgetId')?.value);
         const name = document.getElementById('editBudgetName')?.value?.trim();
-        const amount = parseInt(document.getElementById('editBudgetAmount')?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(document.getElementById('editBudgetAmount')?.value);
+        } catch(e) {
+            this.showError('Jumlah budget tidak valid');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
         const period = document.getElementById('editBudgetPeriod')?.value || 'monthly';
 
         // Validation
@@ -1751,7 +1810,14 @@ class FormHandlers {
 
         const fromAccountId = document.getElementById('transferFromAccount')?.value;
         const toAccountId = document.getElementById('transferToAccount')?.value;
-        const amount = parseInt(document.getElementById('transferAmount')?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(document.getElementById('transferAmount')?.value);
+        } catch(e) {
+            this.showError('Jumlah transfer tidak valid');
+            this.resetButton(submitBtn, '🔄 Transfer Sekarang');
+            return;
+        }
         const date = document.getElementById('transferDate')?.value;
         const note = document.getElementById('transferNote')?.value?.trim();
 
@@ -1854,7 +1920,14 @@ class FormHandlers {
 
         const id = parseInt(document.getElementById('editExpenseId')?.value);
         const name = document.getElementById('editExpenseName')?.value?.trim();
-        const amount = parseInt(document.getElementById('editExpenseAmount')?.value) || 0;
+        let amount = 0;
+        try {
+            amount = this.getValidAmount(document.getElementById('editExpenseAmount')?.value);
+        } catch (e) {
+            this.showError('Jumlah pengeluaran tidak valid');
+            this.resetButton(submitBtn, '💾 Simpan Perubahan');
+            return;
+        }
         const category = document.getElementById('editExpenseCategory')?.value;
         const accountId = parseInt(document.getElementById('editExpenseAccount')?.value);
         const date = document.getElementById('editExpenseDate')?.value;

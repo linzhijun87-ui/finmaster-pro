@@ -691,7 +691,7 @@ class DataManager {
             id,
             name: data.name,
             type: data.type || 'bank',
-            initialBalance: parseInt(data.initialBalance) || 0,
+            initialBalance: Number(data.initialBalance) || 0,
             note: data.note || '',
             active: true,
             created: now.toISOString()
@@ -720,7 +720,7 @@ class DataManager {
                 ...currentAccount,
                 name: updates.name !== undefined ? updates.name : currentAccount.name,
                 type: updates.type !== undefined ? updates.type : currentAccount.type,
-                initialBalance: updates.initialBalance !== undefined ? parseInt(updates.initialBalance) : currentAccount.initialBalance,
+                initialBalance: updates.initialBalance !== undefined ? Number(updates.initialBalance) : currentAccount.initialBalance,
                 note: updates.note !== undefined ? updates.note : currentAccount.note,
                 active: updates.active !== undefined ? updates.active : currentAccount.active
             };
@@ -778,7 +778,7 @@ class DataManager {
             type: 'transfer',
             fromAccountId: parseInt(data.fromAccountId),
             toAccountId: parseInt(data.toAccountId),
-            amount: parseInt(data.amount),
+            amount: Number(data.amount),
             date: data.date,
             note: data.note || '',
             createdAt: new Date().toISOString()

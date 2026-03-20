@@ -312,7 +312,7 @@
                     </div>
                     <div class="form-group">
                         <label for="expenseAmount">Jumlah (Rp)</label>
-                        <input type="number" id="expenseAmount" required min="0" placeholder="1000000">
+                        <input type="number" step="0.01" id="expenseAmount" required min="0" placeholder="1000000">
                     </div>
                     <div class="form-group">
                         <label for="expenseCategory">Kategori</label>
@@ -377,7 +377,7 @@
                     </div>
                     <div class="form-group">
                         <label for="incomeAmount">Jumlah (Rp)</label>
-                        <input type="number" id="incomeAmount" required min="0" placeholder="5000000">
+                        <input type="number" step="0.01" id="incomeAmount" required min="0" placeholder="5000000">
                     </div>
                     <div class="form-group">
                         <label for="incomeCategory">Kategori</label>
@@ -442,7 +442,7 @@
                     </div>
                     <div class="form-group">
                         <label for="goalTarget">Target Amount (Rp)</label>
-                        <input type="number" id="goalTarget" required min="0" placeholder="100000000">
+                        <input type="number" step="0.01" id="goalTarget" required min="0" placeholder="100000000">
                     </div>
                     <div class="form-group">
                         <label for="goalDeadline">Target Tanggal</label>
@@ -450,7 +450,7 @@
                     </div>
                     <div class="form-group">
                         <label for="goalCurrent">Jumlah Saat Ini (Rp)</label>
-                        <input type="number" id="goalCurrent" value="0" min="0" placeholder="0">
+                        <input type="number" step="0.01" id="goalCurrent" value="0" min="0" placeholder="0">
                     </div>
                     <button type="submit" class="btn" style="width: 100%; margin-top: var(--space-4);">
                         🎯 Buat Goal Baru
@@ -476,11 +476,11 @@
                     </div>
                     <div class="form-group">
                         <label for="editGoalTarget">Target (Rp)</label>
-                        <input type="number" id="editGoalTarget" required min="0">
+                        <input type="number" step="0.01" id="editGoalTarget" required min="0">
                     </div>
                     <div class="form-group">
                         <label for="editGoalCurrent">Dana Terkumpul (Rp)</label>
-                        <input type="number" id="editGoalCurrent" required min="0">
+                        <input type="number" step="0.01" id="editGoalCurrent" required min="0">
                         <small style="color: var(--text-muted); display: block; margin-top: 4px;">Mengubah ini akan
                             mempengaruhi Dana Tersedia.</small>
                     </div>
@@ -526,7 +526,7 @@
                     </div>
                     <div class="form-group">
                         <label for="addFundsAmount">Jumlah Alokasi (Rp)</label>
-                        <input type="number" id="addFundsAmount" required min="1" placeholder="Masukkan jumlah">
+                        <input type="number" step="0.01" id="addFundsAmount" required min="1" placeholder="Masukkan jumlah">
                     </div>
                     <div id="addFundsWarning"
                         style="color: var(--danger); font-size: 0.875rem; display: none; margin-top: -10px; margin-bottom: 10px;">
@@ -600,7 +600,7 @@
                     </div>
                     <div class="form-group">
                         <label for="budgetAmount">Batas Anggaran (Rp)</label>
-                        <input type="number" id="budgetAmount" required min="0" placeholder="2000000">
+                        <input type="number" step="0.01" id="budgetAmount" required min="0" placeholder="2000000">
                     </div>
                     <div class="form-group">
                         <label for="budgetCategory">Kategori Pengeluaran</label>
@@ -737,7 +737,7 @@
                     </div>
                     <div class="form-group">
                         <label for="editBudgetAmount">Batas Anggaran (Rp)</label>
-                        <input type="number" id="editBudgetAmount" required min="0">
+                        <input type="number" step="0.01" id="editBudgetAmount" required min="0">
                     </div>
                     <div class="form-group">
                         <label for="editBudgetCategory">Kategori Pengeluaran</label>
@@ -799,7 +799,7 @@
                     </div>
                     <div class="form-group">
                         <label for="accountInitialBalance">Saldo Awal (Rp)</label>
-                        <input type="number" id="accountInitialBalance" required placeholder="0">
+                        <input type="number" step="0.01" id="accountInitialBalance" required placeholder="0">
                         <small class="text-muted">Saldo sebelum memulai pencatatan di aplikasi ini.</small>
                     </div>
                     <div class="form-group">
@@ -838,7 +838,7 @@
                     </div>
                     <div class="form-group">
                         <label for="editAccountInitialBalance">Saldo Awal (Rp)</label>
-                        <input type="number" id="editAccountInitialBalance" required>
+                        <input type="number" step="0.01" id="editAccountInitialBalance" required>
                         <small class="text-muted">Mengubah saldo awal akan mempengaruhi perhitungan saldo saat
                             ini.</small>
                     </div>
@@ -903,7 +903,7 @@
                     </div>
                     <div class="form-group">
                         <label for="budgetAmount">Jumlah Budget (Rp)</label>
-                        <input type="number" id="budgetAmount" required min="0" placeholder="2000000">
+                        <input type="number" step="0.01" id="budgetAmount" required min="0" placeholder="2000000">
                     </div>
                     <div class="form-group">
                         <label for="budgetCategory">Kategori</label>
@@ -947,7 +947,7 @@
                     </div>
                     <div class="form-group">
                         <label for="editBudgetAmount">Jumlah Budget (Rp)</label>
-                        <input type="number" id="editBudgetAmount" required min="0">
+                        <input type="number" step="0.01" id="editBudgetAmount" required min="0">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn-danger" id="deleteBudgetBtn">🗑️ Hapus</button>
@@ -986,7 +986,7 @@
 
                     <div class="form-group">
                         <label for="transferAmount">Jumlah</label>
-                        <input type="number" id="transferAmount" min="1" required>
+                        <input type="number" step="0.01" id="transferAmount" min="1" required>
                     </div>
 
                     <div class="form-group">
@@ -1025,7 +1025,7 @@
 
                     <div class="form-group">
                         <label for="editExpenseAmount">Jumlah</label>
-                        <input type="number" id="editExpenseAmount" min="1" required placeholder="50000">
+                        <input type="number" step="0.01" id="editExpenseAmount" min="1" required placeholder="50000">
                     </div>
 
                     <div class="form-group">

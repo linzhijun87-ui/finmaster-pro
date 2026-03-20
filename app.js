@@ -555,7 +555,7 @@ class FinancialApp {
             const updateTotal = () => {
                 let total = 0;
                 inputs.forEach(input => {
-                    total += parseInt(input.value) || 0;
+                    total += Number(input.value) || 0;
                 });
                 totalDisplay.textContent = this.calculator.formatCurrency(total);
 
@@ -580,7 +580,7 @@ class FinancialApp {
             confirmBtn.addEventListener('click', () => {
                 const manualData = Array.from(inputs).map(input => ({
                     goalId: input.dataset.goalId,
-                    amount: parseInt(input.value) || 0
+                    amount: Number(input.value) || 0
                 }));
                 this.applyAssistantAction('manual-allocation', manualData);
             });
@@ -984,7 +984,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Ensure validation behaves correctly independently of FormHandlers stale bindings
             amountInput.oninput = () => {
-                const val = parseInt(amountInput.value) || 0;
+                const val = Number(amountInput.value) || 0;
                 let isInvalid = false;
                 
                 if (accountSelect && accountSelect.value) {

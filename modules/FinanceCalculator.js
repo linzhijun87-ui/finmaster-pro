@@ -7,6 +7,12 @@ class FinanceCalculator {
         this.app = app;
     }
 
+    // ====== FINANCIAL UTILS ======
+    normalizeAmount(value) {
+        if (value === undefined || value === null || isNaN(value)) return 0;
+        return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+    }
+
     // ====== FINANCIAL CALCULATIONS ======
     calculateFinances() {
         console.log('🧮 Calculating finances...');
@@ -61,7 +67,7 @@ class FinanceCalculator {
                 style: 'currency',
                 currency: currency,
                 minimumFractionDigits: 0,
-                maximumFractionDigits: 0
+                maximumFractionDigits: 2
             });
 
             return formatter.format(amount);
@@ -303,17 +309,17 @@ class FinanceCalculator {
     calculateAccountBalance(account) {
         if (!account) return 0;
 
-        let balance = parseInt(account.initialBalance) || 0;
+        let balance = Number(account.initialBalance) || 0;
 
         // Add all income to this account
         const accountIncome = this.app.state.transactions.income
             .filter(i => i.accountId == account.id)
-            .reduce((sum, i) => sum + (parseInt(i.amount) || 0), 0);
+            .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
         // Subtract all expenses from this account
         const accountExpenses = this.app.state.transactions.expenses
             .filter(e => e.accountId == account.id)
-            .reduce((sum, e) => sum + (parseInt(e.amount) || 0), 0);
+            .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
         balance = balance + accountIncome - accountExpenses;
 
@@ -335,12 +341,12 @@ class FinanceCalculator {
         if (this.app.state.transactions && this.app.state.transactions.transfer) {
             this.app.state.transactions.transfer.forEach(t => {
                 if (t.accountId == account.id) {
-                    balance -= (parseInt(t.amount) || 0);
+                    balance -= (Number(t.amount) || 0);
                 }
             });
         }
 
-        return balance;
+        return this.normalizeAmount(balance);
     }
 
     /**
