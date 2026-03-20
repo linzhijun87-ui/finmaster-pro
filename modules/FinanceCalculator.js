@@ -17,16 +17,16 @@ class FinanceCalculator {
         // Calculate total expenses
         const totalExpenses = this.app.state.transactions.expenses.reduce((sum, item) => sum + item.amount, 0);
 
-        // Calculate net balance (income - expenses)
-        // This represents total wealth/buying power BEFORE allocation
-        const netBalance = totalIncome - totalExpenses;
-
         // Calculate total allocated to goals
         const totalAllocated = this.app.state.goals.reduce((sum, goal) => sum + (goal.current || 0), 0);
 
-        // Calculate available cash (Buying Power)
-        // Available Cash = Net Balance - Total Allocated
-        const availableCash = netBalance - totalAllocated;
+        // CRITICAL UPDATE:
+        // Available Cash (Buying Power) is now EXACTLY the sum of actual account balances
+        // because goal funding is physically deducted from those accounts.
+        const availableCash = this.getTotalAccountBalance();
+
+        // Net Balance (Total Wealth) is Available Cash (in accounts) + Total Allocated (in goals)
+        const netBalance = availableCash + totalAllocated;
 
         // Update state with new structure
         this.app.state.finances = {
@@ -39,8 +39,13 @@ class FinanceCalculator {
             balance: netBalance // Legacy alias
         };
 
+        // Sync account balances specifically for rendering
+        this.app.state.accounts.forEach(acc => {
+            acc.balance = this.calculateAccountBalance(acc);
+        });
+
         // Auto-save if enabled
-        if (this.app.state.settings.autoSave) {
+        if (this.app.state.settings && this.app.state.settings.autoSave) {
             this.app.dataManager.saveData(true);
         }
 
@@ -322,6 +327,15 @@ class FinanceCalculator {
                 // Money coming IN to this account
                 if (transfer.toAccountId == account.id) {
                     balance += transfer.amount;
+                }
+            });
+        }
+        
+        // CRITICAL UPDATE: Deduct formal goal transactions recorded as 'transfer'
+        if (this.app.state.transactions && this.app.state.transactions.transfer) {
+            this.app.state.transactions.transfer.forEach(t => {
+                if (t.accountId == account.id) {
+                    balance -= (parseInt(t.amount) || 0);
                 }
             });
         }

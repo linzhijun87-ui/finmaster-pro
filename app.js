@@ -946,29 +946,72 @@ document.addEventListener('DOMContentLoaded', () => {
         window.app = appInstance;
 
         // Expose specific methods for inline event handlers
-        // Global handler for Updating Goal (Add Funds)
         window.handleUpdateGoal = (id) => {
             const goal = appInstance.state.goals.find(g => g.id == id);
             if (!goal) return;
 
-            document.getElementById('addFundsGoalId').value = goal.id;
-            const available = appInstance.state.finances.availableCash;
-            document.getElementById('addFundsAvailableDisplay').textContent = appInstance.calculator.formatCurrency(available);
-            document.getElementById('addFundsAmount').max = available; // Html5 validation
-
-            // Add handler for dynamic warning
+            // Reset Form and Warnings
+            const form = document.getElementById('addFundsForm');
+            if (form) form.reset();
+            
+            const warning = document.getElementById('addFundsWarning');
+            if (warning) warning.style.display = 'none';
+            
             const amountInput = document.getElementById('addFundsAmount');
+            if (amountInput) {
+                amountInput.style.borderColor = '';
+                amountInput.max = '';
+            }
+
+            document.getElementById('addFundsGoalId').value = goal.id;
+            
+            // Populate Account Dropdown
+            const accountSelect = document.getElementById('addFundsAccount');
+            if (accountSelect) {
+                accountSelect.innerHTML = '<option value="" disabled selected>Pilih Sumber Dana</option>';
+                const activeAccounts = appInstance.state.accounts.filter(a => a.active !== false);
+                activeAccounts.forEach(acc => {
+                    const option = document.createElement('option');
+                    option.value = acc.id;
+                    const bal = appInstance.calculator.formatCurrency(acc.balance || 0);
+                    let icon = '💵';
+                    if (acc.type === 'bank') icon = '🏦';
+                    else if (acc.type === 'ewallet') icon = '📱';
+                    option.textContent = `${icon} ${acc.name} (${bal})`;
+                    accountSelect.appendChild(option);
+                });
+            }
+
+            // Ensure validation behaves correctly independently of FormHandlers stale bindings
             amountInput.oninput = () => {
                 const val = parseInt(amountInput.value) || 0;
-                const warning = document.getElementById('addFundsWarning');
-                if (val > available) {
-                    warning.style.display = 'block';
+                let isInvalid = false;
+                
+                if (accountSelect && accountSelect.value) {
+                    const selectedAccountId = accountSelect.value;
+                    const selectedAccount = appInstance.state.accounts.find(a => a.id == selectedAccountId);
+                    if (selectedAccount) {
+                        amountInput.max = selectedAccount.balance || 0;
+                        if (val > (selectedAccount.balance || 0)) {
+                            isInvalid = true;
+                        }
+                    }
+                }
+                
+                if (isInvalid) {
+                    if (warning) warning.style.display = 'block';
                     amountInput.style.borderColor = 'var(--danger)';
                 } else {
-                    warning.style.display = 'none';
+                    if (warning) warning.style.display = 'none';
                     amountInput.style.borderColor = '';
                 }
             };
+            
+            if (accountSelect) {
+                accountSelect.onchange = () => {
+                   if(amountInput.value) amountInput.oninput();
+                };
+            }
 
             appInstance.uiManager.openModal('addFundsModal');
         };

@@ -518,11 +518,11 @@
             <div class="modal-body">
                 <form id="addFundsForm">
                     <input type="hidden" id="addFundsGoalId">
-                    <div
-                        style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--success-50); border-radius: var(--radius-md);">
-                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Dana Tersedia:</div>
-                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--success);"
-                            id="addFundsAvailableDisplay">Rp 0</div>
+                    <div class="form-group">
+                        <label for="addFundsAccount">Sumber Dana (Akun)</label>
+                        <select id="addFundsAccount" required class="account-select">
+                            <option value="" disabled selected>Pilih Sumber Dana</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="addFundsAmount">Jumlah Alokasi (Rp)</label>
@@ -530,7 +530,7 @@
                     </div>
                     <div id="addFundsWarning"
                         style="color: var(--danger); font-size: 0.875rem; display: none; margin-top: -10px; margin-bottom: 10px;">
-                        ⚠️ Melebihi dana tersedia
+                        ⚠️ Melebihi saldo akun
                     </div>
                     <button type="submit" class="btn" style="width: 100%;">
                         💾 Simpan Alokasi

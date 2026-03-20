@@ -1267,11 +1267,19 @@ class FormHandlers {
     validateAddFundsInput() {
         const amountInput = document.getElementById('addFundsAmount');
         const warning = document.getElementById('addFundsWarning');
-        const availableCash = this.app.state.finances.availableCash;
+        const accountSelect = document.getElementById('addFundsAccount');
+        
+        const selectedAccountId = accountSelect ? accountSelect.value : null;
+        let maxAmount = 0;
+        
+        if (selectedAccountId) {
+            const selectedAccount = this.app.state.accounts.find(a => a.id == selectedAccountId);
+            if (selectedAccount) maxAmount = selectedAccount.balance || 0;
+        }
 
         const val = parseInt(amountInput?.value) || 0;
 
-        if (val > availableCash) {
+        if (selectedAccountId && val > maxAmount) {
             if (warning) warning.style.display = 'block';
             if (amountInput) amountInput.style.borderColor = 'var(--danger)';
             return false;
@@ -1292,17 +1300,31 @@ class FormHandlers {
 
         const id = document.getElementById('addFundsGoalId')?.value;
         const amount = parseInt(document.getElementById('addFundsAmount')?.value) || 0;
-        const availableCash = this.app.state.finances.availableCash;
+        const accountId = document.getElementById('addFundsAccount')?.value;
 
         // Validation
+        if (!accountId) {
+            this.showError('Harap pilih sumber dana (Akun)');
+            this.resetButton(submitBtn, '💾 Simpan Alokasi');
+            return;
+        }
+
         if (amount <= 0) {
             this.showError('Jumlah harus lebih dari 0');
             this.resetButton(submitBtn, '💾 Simpan Alokasi');
             return;
         }
-
-        if (amount > availableCash) {
-            this.showError(`Dana tidak mencukupi! Tersedia: ${this.app.calculator.formatCurrency(availableCash)}`);
+        
+        const account = this.app.state.accounts.find(a => a.id == accountId);
+        if (!account) {
+            this.showError('Akun tidak ditemukan');
+            this.resetButton(submitBtn, '💾 Simpan Alokasi');
+            return;
+        }
+        
+        const accountBalance = account.balance || 0;
+        if (amount > accountBalance) {
+            this.showError(`Saldo akun tidak mencukupi! Saldo: ${this.app.calculator.formatCurrency(accountBalance)}`);
             this.resetButton(submitBtn, '💾 Simpan Alokasi');
             return;
         }
@@ -1323,15 +1345,39 @@ class FormHandlers {
             return;
         }
 
-        // Update goal
+        // --- UPDATE STATE ---
+        // 1. Deduct from selected account
+        account.balance -= amount;
+
+        // 2. Increase goal progress
         goal.current = (goal.current || 0) + amount;
         goal.progress = Math.round((goal.current / goal.target) * 100);
 
-        // Recalculate and save
+        // 3. Track contribution
+        if (!goal.contributions) goal.contributions = [];
+        goal.contributions.push({ amount, accountId, date: new Date().toISOString() });
+
+        // 4. Create Transaction
+        if (!this.app.state.transactions.transfer) {
+            this.app.state.transactions.transfer = [];
+        }
+        
+        this.app.dataManager.addTransaction('transfer', {
+            name: `Goal: ${goal.name}`,
+            amount: amount,
+            accountId: accountId,
+            category: null,
+            date: new Date().toISOString().split('T')[0],
+            note: 'Goal funding'
+        });
+
+        // 5. Finance Recalculation (MANDATORY ORDER)
         this.app.calculator.calculateFinances();
+        
+        // Save data explicitly in case addTransaction didn't grab goals (though it triggers save inside)
         this.app.dataManager.saveData(true);
 
-        // Update UI
+        // 6. Update UI
         this.updateDashboardStats();
 
         // Check completion
